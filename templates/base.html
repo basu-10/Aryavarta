@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{% block title %}BattleCells{% endblock %}</title>
+
+  <!-- Tailwind CSS (CDN) -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            teamA: { DEFAULT: '#3b82f6', light: '#dbeafe', border: '#2563eb' },
+            teamB: { DEFAULT: '#ef4444', light: '#fee2e2', border: '#dc2626' },
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Alpine.js (CDN — lightweight reactivity, no build step) -->
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
+</head>
+<body class="bg-gray-950 text-gray-100 min-h-screen flex flex-col">
+
+  <!-- Nav -->
+  <nav class="bg-gray-900 border-b border-gray-800 px-6 py-3 flex items-center gap-6">
+    <span class="font-bold text-lg tracking-wide text-white">⚔ BattleCells</span>
+    <a href="/setup" class="text-gray-400 hover:text-white text-sm transition-colors">New Battle</a>
+  </nav>
+
+  <main class="flex-1 px-4 py-8 max-w-5xl mx-auto w-full">
+    {% block content %}{% endblock %}
+  </main>
+
+  <footer class="text-center text-xs text-gray-600 py-4">
+    BattleCells V1 — Deterministic Auto-Battler
+  </footer>
+
+</body>
+</html>

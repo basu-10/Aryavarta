@@ -1,0 +1,528 @@
+{% extends "base.html" %}
+{% block title %}Setup — BattleCells{% endblock %}
+
+{% block content %}
+<div
+  x-data="armyBuilder()"
+  x-init="init()"
+  class="space-y-8"
+>
+
+  <!-- Header -->
+  <div class="flex items-center justify-between">
+    <div>
+      <h1 class="text-2xl font-bold">Army Builder</h1>
+      <p class="text-gray-400 text-sm mt-1">
+        Place units on the grid — Team A (blue) on the left, Team B (red) on the right.
+        Click an empty cell to place a unit. Click an occupied cell or a unit in the summary to select it and edit its settings.
+      </p>
+    </div>
+
+    <!-- Load Preset dropdown -->
+    <div class="relative">
+      <button
+        @click="togglePresetList()"
+        class="text-sm px-4 py-2 rounded bg-gray-700 hover:bg-gray-600 transition-colors flex items-center gap-2"
+      >
+        Load Preset
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3 transition-transform" :class="showPresetList ? 'rotate-180' : ''" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+      </button>
+
+      <!-- Dropdown panel -->
+      <div
+        x-show="showPresetList"
+        x-transition
+        @click.outside="showPresetList = false"
+        class="absolute top-full right-0 mt-1 bg-gray-800 border border-gray-700 rounded-lg shadow-xl z-50 min-w-48 py-1"
+      >
+        <template x-if="presetsLoading">
+          <p class="text-sm text-gray-500 px-4 py-3">Loading…</p>
+        </template>
+        <template x-if="!presetsLoading && presetList.length === 0">
+          <p class="text-sm text-gray-500 px-4 py-3 italic">No saved presets yet</p>
+        </template>
+        <template x-for="p in presetList" :key="p">
+          <button
+            @click="loadPreset(p)"
+            class="w-full text-left px-4 py-2 text-sm hover:bg-gray-700 transition-colors"
+            x-text="p"
+          ></button>
+        </template>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── GRID ─────────────────────────────────────────────────────────── -->
+  <div class="overflow-x-auto">
+    <div class="inline-block">
+      <!-- Column labels -->
+      <div class="flex mb-1 ml-8">
+        <template x-for="c in {{ grid_cols }}" :key="c">
+          <div class="w-24 text-center text-xs text-gray-500" x-text="colLabel(c - 1)"></div>
+        </template>
+      </div>
+
+      <!-- Grid rows -->
+      <template x-for="r in {{ grid_rows }}" :key="r">
+        <div class="flex items-center mb-1">
+          <!-- Row label -->
+          <div class="w-8 text-right pr-2 text-xs text-gray-500" x-text="r - 1"></div>
+
+          <!-- Cells -->
+          <template x-for="c in {{ grid_cols }}" :key="c">
+            <div
+              @click="toggleCell(r - 1, c - 1)"
+              :class="cellClass(r - 1, c - 1)"
+              class="w-24 h-16 border rounded cursor-pointer flex flex-col items-center justify-center text-sm font-semibold transition-all select-none relative"
+            >
+              <!-- No-man's land indicator -->
+              <template x-if="isNeutral(c - 1)">
+                <span class="text-gray-600 text-xs">—</span>
+              </template>
+
+              <!-- Empty team cell -->
+              <template x-if="!isNeutral(c - 1) && !getUnit(r - 1, c - 1)">
+                <span class="text-gray-600 text-xs">+</span>
+              </template>
+
+              <!-- Unit placed -->
+              <template x-if="getUnit(r - 1, c - 1)">
+                <div class="text-center leading-tight">
+                  <div x-text="unitInitial(getUnit(r - 1, c - 1).type)" class="text-lg font-bold"></div>
+                  <div x-text="getUnit(r - 1, c - 1).type[0] + ' ' + getUnit(r - 1, c - 1).unit_id.split('_')[1]" class="text-xs opacity-75"></div>
+                </div>
+              </template>
+            </div>
+          </template>
+        </div>
+      </template>
+
+      <!-- Legend -->
+      <div class="flex gap-4 mt-2 ml-8 text-xs text-gray-400">
+        <div class="flex items-center gap-1"><div class="w-4 h-4 rounded bg-blue-900 border border-blue-600"></div> Team A zone</div>
+        <div class="flex items-center gap-1"><div class="w-4 h-4 rounded bg-red-900 border border-red-600"></div> Team B zone</div>
+        <div class="flex items-center gap-1"><div class="w-4 h-4 rounded bg-gray-800 border border-gray-700"></div> No-man's land</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── UNIT EDITOR (shown when a unit is selected) ───────────────────── -->
+  <template x-if="selectedKey">
+    <div class="bg-gray-900 border border-gray-700 rounded-lg p-5 space-y-4">
+      <h2 class="font-semibold text-base" x-text="getUnit(...selectedKey.split(',').map(Number)) ? 'Editing: ' + getUnit(...selectedKey.split(',').map(Number)).unit_id : 'Empty cell (' + selectedKey + ')'" ></h2>
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+
+        <!-- Unit type -->
+        <label class="block">
+          <span class="text-xs text-gray-400 uppercase tracking-wider">Type</span>
+          <select
+            x-model="editForm.type"
+            @change="updateSelected()"
+            class="mt-1 w-full bg-gray-800 border border-gray-600 rounded px-3 py-2 text-sm"
+          >
+            <option value="__remove__" class="text-red-400">— Remove Unit —</option>
+            <template x-for="t in unitTypes" :key="t">
+              <option :value="t" x-text="t"></option>
+            </template>
+          </select>
+        </label>
+
+        <!-- Move behavior -->
+        <label class="block">
+          <span class="text-xs text-gray-400 uppercase tracking-wider">Movement</span>
+          <select
+            x-model="editForm.move_behavior"
+            @change="updateSelected()"
+            :disabled="editForm.type === '__remove__'"
+            class="mt-1 w-full bg-gray-800 border border-gray-600 rounded px-3 py-2 text-sm disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            <template x-for="b in moveBehaviors" :key="b">
+              <option :value="b" x-text="b"></option>
+            </template>
+          </select>
+        </label>
+
+        <!-- Attack behavior -->
+        <label class="block">
+          <span class="text-xs text-gray-400 uppercase tracking-wider">Target Priority</span>
+          <select
+            x-model="editForm.attack_behavior"
+            @change="updateSelected()"
+            :disabled="editForm.type === '__remove__'"
+            class="mt-1 w-full bg-gray-800 border border-gray-600 rounded px-3 py-2 text-sm disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            <template x-for="b in attackBehaviors" :key="b">
+              <option :value="b" x-text="b"></option>
+            </template>
+          </select>
+        </label>
+      </div>
+
+      <!-- Stat summary -->
+      <template x-if="editForm.type && editForm.type !== '__remove__'">
+        <div class="text-xs text-gray-400 flex gap-6 pt-1">
+          <span>HP: <span class="text-white" x-text="unitStats[editForm.type].hp"></span></span>
+          <span>DMG: <span class="text-white" x-text="unitStats[editForm.type].damage"></span></span>
+          <span>Range: <span class="text-white" x-text="unitStats[editForm.type].range"></span> cells</span>
+          <span>Speed: <span class="text-white" x-text="unitStats[editForm.type].speed"></span> cells/tick</span>
+        </div>
+      </template>
+    </div>
+  </template>
+
+  <!-- ── VALIDATION ERROR ──────────────────────────────────────────────── -->
+  <template x-if="errorMsg">
+    <div class="bg-red-900 border border-red-700 text-red-200 rounded px-4 py-3 text-sm" x-text="errorMsg"></div>
+  </template>
+
+  <!-- ── ARMY SUMMARY ──────────────────────────────────────────────────── -->
+  <div class="grid grid-cols-2 gap-4">
+    <template x-for="[label, key, colorClass] in [['Team A (Blue)', 'army_a', 'text-blue-400'], ['Team B (Red)', 'army_b', 'text-red-400']]" :key="key">
+      <div class="bg-gray-900 border border-gray-800 rounded-lg p-4">
+        <h3 class="text-sm font-semibold mb-2" :class="colorClass" x-text="label + ' — ' + armies[key].length + ' units'"></h3>
+        <ul class="space-y-1">
+          <template x-for="u in armies[key]" :key="u.unit_id">
+            <li
+              @click="focusUnit(u)"
+              :class="selectedKey === u.row + ',' + u.col ? 'bg-gray-700 ring-1 ring-white' : 'hover:bg-gray-800'"
+              class="text-xs text-gray-300 rounded px-2 py-1 cursor-pointer transition-colors space-y-0.5"
+            >
+              <div class="flex justify-between">
+                <span class="font-semibold" x-text="u.unit_id + ' — ' + u.type"></span>
+                <span class="text-gray-500" x-text="'(' + u.row + ',' + u.col + ')'"></span>
+              </div>
+              <div class="flex gap-3 text-gray-500">
+                <span>Move: <span class="text-gray-300" x-text="u.move_behavior"></span></span>
+                <span>Target: <span class="text-gray-300" x-text="u.attack_behavior"></span></span>
+              </div>
+            </li>
+          </template>
+        </ul>
+        <p x-show="armies[key].length === 0" class="text-xs text-gray-600 italic">No units placed</p>
+      </div>
+    </template>
+  </div>
+
+  <!-- ── SAVE PRESET ──────────────────────────────────────────────────── -->
+  <div class="flex items-center gap-3 flex-wrap">
+    <input
+      type="text"
+      x-model="presetNameInput"
+      placeholder="Preset name…"
+      class="bg-gray-800 border border-gray-600 rounded px-3 py-2 text-sm w-56 focus:outline-none focus:border-indigo-500"
+    />
+    <button
+      @click="savePreset()"
+      :disabled="!presetNameInput.trim()"
+      class="px-4 py-2 rounded bg-indigo-700 hover:bg-indigo-600 disabled:opacity-40 disabled:cursor-not-allowed text-sm font-medium transition-colors"
+    >Save Preset</button>
+    <span
+      x-show="presetSaveMsg"
+      x-text="presetSaveMsg"
+      :class="presetSaveError ? 'text-red-400' : 'text-green-400'"
+      class="text-sm"
+    ></span>
+  </div>
+
+  <!-- ── SUBMIT ────────────────────────────────────────────────────────── -->
+  <div class="flex justify-end">
+    <button
+      @click="submit()"
+      :disabled="submitting"
+      class="px-6 py-3 rounded-lg bg-green-600 hover:bg-green-500 disabled:opacity-50 disabled:cursor-not-allowed font-semibold transition-colors"
+    >
+      <span x-show="!submitting">⚔ Run Battle</span>
+      <span x-show="submitting">Simulating…</span>
+    </button>
+  </div>
+
+</div>
+
+<script>
+  // Static data passed from Flask
+  const GRID_ROWS = {{ grid_rows }};
+  const GRID_COLS = {{ grid_cols }};
+  const TEAM_A_COLS = {{ team_a_cols | tojson }};
+  const TEAM_B_COLS = {{ team_b_cols | tojson }};
+  const UNIT_TYPES = {{ unit_types | tojson }};
+  const UNIT_STATS = {{ unit_stats | tojson }};
+  const MOVE_BEHAVIORS = {{ move_behaviors | tojson }};
+  const ATTACK_BEHAVIORS = {{ attack_behaviors | tojson }};
+
+  const DEFAULT_PRESET = {{ preset | default('null') | tojson if preset is defined else 'null' }};
+
+  function armyBuilder() {
+    return {
+      // unit map: "row,col" -> unit object
+      unitMap: {},
+      armies: { army_a: [], army_b: [] },
+      unitTypes: UNIT_TYPES,
+      unitStats: UNIT_STATS,
+      moveBehaviors: MOVE_BEHAVIORS,
+      attackBehaviors: ATTACK_BEHAVIORS,
+      selectedKey: null,
+      editForm: { type: 'Barbarian', move_behavior: 'Advance', attack_behavior: 'Closest' },
+      errorMsg: '',
+      submitting: false,
+
+      // Preset state
+      showPresetList: false,
+      presetsLoading: false,
+      presetList: [],
+      presetNameInput: '',
+      currentPresetName: null,   // name of the preset that was loaded
+      presetSaveMsg: '',
+      presetSaveError: false,
+
+      init() {
+        // No preset auto-load on init — let user click button
+      },
+
+      colLabel(c) {
+        if (TEAM_A_COLS.includes(c)) return `A (col ${c})`;
+        if (TEAM_B_COLS.includes(c)) return `B (col ${c})`;
+        return `col ${c}`;
+      },
+
+      isNeutral(c) {
+        return !TEAM_A_COLS.includes(c) && !TEAM_B_COLS.includes(c);
+      },
+
+      teamOfCol(c) {
+        if (TEAM_A_COLS.includes(c)) return 'A';
+        if (TEAM_B_COLS.includes(c)) return 'B';
+        return null;
+      },
+
+      getUnit(r, c) {
+        return this.unitMap[`${r},${c}`] || null;
+      },
+
+      cellClass(r, c) {
+        const unit = this.getUnit(r, c);
+        const isSelected = this.selectedKey === `${r},${c}`;
+
+        if (this.isNeutral(c)) {
+          return 'bg-gray-800 border-gray-700 cursor-not-allowed opacity-40';
+        }
+        if (unit) {
+          const base = unit.team === 'A'
+            ? 'bg-blue-900 border-blue-600'
+            : 'bg-red-900 border-red-600';
+          return base + (isSelected ? ' ring-2 ring-white scale-105' : ' hover:scale-105');
+        }
+        // Empty
+        const zone = this.teamOfCol(c);
+        const emptyBase = zone === 'A'
+          ? 'bg-blue-950 border-blue-900 hover:bg-blue-900 hover:border-blue-700'
+          : 'bg-red-950 border-red-900 hover:bg-red-900 hover:border-red-700';
+        return emptyBase + (isSelected ? ' ring-2 ring-white scale-105' : '');
+      },
+
+      unitInitial(type) {
+        return { Barbarian: 'B', Archer: '🏹' }[type] || type[0];
+      },
+
+      toggleCell(r, c) {
+        if (this.isNeutral(c)) return;
+
+        const key = `${r},${c}`;
+        const existing = this.unitMap[key];
+
+        if (existing) {
+          // Select or deselect occupied cell
+          if (this.selectedKey === key) {
+            this.selectedKey = null;
+          } else {
+            this.selectedKey = key;
+            this.editForm = {
+              type: existing.type,
+              move_behavior: existing.move_behavior,
+              attack_behavior: existing.attack_behavior,
+            };
+          }
+        } else {
+          // Empty cell — select/deselect without placing a unit
+          if (this.selectedKey === key) {
+            this.selectedKey = null;
+          } else {
+            this.selectedKey = key;
+            this.editForm = {
+              type: '__remove__',
+              move_behavior: this.moveBehaviors[0],
+              attack_behavior: this.attackBehaviors[0],
+            };
+          }
+        }
+      },
+
+      updateSelected() {
+        if (!this.selectedKey) return;
+        const key = this.selectedKey;
+        const [r, c] = key.split(',').map(Number);
+        const unit = this.unitMap[key];
+        const team = this.teamOfCol(c);
+
+        if (this.editForm.type === '__remove__') {
+          // Remove the unit if one exists; keep cell selected but empty
+          if (unit) {
+            delete this.unitMap[key];
+            this.rebuildArmies();
+          }
+          return;
+        }
+
+        if (unit) {
+          // Update existing unit
+          unit.type = this.editForm.type;
+          unit.move_behavior = this.editForm.move_behavior;
+          unit.attack_behavior = this.editForm.attack_behavior;
+          const typeInitial = unit.type === 'Barbarian' ? 'B' : 'AR';
+          const [_, rest] = unit.unit_id.split('_');
+          const num = rest.replace(/[^0-9]/g, '');
+          unit.unit_id = `${unit.team}_${typeInitial}${num}`;
+        } else {
+          // Place a new unit on this empty selected cell
+          const count = Object.values(this.unitMap).filter(u => u.team === team).length + 1;
+          const typeInitial = this.editForm.type === 'Barbarian' ? 'B' : 'AR';
+          this.unitMap[key] = {
+            unit_id: `${team}_${typeInitial}${count}`,
+            team,
+            type: this.editForm.type,
+            row: r,
+            col: c,
+            move_behavior: this.editForm.move_behavior,
+            attack_behavior: this.editForm.attack_behavior,
+          };
+        }
+        this.rebuildArmies();
+      },
+
+      focusUnit(u) {
+        const key = `${u.row},${u.col}`;
+        this.selectedKey = key;
+        this.editForm = {
+          type: u.type,
+          move_behavior: u.move_behavior,
+          attack_behavior: u.attack_behavior,
+        };
+      },
+
+      rebuildArmies() {
+        this.armies.army_a = Object.values(this.unitMap).filter(u => u.team === 'A');
+        this.armies.army_b = Object.values(this.unitMap).filter(u => u.team === 'B');
+      },
+
+      async togglePresetList() {
+        if (!this.showPresetList) {
+          this.presetsLoading = true;
+          this.showPresetList = true;
+          try {
+            const res = await fetch('/presets');
+            const data = await res.json();
+            this.presetList = data.presets || [];
+          } catch (e) {
+            this.presetList = [];
+          } finally {
+            this.presetsLoading = false;
+          }
+        } else {
+          this.showPresetList = false;
+        }
+      },
+
+      async loadPreset(name) {
+        try {
+          const res = await fetch(`/presets/${encodeURIComponent(name)}`);
+          if (!res.ok) { this.errorMsg = 'Preset not found.'; return; }
+          const preset = await res.json();
+          this.unitMap = {};
+          for (const u of [...(preset.army_a || []), ...(preset.army_b || [])]) {
+            this.unitMap[`${u.row},${u.col}`] = { ...u };
+          }
+          this.rebuildArmies();
+          this.selectedKey = null;
+          this.errorMsg = '';
+          this.showPresetList = false;
+          // Populate preset name field with the loaded preset's name
+          this.currentPresetName = preset.name || name;
+          this.presetNameInput = preset.name || name;
+        } catch (e) {
+          this.errorMsg = 'Failed to load preset: ' + e.message;
+        }
+      },
+
+      async savePreset() {
+        const name = this.presetNameInput.trim();
+        if (!name) return;
+        const isNew = name !== this.currentPresetName;
+        try {
+          const res = await fetch('/presets', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              name,
+              army_a: this.armies.army_a,
+              army_b: this.armies.army_b,
+            }),
+          });
+          const data = await res.json();
+          if (res.ok) {
+            this.presetSaveError = false;
+            this.presetSaveMsg = `"${name}" saved!`;
+            setTimeout(() => this.presetSaveMsg = '', 2500);
+            if (isNew) {
+              // New preset saved — clear the name field so it feels fresh
+              this.presetNameInput = '';
+              this.currentPresetName = null;
+            }
+            // Refresh cached list if dropdown was opened before
+            if (this.presetList.length > 0) {
+              const listRes = await fetch('/presets');
+              this.presetList = (await listRes.json()).presets || [];
+            }
+          } else {
+            this.presetSaveError = true;
+            this.presetSaveMsg = data.error || 'Save failed';
+          }
+        } catch (e) {
+          this.presetSaveError = true;
+          this.presetSaveMsg = 'Network error: ' + e.message;
+        }
+      },
+
+      async submit() {
+        this.errorMsg = '';
+        if (!this.armies.army_a.length || !this.armies.army_b.length) {
+          this.errorMsg = 'Both teams must have at least one unit.';
+          return;
+        }
+
+        this.submitting = true;
+        try {
+          const res = await fetch('/run', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              army_a: this.armies.army_a,
+              army_b: this.armies.army_b,
+            }),
+          });
+
+          const data = await res.json();
+          if (!res.ok) {
+            this.errorMsg = Array.isArray(data.error) ? data.error.join('\n') : data.error;
+            return;
+          }
+
+          window.location.href = data.redirect;
+        } catch (err) {
+          this.errorMsg = 'Network error: ' + err.message;
+        } finally {
+          this.submitting = false;
+        }
+      },
+    };
+  }
+</script>
+{% endblock %}
