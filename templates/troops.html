@@ -1,0 +1,273 @@
+{% extends "base.html" %}
+{% block title %}Troop Types — BattleCells{% endblock %}
+
+{% block content %}
+<div
+  x-data="troopManager()"
+  x-init="init()"
+  class="space-y-8"
+>
+
+  <!-- Header -->
+  <div>
+    <h1 class="text-2xl font-bold">Troop Types</h1>
+    <p class="text-gray-400 text-sm mt-1">
+      Define custom unit types with their own stats and default behaviours.
+      Custom troops become available in the Army Builder.
+    </p>
+  </div>
+
+  <!-- ── BUILT-IN TYPES (read-only reference) ──────────────────────── -->
+  <div>
+    <h2 class="text-sm font-semibold uppercase tracking-wider text-gray-500 mb-3">Built-in Types</h2>
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+      {% for name, stats in builtin_stats.items() %}
+      <div class="bg-gray-900 border border-gray-800 rounded-lg px-4 py-3 flex flex-col gap-1">
+        <div class="flex items-center justify-between">
+          <span class="font-semibold text-sm">{{ name }}</span>
+          <span class="text-xs text-gray-500 italic">built-in</span>
+        </div>
+        <div class="flex flex-wrap gap-x-4 gap-y-0.5 text-xs text-gray-400 mt-1">
+          <span>HP <span class="text-white">{{ stats.hp }}</span></span>
+          <span>DMG <span class="text-white">{{ stats.damage }}</span></span>
+          <span>DEF <span class="text-white">{{ stats.defense }}</span></span>
+          <span>Range <span class="text-white">{{ stats.range }}</span></span>
+          <span>Speed <span class="text-white">{{ stats.speed }}</span></span>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- ── CUSTOM TYPES LIST ─────────────────────────────────────────── -->
+  <div>
+    <h2 class="text-sm font-semibold uppercase tracking-wider text-gray-500 mb-3">Custom Types</h2>
+
+    <template x-if="loading">
+      <p class="text-sm text-gray-500">Loading…</p>
+    </template>
+
+    <template x-if="!loading && customTroops.length === 0">
+      <p class="text-sm text-gray-600 italic">No custom troop types yet. Create one below.</p>
+    </template>
+
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+      <template x-for="t in customTroops" :key="t.name">
+        <div class="bg-gray-900 border border-gray-700 rounded-lg px-4 py-3 flex flex-col gap-1">
+          <div class="flex items-center justify-between">
+            <span class="font-semibold text-sm" x-text="t.name"></span>
+            <button
+              @click="deleteTroop(t.name)"
+              class="text-xs text-red-400 hover:text-red-300 transition-colors px-2 py-0.5 rounded hover:bg-red-900/30"
+            >Delete</button>
+          </div>
+          <div class="flex flex-wrap gap-x-4 gap-y-0.5 text-xs text-gray-400 mt-1">
+            <span>HP <span class="text-white" x-text="t.hp"></span></span>
+            <span>DMG <span class="text-white" x-text="t.damage"></span></span>
+            <span>DEF <span class="text-white" x-text="t.defense"></span></span>
+            <span>Range <span class="text-white" x-text="t.range"></span></span>
+            <span>Speed <span class="text-white" x-text="t.speed"></span></span>
+          </div>
+          <div class="flex gap-x-4 text-xs text-gray-500 mt-0.5">
+            <span>Move: <span class="text-gray-300" x-text="t.default_move"></span></span>
+            <span>Target: <span class="text-gray-300" x-text="t.default_attack"></span></span>
+          </div>
+        </div>
+      </template>
+    </div>
+  </div>
+
+  <!-- ── CREATE FORM ───────────────────────────────────────────────── -->
+  <div class="bg-gray-900 border border-gray-700 rounded-lg p-5 space-y-5">
+    <h2 class="font-semibold text-base">Create New Troop Type</h2>
+
+    <!-- Name -->
+    <div>
+      <label class="block">
+        <span class="text-xs text-gray-400 uppercase tracking-wider">Name</span>
+        <input
+          type="text"
+          x-model="form.name"
+          placeholder="e.g. Knight"
+          maxlength="32"
+          class="mt-1 w-full sm:w-64 bg-gray-800 border border-gray-600 rounded px-3 py-2 text-sm focus:outline-none focus:border-indigo-500"
+        />
+      </label>
+    </div>
+
+    <!-- Stat grid -->
+    <div class="grid grid-cols-2 sm:grid-cols-5 gap-4">
+
+      <label class="block">
+        <span class="text-xs text-gray-400 uppercase tracking-wider">HP</span>
+        <input type="number" x-model.number="form.hp" min="1" max="999"
+          class="mt-1 w-full bg-gray-800 border border-gray-600 rounded px-3 py-2 text-sm focus:outline-none focus:border-indigo-500" />
+        <span class="text-xs text-gray-600">min 1</span>
+      </label>
+
+      <label class="block">
+        <span class="text-xs text-gray-400 uppercase tracking-wider">Damage</span>
+        <input type="number" x-model.number="form.damage" min="0" max="999"
+          class="mt-1 w-full bg-gray-800 border border-gray-600 rounded px-3 py-2 text-sm focus:outline-none focus:border-indigo-500" />
+        <span class="text-xs text-gray-600">min 0</span>
+      </label>
+
+      <label class="block">
+        <span class="text-xs text-gray-400 uppercase tracking-wider">Defense</span>
+        <input type="number" x-model.number="form.defense" min="0" max="999"
+          class="mt-1 w-full bg-gray-800 border border-gray-600 rounded px-3 py-2 text-sm focus:outline-none focus:border-indigo-500" />
+        <span class="text-xs text-gray-600">min 0</span>
+      </label>
+
+      <label class="block">
+        <span class="text-xs text-gray-400 uppercase tracking-wider">Range</span>
+        <input type="number" x-model.number="form.range" min="1" max="99"
+          class="mt-1 w-full bg-gray-800 border border-gray-600 rounded px-3 py-2 text-sm focus:outline-none focus:border-indigo-500" />
+        <span class="text-xs text-gray-600">Chebyshev cells</span>
+      </label>
+
+      <label class="block">
+        <span class="text-xs text-gray-400 uppercase tracking-wider">Speed</span>
+        <input type="number" x-model.number="form.speed" min="1" max="99"
+          class="mt-1 w-full bg-gray-800 border border-gray-600 rounded px-3 py-2 text-sm focus:outline-none focus:border-indigo-500" />
+        <span class="text-xs text-gray-600">cells/tick</span>
+      </label>
+    </div>
+
+    <!-- Behaviour defaults -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+
+      <label class="block">
+        <span class="text-xs text-gray-400 uppercase tracking-wider">Default Movement</span>
+        <select x-model="form.default_move"
+          class="mt-1 w-full bg-gray-800 border border-gray-600 rounded px-3 py-2 text-sm focus:outline-none focus:border-indigo-500">
+          {% for b in move_behaviors %}
+          <option value="{{ b }}">{{ b }}</option>
+          {% endfor %}
+        </select>
+      </label>
+
+      <label class="block">
+        <span class="text-xs text-gray-400 uppercase tracking-wider">Default Target Priority</span>
+        <select x-model="form.default_attack"
+          class="mt-1 w-full bg-gray-800 border border-gray-600 rounded px-3 py-2 text-sm focus:outline-none focus:border-indigo-500">
+          {% for b in attack_behaviors %}
+          <option value="{{ b }}">{{ b }}</option>
+          {% endfor %}
+        </select>
+      </label>
+    </div>
+
+    <!-- Error / success feedback -->
+    <template x-if="errorMsg">
+      <div class="bg-red-900 border border-red-700 text-red-200 rounded px-4 py-3 text-sm" x-text="errorMsg"></div>
+    </template>
+    <template x-if="successMsg">
+      <div class="bg-green-900 border border-green-700 text-green-200 rounded px-4 py-3 text-sm" x-text="successMsg"></div>
+    </template>
+
+    <!-- Submit -->
+    <div class="flex items-center gap-4">
+      <button
+        @click="createTroop()"
+        :disabled="saving || !form.name.trim()"
+        class="px-5 py-2 rounded bg-indigo-700 hover:bg-indigo-600 disabled:opacity-40 disabled:cursor-not-allowed font-medium text-sm transition-colors"
+      >
+        <span x-show="!saving">+ Create Troop Type</span>
+        <span x-show="saving">Saving…</span>
+      </button>
+      <a
+        href="/setup"
+        class="text-sm text-indigo-400 hover:text-indigo-300 transition-colors"
+      >Go to Army Builder →</a>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  function troopManager() {
+    return {
+      loading: true,
+      saving: false,
+      customTroops: [],
+      errorMsg: '',
+      successMsg: '',
+
+      form: {
+        name: '',
+        hp: 10,
+        damage: 1,
+        defense: 0,
+        range: 1,
+        speed: 1,
+        default_move: '{{ move_behaviors[0] }}',
+        default_attack: '{{ attack_behaviors[0] }}',
+      },
+
+      async init() {
+        await this.fetchTroops();
+      },
+
+      async fetchTroops() {
+        this.loading = true;
+        try {
+          const res = await fetch('/api/troops');
+          const data = await res.json();
+          this.customTroops = data.custom || [];
+        } catch (e) {
+          this.errorMsg = 'Failed to load troop types.';
+        } finally {
+          this.loading = false;
+        }
+      },
+
+      async createTroop() {
+        this.errorMsg = '';
+        this.successMsg = '';
+        const name = this.form.name.trim();
+        if (!name) { this.errorMsg = 'Name is required.'; return; }
+
+        this.saving = true;
+        try {
+          const res = await fetch('/api/troops', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ ...this.form, name }),
+          });
+          const data = await res.json();
+          if (!res.ok) {
+            this.errorMsg = data.error || 'Failed to create troop type.';
+            return;
+          }
+          this.successMsg = `"${name}" created successfully!`;
+          this.form.name = '';
+          await this.fetchTroops();
+          setTimeout(() => this.successMsg = '', 3000);
+        } catch (e) {
+          this.errorMsg = 'Network error: ' + e.message;
+        } finally {
+          this.saving = false;
+        }
+      },
+
+      async deleteTroop(name) {
+        if (!confirm(`Delete troop type "${name}"? This cannot be undone.`)) return;
+        try {
+          const res = await fetch(`/api/troops/${encodeURIComponent(name)}`, {
+            method: 'DELETE',
+          });
+          if (!res.ok) {
+            const d = await res.json();
+            this.errorMsg = d.error || 'Delete failed.';
+            return;
+          }
+          await this.fetchTroops();
+        } catch (e) {
+          this.errorMsg = 'Network error: ' + e.message;
+        }
+      },
+    };
+  }
+</script>
+{% endblock %}

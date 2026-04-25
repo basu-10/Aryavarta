@@ -81,9 +81,13 @@ class Unit:
     @classmethod
     def from_dict(cls, data: dict) -> "Unit":
         """Reconstruct a Unit from a plain dict (e.g. JSON army config)."""
-        from config import UNIT_STATS  # local import avoids circular
+        from utils.troops_store import get_all_unit_stats  # local import avoids circular
 
-        stats = UNIT_STATS[data["type"]]
+        all_stats = get_all_unit_stats()
+        utype = data["type"]
+        if utype not in all_stats:
+            raise KeyError(f"Unknown unit type: '{utype}'")
+        stats = all_stats[utype]
         hp = data.get("hp", stats["hp"])
         return cls(
             unit_id=data["unit_id"],

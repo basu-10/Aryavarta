@@ -11,9 +11,9 @@
   <!-- Header -->
   <div class="flex items-center justify-between">
     <div>
-      <h1 class="text-2xl font-bold">Army Builder</h1>
+      <h1 class="text-2xl font-bold">Battle Simulator</h1>
       <p class="text-gray-400 text-sm mt-1">
-        Place units on the grid — Team A (blue) on the left, Team B (red) on the right.
+        Place units of BOTH teams on the grid — Team A (blue) on the left, Team B (red) on the right.
         Click an empty cell to place a unit. Click an occupied cell or a unit in the summary to select it and edit its settings.
       </p>
     </div>
@@ -319,8 +319,15 @@
         return emptyBase + (isSelected ? ' ring-2 ring-white scale-105' : '');
       },
 
+      typeAbbrev(type) {
+        const map = { Barbarian: 'B', Archer: 'AR' };
+        if (map[type]) return map[type];
+        // Custom type: strip non-alpha, take up to 3 uppercase letters
+        return type.replace(/[^A-Za-z]/g, '').slice(0, 3).toUpperCase() || type[0].toUpperCase();
+      },
+
       unitInitial(type) {
-        return { Barbarian: 'B', Archer: '🏹' }[type] || type[0];
+        return { Barbarian: 'B', Archer: '🏹' }[type] || type[0].toUpperCase();
       },
 
       toggleCell(r, c) {
@@ -377,14 +384,14 @@
           unit.type = this.editForm.type;
           unit.move_behavior = this.editForm.move_behavior;
           unit.attack_behavior = this.editForm.attack_behavior;
-          const typeInitial = unit.type === 'Barbarian' ? 'B' : 'AR';
+          const typeInitial = this.typeAbbrev(unit.type);
           const [_, rest] = unit.unit_id.split('_');
           const num = rest.replace(/[^0-9]/g, '');
           unit.unit_id = `${unit.team}_${typeInitial}${num}`;
         } else {
           // Place a new unit on this empty selected cell
           const count = Object.values(this.unitMap).filter(u => u.team === team).length + 1;
-          const typeInitial = this.editForm.type === 'Barbarian' ? 'B' : 'AR';
+          const typeInitial = this.typeAbbrev(this.editForm.type);
           this.unitMap[key] = {
             unit_id: `${team}_${typeInitial}${count}`,
             team,

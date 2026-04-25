@@ -34,6 +34,12 @@ from engine.battle import Battle
 from engine.unit import Unit
 from utils.csv_writer import write_battle_csv
 from utils.serializer import build_tick_data, army_from_json
+from utils.troops_store import (
+    load_custom_troops,
+    save_custom_troops,
+    get_all_unit_stats,
+    get_all_unit_types,
+)
 import config
 
 battle_bp = Blueprint("battle", __name__)
@@ -50,17 +56,91 @@ def index():
 
 @battle_bp.route("/setup")
 def setup():
+    all_stats = get_all_unit_stats()
     return render_template(
         "setup.html",
         grid_rows=config.GRID_ROWS,
         grid_cols=config.GRID_COLS,
         team_a_cols=config.TEAM_A_COLS,
         team_b_cols=config.TEAM_B_COLS,
-        unit_types=config.UNIT_TYPES,
-        unit_stats=config.UNIT_STATS,
+        unit_types=list(all_stats.keys()),
+        unit_stats=all_stats,
         move_behaviors=config.MOVE_BEHAVIORS,
         attack_behaviors=config.ATTACK_BEHAVIORS,
     )
+
+
+# ------------------------------------------------------------------ #
+# Troop type routes                                                    #
+# ------------------------------------------------------------------ #
+
+@battle_bp.route("/troops")
+def troops_page():
+    return render_template(
+        "troops.html",
+        builtin_stats=config.UNIT_STATS,
+        move_behaviors=config.MOVE_BEHAVIORS,
+        attack_behaviors=config.ATTACK_BEHAVIORS,
+    )
+
+
+@battle_bp.route("/api/troops", methods=["GET"])
+def api_list_troops():
+    custom = load_custom_troops()
+    builtin = [
+        {"name": name, **stats, "builtin": True}
+        for name, stats in config.UNIT_STATS.items()
+    ]
+    return jsonify({"builtin": builtin, "custom": custom})
+
+
+@battle_bp.route("/api/troops", methods=["POST"])
+def api_create_troop():
+    data = request.get_json(force=True, silent=True)
+    if not data:
+        return jsonify({"error": "Invalid JSON"}), 400
+
+    name = data.get("name", "").strip()
+    if not name:
+        return jsonify({"error": "Name is required"}), 400
+
+    # Reject names that clash with built-in types
+    if name in config.UNIT_STATS:
+        return jsonify({"error": f"'{name}' is a built-in type and cannot be overridden"}), 409
+
+    custom = load_custom_troops()
+    if any(t["name"].lower() == name.lower() for t in custom):
+        return jsonify({"error": f"A custom troop named '{name}' already exists"}), 409
+
+    def _int_field(key: str, default: int, min_val: int = 0) -> int:
+        try:
+            return max(min_val, int(data.get(key, default)))
+        except (TypeError, ValueError):
+            return default
+
+    new_troop = {
+        "name": name,
+        "hp": _int_field("hp", 10, 1),
+        "damage": _int_field("damage", 1, 0),
+        "defense": _int_field("defense", 0, 0),
+        "range": _int_field("range", 1, 1),
+        "speed": _int_field("speed", 1, 1),
+        "default_move": data.get("default_move", config.MOVE_BEHAVIORS[0]),
+        "default_attack": data.get("default_attack", config.ATTACK_BEHAVIORS[0]),
+    }
+    custom.append(new_troop)
+    save_custom_troops(custom)
+    return jsonify({"ok": True, "troop": new_troop}), 201
+
+
+@battle_bp.route("/api/troops/<name>", methods=["DELETE"])
+def api_delete_troop(name: str):
+    custom = load_custom_troops()
+    new_list = [t for t in custom if t["name"] != name]
+    if len(new_list) == len(custom):
+        return jsonify({"error": "Troop type not found"}), 404
+    save_custom_troops(new_list)
+    return jsonify({"ok": True})
 
 
 # ------------------------------------------------------------------ #
@@ -251,7 +331,7 @@ def _validate_armies(army_a: list[dict], army_b: list[dict]) -> list[str]:
             all_positions.add(pos)
 
             utype = u.get("type")
-            if utype not in config.UNIT_STATS:
+            if utype not in get_all_unit_stats():
                 errors.append(f"{label} unit {uid}: unknown type '{utype}'")
 
     return errors
