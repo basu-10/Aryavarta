@@ -1,1 +1,27 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1" height="1"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256" role="img" aria-label="Garrison">
+	<defs>
+		<linearGradient id="gar-sky" x1="0" y1="0" x2="0" y2="1">
+			<stop offset="0%" stop-color="#9ab8db"/>
+			<stop offset="100%" stop-color="#dfe8f5"/>
+		</linearGradient>
+	</defs>
+
+	<rect width="256" height="256" fill="url(#gar-sky)"/>
+	<rect y="188" width="256" height="68" fill="#78996c"/>
+
+	<rect x="54" y="86" width="148" height="104" rx="6" fill="#8a8f99" stroke="#5d636e" stroke-width="4"/>
+	<rect x="48" y="74" width="160" height="18" fill="#636b77" stroke="#474e58" stroke-width="3"/>
+
+	<rect x="70" y="104" width="18" height="20" fill="#2c3542"/>
+	<rect x="96" y="104" width="18" height="20" fill="#2c3542"/>
+	<rect x="142" y="104" width="18" height="20" fill="#2c3542"/>
+	<rect x="168" y="104" width="18" height="20" fill="#2c3542"/>
+
+	<rect x="114" y="138" width="28" height="52" rx="3" fill="#5a3923" stroke="#2e1c12" stroke-width="3"/>
+
+	<path d="M36 190h184" stroke="#4b5c36" stroke-width="6"/>
+	<path d="M214 72l20 8-20 8z" fill="#8d1b1b"/>
+	<rect x="210" y="56" width="4" height="28" fill="#4f311f"/>
+
+	<path d="M24 176l16 14m-16 0l16-14" stroke="#5a3b28" stroke-width="4" stroke-linecap="round"/>
+</svg>

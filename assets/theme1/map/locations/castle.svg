@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256" role="img" aria-label="Castle">
+  <defs>
+    <linearGradient id="castle-sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#a7d8ff"/>
+      <stop offset="100%" stop-color="#e6f3ff"/>
+    </linearGradient>
+    <linearGradient id="castle-stone" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#d4d8de"/>
+      <stop offset="100%" stop-color="#8f98a6"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="256" height="256" fill="url(#castle-sky)"/>
+  <rect y="196" width="256" height="60" fill="#83ad73"/>
+
+  <rect x="52" y="96" width="152" height="92" fill="url(#castle-stone)" stroke="#626b78" stroke-width="4"/>
+  <rect x="42" y="82" width="172" height="16" fill="#6a7280" stroke="#505763" stroke-width="3"/>
+
+  <rect x="34" y="66" width="34" height="122" fill="url(#castle-stone)" stroke="#626b78" stroke-width="4"/>
+  <rect x="188" y="66" width="34" height="122" fill="url(#castle-stone)" stroke="#626b78" stroke-width="4"/>
+
+  <rect x="28" y="54" width="46" height="14" fill="#5b6471"/>
+  <rect x="182" y="54" width="46" height="14" fill="#5b6471"/>
+
+  <rect x="112" y="132" width="32" height="56" rx="5" fill="#5b3723" stroke="#331c11" stroke-width="3"/>
+  <rect x="72" y="112" width="20" height="22" fill="#2f3640"/>
+  <rect x="164" y="112" width="20" height="22" fill="#2f3640"/>
+
+  <path d="M51 66l14 6-14 6z" fill="#2b7ec0"/>
+  <rect x="48" y="50" width="3" height="20" fill="#4d3221"/>
+  <path d="M205 66l-14 6 14 6z" fill="#c03f2b"/>
+  <rect x="205" y="50" width="3" height="20" fill="#4d3221"/>
+</svg>

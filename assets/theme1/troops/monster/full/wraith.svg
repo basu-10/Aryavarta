@@ -1,1 +1,28 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1" height="1"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256" role="img" aria-label="Wraith">
+	<defs>
+		<radialGradient id="night" cx="50%" cy="30%" r="70%">
+			<stop offset="0%" stop-color="#353b69"/>
+			<stop offset="100%" stop-color="#101327"/>
+		</radialGradient>
+		<linearGradient id="cloak" x1="0" y1="0" x2="0" y2="1">
+			<stop offset="0%" stop-color="#c8d2ff" stop-opacity="0.95"/>
+			<stop offset="100%" stop-color="#7380bf" stop-opacity="0.75"/>
+		</linearGradient>
+	</defs>
+
+	<rect width="256" height="256" fill="url(#night)"/>
+
+	<ellipse cx="128" cy="194" rx="44" ry="16" fill="#8aa2ff" opacity="0.35"/>
+
+	<path d="M128 44c-24 0-44 20-44 44 0 12 5 26 12 40l-22 58h108l-22-58c7-14 12-28 12-40 0-24-20-44-44-44z"
+				fill="url(#cloak)" stroke="#9eb0ff" stroke-width="3"/>
+
+	<ellipse cx="128" cy="88" rx="20" ry="16" fill="#1b2040"/>
+	<circle cx="121" cy="86" r="3" fill="#6cf3ff"/>
+	<circle cx="135" cy="86" r="3" fill="#6cf3ff"/>
+
+	<path d="M96 186l14-26m50 26l-14-26" stroke="#d2dcff" stroke-width="4" stroke-linecap="round"/>
+	<path d="M74 186q18 16 34 0q16 16 32 0q16 16 34 0q16 16 34 0" fill="#a8b8ff" fill-opacity="0.55"/>
+
+	<path d="M48 60l16 6-16 6m160-6l16 6-16 6" stroke="#8b9cff" stroke-width="2" fill="none"/>
+</svg>
