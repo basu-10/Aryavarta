@@ -34,7 +34,21 @@ def dashboard():
         unit_stats=config.UNIT_STATS,
         unit_types=config.UNIT_TYPES,
         building_types=list(config.BUILDING_BUILD_COST.keys()),
+        available_themes=config.AVAILABLE_THEMES,
+        active_theme=config.ACTIVE_THEME,
     )
+
+
+# ── Theme management ─────────────────────────────────────────────────── #
+
+@admin_bp.route("/set-theme/<theme_name>", methods=["POST"])
+@admin_required
+def set_theme(theme_name: str):
+    """Switch active theme (instant, no DB required)."""
+    if theme_name not in config.AVAILABLE_THEMES:
+        return jsonify({"ok": False, "error": f"Theme '{theme_name}' not found."}), 400
+    config.ACTIVE_THEME = theme_name
+    return jsonify({"ok": True, "active_theme": config.ACTIVE_THEME})
 
 
 # ── User management ───────────────────────────────────────────────────── #

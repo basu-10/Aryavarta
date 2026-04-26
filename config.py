@@ -202,3 +202,7 @@ PHASES = [
     "Death Resolution",
     "Win Check",
 ]
+
+# ── Theme Configuration ─────────────────────────────────────────────── #
+ACTIVE_THEME = "theme1"  # Switch between "theme1" and "theme2" from admin panel
+AVAILABLE_THEMES = ["theme1", "theme2"]

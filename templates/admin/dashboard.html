@@ -23,6 +23,30 @@
   </div>
 </div>
 
+<!-- ── Theme Selector ────────────────────────────────────────────────── -->
+<section class="bg-gray-800 rounded p-4 mb-8">
+  <h2 class="font-semibold mb-3">World Theme</h2>
+  <div class="flex gap-4 items-center">
+    <p class="text-sm text-gray-400">
+      Current: <span class="font-semibold text-blue-300">{{ active_theme }}</span>
+    </p>
+    <div class="flex gap-2">
+      {% for theme in available_themes %}
+      <button 
+        @click="switchTheme('{{ theme }}')"
+        class="px-4 py-2 rounded text-sm font-semibold transition-colors
+                {% if theme == active_theme %}
+                  bg-blue-600 text-white
+                {% else %}
+                  bg-gray-700 text-gray-300 hover:bg-gray-600
+                {% endif %}">
+        {{ theme }}
+      </button>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
 <!-- ── Create user ───────────────────────────────────────────────────── -->
 <section class="bg-gray-800 rounded p-4 mb-8"
          x-data="{username:'', password:'', role:'player', msg:'', err:''}">
@@ -349,6 +373,16 @@ async function grantFort(pid, slot_count, fully_built) {
     body: JSON.stringify({ slot_count, fully_built }),
   });
   return r.json();
+}
+
+async function switchTheme(themeName) {
+  const r = await fetch(`/admin/set-theme/${themeName}`, { method: 'POST' });
+  const j = await r.json();
+  if (j.ok) {
+    location.reload();  // Reload to apply theme instantly
+  } else {
+    alert(`Failed to switch theme: ${j.error}`);
+  }
 }
 </script>
 {% endblock %}

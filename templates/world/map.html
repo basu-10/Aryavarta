@@ -63,34 +63,17 @@ const BG = {
 const ICON = { castle: '\u{1F3F0}', fort: '\u{1F3EF}', monster_camp: '\u{1F47E}' };
 
 // Tile-set oriented renderer (platformer-style map tiling). This can be
-// switched by admin later by replacing ACTIVE_TILESET_KEY and tile data.
+// switched by admin from the admin panel; server passes the active theme via Jinja2.
 const TILESETS = {
-  classic: {
-    grass: "data:image/svg+xml;utf8," + encodeURIComponent(`
-      <svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 26 26' width='26' height='26'>
-        <defs>
-          <linearGradient id='g' x1='0' y1='0' x2='0' y2='1'>
-            <stop offset='0%' stop-color='#63b152'/>
-            <stop offset='100%' stop-color='#4e9844'/>
-          </linearGradient>
-        </defs>
-        <rect width='26' height='26' fill='url(#g)'/>
-        <g fill='#73c363' opacity='0.45'>
-          <ellipse cx='5' cy='4' rx='4' ry='2'/>
-          <ellipse cx='18' cy='6' rx='5' ry='3'/>
-          <ellipse cx='8' cy='15' rx='4' ry='2'/>
-          <ellipse cx='21' cy='18' rx='4' ry='2'/>
-        </g>
-        <g stroke='#89d676' stroke-width='1' stroke-linecap='round' opacity='0.55'>
-          <path d='M3 11l2-5M9 12l2-5M14 10l2-4M20 12l2-5'/>
-          <path d='M5 23l2-5M12 24l2-5M18 23l2-5'/>
-        </g>
-      </svg>
-    `)
+  theme1: {
+    grass: "/assets/theme1/map/terrain/grass.svg"
+  },
+  theme2: {
+    grass: "/assets/theme2/map/terrain/grass.svg"
   }
 };
 
-const ACTIVE_TILESET_KEY = 'classic';
+const ACTIVE_TILESET_KEY = '{{ active_theme }}';
 const BASE_TILE_ID = 'grass';
 
 function tileUrl(tileId) {

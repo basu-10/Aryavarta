@@ -41,7 +41,8 @@ _PRESETS_DIR = Path(__file__).parent.parent / "presets"
 def world_map():
     return render_template("world/map.html",
                            world_w=config.WORLD_GRID_W,
-                           world_h=config.WORLD_GRID_H)
+                           world_h=config.WORLD_GRID_H,
+                           active_theme=config.ACTIVE_THEME)
 
 
 @world_bp.route("/world/item/<item_type>/<int:item_id>")
