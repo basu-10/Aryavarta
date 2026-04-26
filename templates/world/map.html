@@ -2,55 +2,44 @@
 {% block title %}World Map — BattleCells{% endblock %}
 {% block content %}
 
-<div class="flex gap-4 items-start">
-
-  <!-- ── Left: map ── -->
-  <div class="flex-1 min-w-0">
+<div class="relative left-1/2 right-1/2 -mx-[50vw] w-screen px-4">
+  <div class="w-full min-w-0">
     <div class="flex flex-wrap items-center gap-3 mb-2">
       <h1 class="text-xl font-bold">World Map
         <span class="text-sm font-normal text-gray-400">(click any entity to interact)</span>
       </h1>
-      <!-- Toggle labels -->
       <label class="flex items-center gap-2 text-sm text-gray-300 cursor-pointer select-none ml-auto">
         <input type="checkbox" id="toggle-labels" class="w-4 h-4 accent-blue-500" />
         <span>Show names &amp; stars</span>
       </label>
     </div>
 
-    <div class="overflow-auto border border-gray-700 rounded bg-gray-950" style="max-height:72vh">
-      <div id="world-grid"
-           style="display:inline-grid;grid-template-columns:repeat({{ world_w }},26px);gap:1px;padding:4px;background:#030712;min-width:max-content">
-        <!-- filled by buildGrid() -->
+    <div id="world-map-shell" class="relative overflow-hidden border border-gray-700 rounded bg-gray-950">
+      <div class="overflow-auto" style="max-height:74vh">
+        <div id="world-grid"
+             style="display:inline-grid;grid-template-columns:repeat({{ world_w }},26px);gap:1px;padding:4px;background:#030712;min-width:max-content">
+          <!-- filled by buildGrid() -->
+        </div>
+      </div>
+
+      <div id="entity-popup" class="hidden absolute z-20" style="min-width:280px;max-width:min(22rem, calc(100vw - 2rem));"></div>
+
+      <div id="legend-card" class="absolute right-3 bottom-3 z-10 w-56 bg-gray-900/70 backdrop-blur border border-gray-600 rounded-lg shadow-lg">
+        <button id="legend-toggle" class="w-full flex items-center justify-between px-3 py-2 text-xs font-semibold tracking-wide text-gray-200 hover:bg-gray-800/40 rounded-t-lg">
+          <span>Legend</span>
+          <span id="legend-caret">▾</span>
+        </button>
+        <div id="legend-body" class="px-3 pb-3 text-xs text-gray-300 space-y-1">
+          <div class="flex items-center gap-2"><span class="inline-block w-3 h-3 rounded-sm bg-blue-500"></span>Your Castle</div>
+          <div class="flex items-center gap-2"><span class="inline-block w-3 h-3 rounded-sm" style="background:#1d4ed8"></span>Other Castle</div>
+          <div class="flex items-center gap-2"><span class="inline-block w-3 h-3 rounded-sm" style="background:#7c3aed"></span>NPC Castle</div>
+          <div class="flex items-center gap-2"><span class="inline-block w-3 h-3 rounded-sm bg-green-500"></span>Your Fort</div>
+          <div class="flex items-center gap-2"><span class="inline-block w-3 h-3 rounded-sm bg-red-500"></span>Enemy Fort</div>
+          <div class="flex items-center gap-2"><span class="inline-block w-3 h-3 rounded-sm bg-orange-500"></span>Monster Fort</div>
+          <div class="flex items-center gap-2"><span class="inline-block w-3 h-3 rounded-sm bg-purple-500"></span>Monster Camp</div>
+        </div>
       </div>
     </div>
-
-    <!-- Legend -->
-    <div class="flex flex-wrap gap-4 mt-2 text-xs text-gray-400">
-      <span class="flex items-center gap-1"><span class="inline-block w-3 h-3 rounded-sm bg-blue-500"></span>Your Castle</span>
-      <span class="flex items-center gap-1"><span class="inline-block w-3 h-3 rounded-sm" style="background:#1d4ed8"></span>Other Castle</span>
-      <span class="flex items-center gap-1"><span class="inline-block w-3 h-3 rounded-sm" style="background:#7c3aed"></span>NPC Castle</span>
-      <span class="flex items-center gap-1"><span class="inline-block w-3 h-3 rounded-sm bg-green-500"></span>Your Fort</span>
-      <span class="flex items-center gap-1"><span class="inline-block w-3 h-3 rounded-sm bg-red-500"></span>Enemy Fort</span>
-      <span class="flex items-center gap-1"><span class="inline-block w-3 h-3 rounded-sm bg-orange-500"></span>Monster Fort</span>
-      <span class="flex items-center gap-1"><span class="inline-block w-3 h-3 rounded-sm bg-purple-500"></span>Monster Camp</span>
-    </div>
-  </div>
-
-  <!-- ── Right: sidebar ── -->
-  <div class="w-72 flex-shrink-0 flex flex-col gap-4">
-
-    <!-- Active missions (HTMX-polled HTML partial) -->
-    <div id="active-missions"
-         hx-get="{{ url_for('world.api_active_missions') }}"
-         hx-trigger="load, every 3s"
-         hx-swap="innerHTML"
-         class="bg-gray-800 border border-gray-700 rounded p-3">
-      <p class="text-gray-500 text-sm">Loading missions...</p>
-    </div>
-
-    <!-- Item popup -->
-    <div id="item-popup"></div>
-
   </div>
 </div>
 
@@ -75,10 +64,20 @@ const ICON = { castle: '\u{1F3F0}', fort: '\u{1F3EF}', monster_camp: '\u{1F47E}'
 
 let entityMap = {};
 let showLabels = false;
+let legendOpen = true;
+let popupAnchor = { x: 12, y: 12 };
 
 document.getElementById('toggle-labels').addEventListener('change', e => {
   showLabels = e.target.checked;
   rebuildGrid();
+});
+
+document.getElementById('legend-toggle').addEventListener('click', () => {
+  legendOpen = !legendOpen;
+  const body = document.getElementById('legend-body');
+  const caret = document.getElementById('legend-caret');
+  body.classList.toggle('hidden', !legendOpen);
+  caret.textContent = legendOpen ? '▾' : '▸';
 });
 
 function stars(n) { return n ? '\u2605'.repeat(Math.min(n, 4)) : ''; }
@@ -153,10 +152,65 @@ function rebuildGrid() {
   grid.onclick = e => {
     const cell = e.target.closest('[data-type]');
     if (!cell) return;
-    htmx.ajax('GET', `/world/item/${cell.dataset.type}/${cell.dataset.id}`,
-              {target: '#item-popup', swap: 'innerHTML'});
+    openEntityPopup(cell);
   };
 }
+
+function clampPopup() {
+  const shell = document.getElementById('world-map-shell');
+  const popup = document.getElementById('entity-popup');
+  if (popup.classList.contains('hidden')) return;
+
+  const maxX = Math.max(8, shell.clientWidth - popup.offsetWidth - 8);
+  const maxY = Math.max(8, shell.clientHeight - popup.offsetHeight - 8);
+  const x = Math.min(maxX, Math.max(8, popupAnchor.x));
+  const y = Math.min(maxY, Math.max(8, popupAnchor.y));
+
+  popup.style.left = `${x}px`;
+  popup.style.top = `${y}px`;
+}
+
+function openEntityPopup(cell) {
+  const shell = document.getElementById('world-map-shell');
+  const popup = document.getElementById('entity-popup');
+  const cellRect = cell.getBoundingClientRect();
+  const shellRect = shell.getBoundingClientRect();
+
+  popupAnchor = {
+    x: cellRect.right - shellRect.left + 10,
+    y: cellRect.top - shellRect.top - 4,
+  };
+
+  popup.classList.remove('hidden');
+  popup.style.left = `${popupAnchor.x}px`;
+  popup.style.top = `${popupAnchor.y}px`;
+
+  htmx.ajax('GET', `/world/item/${cell.dataset.type}/${cell.dataset.id}`,
+            {target: '#entity-popup', swap: 'innerHTML'});
+}
+
+function closeEntityPopup() {
+  document.getElementById('entity-popup').classList.add('hidden');
+}
+
+document.body.addEventListener('htmx:afterSwap', (event) => {
+  if (event.target.id !== 'entity-popup') return;
+  clampPopup();
+});
+
+document.addEventListener('click', (event) => {
+  const popup = document.getElementById('entity-popup');
+  if (popup.classList.contains('hidden')) return;
+  if (event.target.closest('#entity-popup')) return;
+  if (event.target.closest('[data-type]')) return;
+  closeEntityPopup();
+});
+
+document.addEventListener('keydown', (event) => {
+  if (event.key === 'Escape') closeEntityPopup();
+});
+
+window.addEventListener('resize', clampPopup);
 
 async function loadMap() {
   const res = await fetch('/api/world/map');

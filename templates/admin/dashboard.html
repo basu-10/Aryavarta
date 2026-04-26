@@ -159,14 +159,14 @@
 
               <!-- Resources panel -->
               <div class="bg-gray-800 rounded p-3"
-                   x-data="{action:'add', r_food:'', r_timber:'', r_gold:'', r_metal:'', msg:'', err:''}">
+                   x-data="{action:'set', r_food:'', r_timber:'', r_gold:'', r_metal:'', msg:'', err:''}">
                 <h3 class="text-xs font-semibold text-gray-400 uppercase mb-2">Resources</h3>
                 <div class="flex gap-2 mb-2">
                   <label class="text-xs text-gray-400 flex items-center gap-1">
-                    <input type="radio" x-model="action" value="add"> Add
+                    <input type="radio" x-model="action" value="add"> Add on top
                   </label>
                   <label class="text-xs text-gray-400 flex items-center gap-1">
-                    <input type="radio" x-model="action" value="set"> Set
+                    <input type="radio" x-model="action" value="set"> Set exact
                   </label>
                 </div>
                 <div class="grid grid-cols-2 gap-1 mb-2">
@@ -317,12 +317,20 @@ async function editResources(pid, action, food, timber, gold, metal) {
   if (timber !== '') body.timber = +timber;
   if (gold   !== '') body.gold   = +gold;
   if (metal  !== '') body.metal  = +metal;
-  const r = await fetch(`/admin/users/${pid}/resources`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body),
-  });
-  return r.json();
+  try {
+    const r = await fetch(`/admin/users/${pid}/resources`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+    const data = await r.json();
+    if (!r.ok) {
+      return { ok: false, error: data.error || `HTTP ${r.status}` };
+    }
+    return data;
+  } catch (err) {
+    return { ok: false, error: 'Failed to update resources. Please refresh and try again.' };
+  }
 }
 
 async function addTroops(pid, unit_type, qty) {

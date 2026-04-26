@@ -196,7 +196,7 @@ def spawn_entities():
     data = request.get_json(force=True, silent=True) or {}
     num_forts = int(data.get("forts", 5))
     num_camps = int(data.get("camps", 5))
-    counts = seed_world(num_forts=num_forts, num_camps=num_camps)
+    counts = seed_world(num_forts=num_forts, num_camps=num_camps, force=True)
     return jsonify({"ok": True, **counts})
 
 

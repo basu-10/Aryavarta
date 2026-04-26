@@ -1,61 +1,59 @@
-# Asset IDs used by this project
+# Assets Guide
 
-### Troop / unit types
+This folder uses an entity-first structure. Keep art with the game object it represents, then split by usage variant (`full`, `map-icons`, etc.).
 
-#### Human-only unit types
+## Current structure
 
-Defined in config.py under UNIT_STATS:
+```text
+assets/
+	assets_readme.md
+	theme1/
+		troops/
+			human/
+				full/
+				map-icons/
+			monster/
+				full/
+				map-icons/
+		buildings/
+			resource/
+			military/
+			defense/
+			default/
+		map/
+			locations/
+			terrain/
+		ui/
+			command-centre/
+```
 
-##### Melee Troops
+## Placement rules
 
-Barbarian
-Hussar
+1. Troop art always goes in `troops/...`, never in `buildings/...`.
+2. Building art always goes in `buildings/...`.
+3. World map location markers/icons (fort, camp, castle) go in `map/locations/...`.
+4. Terrain visuals (grass, bushes, trees, pond) go in `map/terrain/...`.
+5. Non-entity UI visuals (grid, decoration, frames) go in `ui/...`.
 
-##### Ranged Troops
+## Your Troll/Wraith question
 
-Archer
-Longbowman
+`Troll` and `Wraith` are monster troops, so their source files belong in:
 
-#### Monster-only unit types
+- `assets/theme1/troops/monster/full/`
 
-Troll
-Wraith
+If they are also shown as mini icons on the world map, keep map-sized versions in:
 
-### Building types
+- `assets/theme1/troops/monster/map-icons/`
 
-Defined in config.py under BUILDING_PRODUCTION_RATE, BUILDING_BUILD_TIME, and BUILDING_BUILD_COST:
+If dedicated icon art does not exist yet, reuse/copy the `full` version temporarily.
 
-#### Resource-generating buildings
+## Naming convention
 
-Farm
-Lumber Mill
-Merchant
-Mine
+- Use lowercase kebab-case filenames: `archer-tower.svg`, `monster-camp.svg`.
+- Keep one file per visual variant per entity.
+- Do not encode game logic in filenames; only visual identity and variant.
 
-##### Military buildings
+## Content reference
 
-Garrison
-Stable
-
-#### Defensive buildings
-
-Cannon
-Archer Tower
-
-#### Default building type for all castles and forts:
-(Auto Generated with fort(doesnt consume any resources or slot). User doesnt need to build it. It can however get detroyed and can be repaired to resume using it.)
-Command Centre
-
-### Map/location entity types
-
-Used in the world model and DB code:
-
-castle
-fort
-monster_camp
-
-
-### Used by world_seeder.py for monster garrisons:
-
-Troll
-Wraith
+Troop/unit IDs come from `config.py` (`UNIT_STATS`) and world seeding.
+Building IDs come from `config.py` (`BUILDING_*` dictionaries).

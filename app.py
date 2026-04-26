@@ -20,6 +20,7 @@ from blueprints.fort_bp import fort_bp
 from blueprints.clan_bp import clan_bp
 from blueprints.admin_bp import admin_bp
 import db as database
+from utils.battle_store import init_store
 
 
 def create_app(output_dir: str | None = None) -> Flask:
@@ -33,6 +34,7 @@ def create_app(output_dir: str | None = None) -> Flask:
     base = Path(__file__).parent
     app.config["OUTPUT_DIR"] = output_dir or str(base / "output")
     Path(app.config["OUTPUT_DIR"]).mkdir(exist_ok=True)
+    init_store(app.config["OUTPUT_DIR"])
 
     # Database
     app.config["DATABASE"] = str(base / "battlecells.db")
@@ -45,6 +47,11 @@ def create_app(output_dir: str | None = None) -> Flask:
     app.register_blueprint(fort_bp)
     app.register_blueprint(clan_bp)
     app.register_blueprint(admin_bp)
+
+    # Seed monster forts and camps on startup (tops up to configured maximums)
+    with app.app_context():
+        from db.world_seeder import ensure_world_entities
+        ensure_world_entities()
 
     return app
 

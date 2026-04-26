@@ -2,22 +2,18 @@
 {% block title %}{{ 'Castle' if location_type == 'castle' else 'Fort #' ~ location.id }} — BattleCells{% endblock %}
 {% block content %}
 
-<!-- ── Header ── -->
 <div class="flex flex-wrap items-center justify-between gap-3 mb-5">
   <h1 class="text-2xl font-bold">
     {% if location_type == 'castle' %}🏰 Your Castle{% else %}🏯 Fort #{{ location.id }}{% endif %}
   </h1>
-
-  <!-- Resource bar -->
   <div id="pending-resources"
        hx-get="{% if location_type == 'castle' %}{{ url_for('fort.api_castle_resources') }}{% else %}{{ url_for('fort.api_fort_resources', fort_id=location.id) }}{% endif %}"
        hx-trigger="every 5s"
        hx-swap="innerHTML">
-    {% include "fort/_resource_bar.html" with context %}
+    {% include "fort/_header_cards.html" with context %}
   </div>
 </div>
 
-<!-- Collect button -->
 <div class="mb-6 flex items-center gap-3">
   <button type="button" onclick="collectAll()"
           class="bg-green-700 hover:bg-green-600 text-white text-sm px-5 py-2 rounded font-medium">
@@ -26,17 +22,7 @@
   <span id="collect-msg" class="text-xs text-gray-400"></span>
 </div>
 
-<!-- ── Building slots ── -->
 <h2 class="text-lg font-semibold mb-3">Buildings ({{ location.slot_count }} slots)</h2>
-
-{# Build build_complete_at list for JS #}
-{% set completion_times = [] %}
-{% for b in buildings %}
-  {% if b.build_complete_at %}
-    {% set _ = completion_times.append(b.build_complete_at) %}
-  {% endif %}
-{% endfor %}
-
 <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-8">
   {% set occupied = {} %}
   {% for b in buildings %}
@@ -46,38 +32,37 @@
   {% for slot in all_slots %}
     {% if slot in occupied %}
       {% set b = occupied[slot] %}
-      <div class="bg-gray-800 border {% if b.is_destroyed %}border-red-700{% elif b.build_complete_at %}border-yellow-700{% else %}border-gray-600{% endif %} rounded-lg p-3 relative">
+      <div onclick="openBuildingPanel({{ b.id }})"
+           class="bg-gray-800 border {% if b.is_destroyed %}border-red-700{% elif b.build_complete_at %}border-yellow-700{% else %}border-gray-600 hover:border-blue-400 cursor-pointer{% endif %} rounded-lg p-3 relative transition-colors">
         <div class="font-semibold text-sm">{{ b.type }}</div>
         <div class="text-xs text-gray-400 mb-2">Level {{ b.level }}</div>
         {% if b.is_destroyed %}
-          <span class="text-red-400 text-xs block">💀 Destroyed</span>
-          <button onclick="repairBuilding({{ b.id }})"
+          <span class="text-red-400 text-xs block">Destroyed</span>
+          <button onclick="event.stopPropagation(); repairBuilding({{ b.id }})"
                   class="mt-2 text-xs bg-yellow-700 hover:bg-yellow-600 text-white px-2 py-1 rounded w-full">
             Repair
           </button>
         {% elif b.build_complete_at %}
-          <span class="text-yellow-400 text-xs block">🔨 Building…</span>
+          <span class="text-yellow-400 text-xs block">Building…</span>
           <div class="text-xs text-gray-500 mt-1" data-complete="{{ b.build_complete_at }}">
-            <span class="countdown-label">⏳ calculating…</span>
+            <span class="countdown-label">calculating…</span>
           </div>
         {% else %}
-          <span class="text-green-400 text-xs block">✅ Active</span>
+          <span class="text-green-400 text-xs block">Active</span>
+          <span class="text-[10px] text-gray-500 block mt-1">click to manage</span>
         {% endif %}
       </div>
     {% else %}
       <div class="bg-gray-900 border border-dashed border-gray-700 rounded-lg p-3 flex flex-col items-center justify-center min-h-[90px]">
         <span class="text-gray-600 text-xs mb-2">Empty slot {{ slot }}</span>
         <button onclick="openBuildModal({{ slot }})"
-                class="text-xs bg-blue-700 hover:bg-blue-600 text-white px-3 py-1 rounded">
-          Build
-        </button>
+                class="text-xs bg-blue-700 hover:bg-blue-600 text-white px-3 py-1 rounded">Build</button>
       </div>
     {% endif %}
   {% endfor %}
 </div>
 
-<!-- ── Troops ── -->
-<h2 class="text-lg font-semibold mb-3">Troops</h2>
+<h2 class="text-lg font-semibold mb-3">Troops stationed here</h2>
 {% if troops %}
 <ul class="space-y-1 text-sm mb-6">
   {% for t in troops %}
@@ -91,170 +76,412 @@
 <p class="text-gray-500 text-sm mb-6">No troops stationed here.</p>
 {% endif %}
 
-
-<!-- ══════════════════════════════════════════════════════════════ -->
-<!--  BUILD MODAL                                                  -->
-<!-- ══════════════════════════════════════════════════════════════ -->
-<div id="build-modal"
-     class="fixed inset-0 z-50 flex items-center justify-center bg-black/70 hidden">
-  <div class="bg-gray-900 border border-gray-700 rounded-xl shadow-2xl w-full max-w-3xl mx-4 max-h-[90vh] flex flex-col">
-
-    <div class="flex items-center justify-between px-6 py-4 border-b border-gray-700">
-      <h3 class="text-lg font-bold">Choose a Building</h3>
-      <button onclick="closeBuildModal()" class="text-gray-400 hover:text-white text-xl leading-none">&times;</button>
+{% if location_type == 'castle' %}
+<h2 class="text-lg font-semibold mb-3">Owned Forts</h2>
+{% if owned_fort_cards %}
+<div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3 mb-8">
+  {% for f in owned_fort_cards %}
+  <a href="{{ url_for('fort.fort_page', fort_id=f.id) }}"
+     class="block bg-gray-800 border border-gray-700 hover:border-blue-500 rounded-lg p-4 transition-colors">
+    <div class="flex items-center justify-between mb-2">
+      <div class="font-semibold">Fort #{{ f.id }}</div>
+      <div class="text-xs text-gray-500">⭐ {{ f.star_level }}</div>
     </div>
+    <div class="text-xs text-gray-400 mb-2">Position: ({{ f.grid_x }}, {{ f.grid_y }}) • Distance: {{ f.distance }}</div>
+    <div class="text-sm mb-1">🪖 Garrisoned troops: <span class="font-semibold text-white">{{ f.troop_total }}</span></div>
+    <div class="text-sm mb-1">⏱ Training queue:
+      <span class="font-semibold {% if f.queue_count > 0 %}text-green-400{% else %}text-red-400{% endif %}">{{ f.queue_count }}</span>
+    </div>
+    <div class="text-sm">📦 Uncollected resources:
+      <span class="font-semibold {% if f.pending_total > 0 %}text-green-400{% else %}text-red-400{% endif %}">{{ '%.1f'|format(f.pending_total) }}</span>
+    </div>
+  </a>
+  {% endfor %}
+</div>
+{% else %}
+<p class="text-gray-500 text-sm mb-8">You do not own any forts yet.</p>
+{% endif %}
+{% endif %}
 
-    <div class="overflow-y-auto p-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4" id="build-cards">
-      <!-- cards injected by JS -->
+<div id="building-panel" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/70">
+  <div class="bg-gray-900 border border-gray-700 rounded-xl shadow-2xl w-full max-w-2xl mx-4 max-h-[90vh] flex flex-col">
+    <div class="flex items-center justify-between px-6 py-4 border-b border-gray-700">
+      <h3 id="panel-title" class="text-lg font-bold">Building</h3>
+      <button onclick="closeBuildingPanel()" class="text-gray-400 hover:text-white text-2xl leading-none">&times;</button>
+    </div>
+    <div id="panel-body" class="overflow-y-auto p-6 flex-1 space-y-6">
+      <p class="text-gray-400 text-sm">Loading…</p>
     </div>
   </div>
 </div>
 
+<div id="build-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/70">
+  <div class="bg-gray-900 border border-gray-700 rounded-xl shadow-2xl w-full max-w-3xl mx-4 max-h-[90vh] flex flex-col">
+    <div class="flex items-center justify-between px-6 py-4 border-b border-gray-700">
+      <h3 class="text-lg font-bold">Choose a Building</h3>
+      <button onclick="closeBuildModal()" class="text-gray-400 hover:text-white text-xl leading-none">&times;</button>
+    </div>
+    <div class="overflow-y-auto p-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4" id="build-cards"></div>
+  </div>
+</div>
 
 <script>
-/* ── Building catalogue from Jinja ── */
 const BUILD_COSTS = {{ build_costs | tojson }};
+const LOC_TYPE = '{{ location_type }}';
+const LOC_ID = {{ location.id }};
 
+let pendingSlot = null;
+let currentBuildingId = null;
+let panelTimer = null;
+let didReload = false;
+
+const RES_ICONS = { food: '🍖', timber: '🪵', gold: '💰', metal: '⚙️' };
+const CATEGORY_ORDER = ['Resources', 'Military', 'Defense'];
 const BUILDING_INFO = {
-  "Farm":         { icon:"🌾", category:"Resources", desc:"Generates Food over time.",    gain:"🍖 Food / sec" },
-  "Lumber Mill":  { icon:"🪵", category:"Resources", desc:"Generates Timber over time.",  gain:"🪵 Timber / sec" },
-  "Merchant":     { icon:"💰", category:"Resources", desc:"Generates Gold over time.",    gain:"💰 Gold / sec" },
-  "Mine":         { icon:"⛏️", category:"Resources", desc:"Generates Metal over time.",   gain:"⚙️ Metal / sec" },
-  "Garrison":     { icon:"🏹", category:"Military",  desc:"Trains Longbowmen.",           gain:"🏹 Longbowman / min" },
-  "Stable":       { icon:"🐴", category:"Military",  desc:"Trains Hussars.",              gain:"🐴 Hussar / 90 s" },
-  "Cannon":       { icon:"💣", category:"Defense",   desc:"Stationary heavy cannon.",     gain:"🛡️ Defense unit" },
-  "Archer Tower": { icon:"🗼", category:"Defense",   desc:"Stationary archer tower.",     gain:"🛡️ Defense unit" },
+  'Farm': { icon: '🌾', category: 'Resources', desc: 'Generates Food over time.', gain: 'Food / sec' },
+  'Lumber Mill': { icon: '🪵', category: 'Resources', desc: 'Generates Timber over time.', gain: 'Timber / sec' },
+  'Merchant': { icon: '💰', category: 'Resources', desc: 'Generates Gold over time.', gain: 'Gold / sec' },
+  'Mine': { icon: '⛏️', category: 'Resources', desc: 'Generates Metal over time.', gain: 'Metal / sec' },
+  'Garrison': { icon: '🏹', category: 'Military', desc: 'Barracks: trains Longbowmen.', gain: 'Longbowman / 60s' },
+  'Stable': { icon: '🐴', category: 'Military', desc: 'Trains Hussars.', gain: 'Hussar / 90s' },
+  'Cannon': { icon: '💣', category: 'Defense', desc: 'Uses cannon balls, fires 1 per battle tick.', gain: 'Ammo based' },
+  'Archer Tower': { icon: '🗼', category: 'Defense', desc: 'Uses arrows, fires 1 per battle tick.', gain: 'Ammo based' },
+  'Command Centre': { icon: '🏛', category: 'Special', desc: 'Shows all stationed troops.', gain: '' },
 };
 
-const CATEGORY_ORDER = ["Resources", "Military", "Defense"];
-
-let _pendingSlot = null;
+function fmtCost(cost) {
+  return Object.entries(cost || {}).map(([k, v]) =>
+    `<span class="inline-flex items-center gap-1 bg-gray-700 rounded px-2 py-0.5 text-xs">${RES_ICONS[k] || ''} ${k} <b>${v}</b></span>`
+  ).join(' ');
+}
 
 function openBuildModal(slot) {
-  _pendingSlot = slot;
-  const container = document.getElementById('build-cards');
-  container.innerHTML = '';
+  pendingSlot = slot;
+  const wrap = document.getElementById('build-cards');
+  wrap.innerHTML = '';
 
   const grouped = {};
-  for (const [btype, info] of Object.entries(BUILDING_INFO)) {
-    const cat = info.category;
-    if (!grouped[cat]) grouped[cat] = [];
-    grouped[cat].push({btype, info});
+  for (const [name, info] of Object.entries(BUILDING_INFO)) {
+    if (name === 'Command Centre') continue;
+    if (!grouped[info.category]) grouped[info.category] = [];
+    grouped[info.category].push({ name, info });
   }
 
   for (const cat of CATEGORY_ORDER) {
     if (!grouped[cat]) continue;
-    // Category header
     const hdr = document.createElement('div');
     hdr.className = 'col-span-full text-xs font-semibold uppercase tracking-widest text-gray-500 mt-2 mb-1';
     hdr.textContent = cat;
-    container.appendChild(hdr);
+    wrap.appendChild(hdr);
 
-    for (const {btype, info} of grouped[cat]) {
-      const cost = BUILD_COSTS[btype] || {};
-      const costLines = Object.entries(cost)
-        .map(([res, amt]) => `<span class="inline-block bg-gray-700 rounded px-1.5 py-0.5 mr-1">${res} ${amt}</span>`)
-        .join('');
-
+    for (const item of grouped[cat]) {
+      const cost = fmtCost(BUILD_COSTS[item.name] || {});
       const card = document.createElement('div');
-      card.className =
-        'bg-gray-800 border border-gray-700 hover:border-blue-500 rounded-lg p-4 cursor-pointer ' +
-        'flex flex-col gap-2 transition-all';
+      card.className = 'bg-gray-800 border border-gray-700 hover:border-blue-500 rounded-lg p-4 flex flex-col gap-2';
       card.innerHTML = `
         <div class="flex items-center gap-2">
-          <span class="text-2xl">${info.icon}</span>
-          <span class="font-semibold text-sm">${btype}</span>
+          <span class="text-2xl">${item.info.icon}</span>
+          <span class="font-semibold text-sm">${item.name}</span>
         </div>
-        <p class="text-xs text-gray-400">${info.desc}</p>
-        <div class="text-xs text-green-400">📈 ${info.gain}</div>
-        <div class="text-xs mt-1">
-          <span class="text-gray-500">Cost: </span>${costLines || '<span class="text-gray-500">Free</span>'}
-        </div>
-        <button onclick="confirmBuild('${btype}')"
-                class="mt-auto bg-blue-700 hover:bg-blue-600 text-white text-xs px-3 py-1 rounded">
-          Build
-        </button>
+        <p class="text-xs text-gray-400">${item.info.desc}</p>
+        <div class="text-xs text-green-400">${item.info.gain}</div>
+        <div class="text-xs mt-1"><span class="text-gray-500">Cost: </span>${cost || '<span class="text-gray-500">Free</span>'}</div>
+        <button onclick="confirmBuild('${item.name}')" class="mt-auto bg-blue-700 hover:bg-blue-600 text-white text-xs px-3 py-1 rounded">Build</button>
       `;
-      container.appendChild(card);
+      wrap.appendChild(card);
     }
   }
 
-  document.getElementById('build-modal').classList.remove('hidden');
+  const modal = document.getElementById('build-modal');
+  modal.classList.remove('hidden');
+  modal.classList.add('flex');
 }
 
 function closeBuildModal() {
-  document.getElementById('build-modal').classList.add('hidden');
-  _pendingSlot = null;
+  const modal = document.getElementById('build-modal');
+  modal.classList.add('hidden');
+  modal.classList.remove('flex');
+  pendingSlot = null;
 }
 
-async function confirmBuild(btype) {
-  if (_pendingSlot === null) return;
+async function confirmBuild(buildingType) {
+  if (pendingSlot === null) return;
+  const slotToBuild = pendingSlot;
   closeBuildModal();
   const r = await fetch('/api/build', {
-    method: 'POST', headers: {'Content-Type':'application/json'},
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      location_type: '{{ location_type }}',
-      location_id:   {{ location.id }},
-      slot_index:    _pendingSlot,
-      building_type: btype,
-    })
+      location_type: LOC_TYPE,
+      location_id: LOC_ID,
+      slot_index: slotToBuild,
+      building_type: buildingType,
+    }),
   });
   const d = await r.json();
   if (d.ok) location.reload();
-  else alert(d.error);
+  else alert(d.error || 'Build failed');
 }
 
-/* ── Collect ── */
 async function collectAll() {
   const r = await fetch('/api/collect', {
-    method: 'POST', headers: {'Content-Type':'application/json'},
-    body: JSON.stringify({location_type: '{{ location_type }}', location_id: {{ location.id }}})
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ location_type: LOC_TYPE, location_id: LOC_ID }),
   });
   const d = await r.json();
   const msg = document.getElementById('collect-msg');
   if (d.ok) {
-    const parts = Object.entries(d.collected).map(([k,v]) => `${k}: +${v}`);
-    msg.textContent = parts.length ? 'Collected — ' + parts.join(', ') : 'Nothing to collect yet.';
+    const parts = Object.entries(d.collected).map(([k, v]) => `${k}: +${v}`);
+    msg.textContent = parts.length ? `Collected — ${parts.join(', ')}` : 'Nothing to collect yet.';
   } else {
     msg.textContent = d.error || 'Error';
   }
 }
 
-/* ── Repair ── */
-async function repairBuilding(bid) {
+async function repairBuilding(buildingId) {
   const r = await fetch('/api/repair', {
-    method: 'POST', headers: {'Content-Type':'application/json'},
-    body: JSON.stringify({building_id: bid})
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ building_id: buildingId }),
   });
   const d = await r.json();
-  if (d.ok) location.reload(); else alert(d.error);
+  if (d.ok) location.reload();
+  else alert(d.error || 'Repair failed');
 }
 
-/* ── Build completion countdown & auto-reload ── */
-function updateCountdowns() {
-  const now = Date.now();
-  let anyBuilding = false;
-  document.querySelectorAll('[data-complete]').forEach(el => {
-    const complete = new Date(el.dataset.complete).getTime();
-    const remaining = Math.ceil((complete - now) / 1000);
-    const label = el.querySelector('.countdown-label');
-    if (remaining <= 0) {
-      // Building done — reload page once
-      location.reload();
+function panelError(msg) {
+  const body = document.getElementById('panel-body');
+  const el = document.createElement('div');
+  el.className = 'bg-red-900/60 border border-red-600 rounded-lg px-4 py-2 text-sm text-red-300';
+  el.textContent = `Warning: ${msg || 'Action failed'}`;
+  body.prepend(el);
+  setTimeout(() => el.remove(), 3000);
+}
+
+async function openBuildingPanel(buildingId) {
+  currentBuildingId = buildingId;
+  const panel = document.getElementById('building-panel');
+  panel.classList.remove('hidden');
+  panel.classList.add('flex');
+  await refreshPanel();
+}
+
+function closeBuildingPanel() {
+  const panel = document.getElementById('building-panel');
+  panel.classList.add('hidden');
+  panel.classList.remove('flex');
+  currentBuildingId = null;
+  clearInterval(panelTimer);
+  panelTimer = null;
+}
+
+async function refreshPanel() {
+  if (!currentBuildingId) return;
+  clearInterval(panelTimer);
+  const r = await fetch(`/api/building/${currentBuildingId}/details`);
+  if (!r.ok) {
+    closeBuildingPanel();
+    return;
+  }
+  const data = await r.json();
+  if (data.error) {
+    closeBuildingPanel();
+    return;
+  }
+  renderPanel(data);
+}
+
+function renderPanel(data) {
+  const b = data.building;
+  const info = BUILDING_INFO[b.type] || { icon: '🏗' };
+  document.getElementById('panel-title').textContent = `${info.icon} ${b.type} — Level ${b.level}`;
+
+  let html = '';
+
+  if (b.is_destroyed) {
+    html = `<div class="bg-red-900/40 border border-red-700 rounded-lg px-4 py-3 text-sm text-red-300">Building is destroyed. Repair first.</div>`;
+    document.getElementById('panel-body').innerHTML = html;
+    return;
+  }
+
+  if (b.build_complete_at) {
+    const rem = Math.max(0, Math.ceil((new Date(b.build_complete_at) - Date.now()) / 1000));
+    html = `<div class="bg-yellow-900/40 border border-yellow-700 rounded-lg px-4 py-3 text-sm text-yellow-300">Under construction — <span id="panel-build-countdown">${rem}s</span> remaining</div>`;
+    document.getElementById('panel-body').innerHTML = html;
+    panelTimer = setInterval(() => {
+      const left = Math.max(0, Math.ceil((new Date(b.build_complete_at) - Date.now()) / 1000));
+      const c = document.getElementById('panel-build-countdown');
+      if (c) c.textContent = `${left}s`;
+      if (left <= 0) {
+        clearInterval(panelTimer);
+        refreshPanel();
+      }
+    }, 1000);
+    return;
+  }
+
+  if (data.upgrade_cost) {
+    html += `
+      <section>
+        <h4 class="text-sm font-semibold text-gray-300 mb-2">Upgrade to Level ${b.level + 1}</h4>
+        <div class="flex flex-wrap items-center gap-3">
+          <div class="flex flex-wrap gap-2">${fmtCost(data.upgrade_cost)}</div>
+          <button onclick="upgradeBuilding(${b.id})" class="bg-blue-700 hover:bg-blue-600 text-white text-xs px-4 py-1.5 rounded font-medium">Upgrade</button>
+        </div>
+      </section>
+    `;
+  }
+
+  if (b.type === 'Command Centre') {
+    const troops = data.troops || [];
+    if (!troops.length) {
+      html += '<section><h4 class="text-sm font-semibold text-gray-300 mb-2">Troop Details</h4><p class="text-gray-500 text-sm">No troops stationed here.</p></section>';
     } else {
-      anyBuilding = true;
-      if (label) label.textContent = `⏳ ${remaining}s left`;
+      const rows = troops.map((t) => {
+        const s = t.stats || {};
+        return `<tr class="border-t border-gray-700"><td class="py-2 px-3 text-left">${t.unit_type} ×${t.quantity}</td><td class="py-2 px-3 text-center">${s.hp ?? '-'}</td><td class="py-2 px-3 text-center">${s.damage ?? '-'}</td><td class="py-2 px-3 text-center">${s.defense ?? '-'}</td><td class="py-2 px-3 text-center">${s.range ?? '-'}</td><td class="py-2 px-3 text-center">${s.speed ?? '-'}</td></tr>`;
+      }).join('');
+      html += `
+        <section>
+          <h4 class="text-sm font-semibold text-gray-300 mb-2">Troop Details</h4>
+          <div class="overflow-x-auto">
+            <table class="w-full text-xs">
+              <thead><tr class="text-gray-500 uppercase"><th class="pb-2 px-3 text-left">Unit</th><th class="pb-2 px-3">HP</th><th class="pb-2 px-3">DMG</th><th class="pb-2 px-3">DEF</th><th class="pb-2 px-3">RNG</th><th class="pb-2 px-3">SPD</th></tr></thead>
+              <tbody>${rows}</tbody>
+            </table>
+          </div>
+        </section>
+      `;
+    }
+  }
+
+  if (data.army) {
+    const unit = data.army.unit_type;
+    const queue = data.queue || [];
+    const nowTraining = queue.length ? queue[0] : null;
+    const stack = (data.all_troops || []).find((t) => t.unit_type === unit);
+    html += `
+      <section>
+        <h4 class="text-sm font-semibold text-gray-300 mb-2">Troop Management (${unit})</h4>
+        <div class="text-xs text-gray-400 mb-2">Available: <b class="text-white">${data.troop_count || 0}</b> | Queue: <b class="text-yellow-300">${queue.length}</b></div>
+        ${nowTraining ? `<div class="bg-gray-800 rounded-lg px-4 py-2 text-xs text-gray-300 mb-2">Training now: ${unit} — <span data-train-complete="${nowTraining.complete_at}" class="font-mono">...</span> left</div>` : ''}
+        <div class="flex flex-wrap items-center gap-2 mb-3">
+          <span class="text-xs text-gray-400">Cost per unit: ${fmtCost(data.train_cost || {})}</span>
+          <button onclick="trainTroop(${b.id})" class="ml-auto bg-green-700 hover:bg-green-600 text-white text-xs px-4 py-1.5 rounded font-medium">Train 1</button>
+        </div>
+        ${stack ? `<div class="flex items-center justify-between bg-gray-800 rounded-lg px-4 py-2"><span class="text-sm">${stack.unit_type} ×${stack.quantity}</span><div class="flex gap-2"><button onclick="deleteTroop(${stack.id},1)" class="text-xs bg-red-800 hover:bg-red-700 text-white px-3 py-1 rounded">Dismiss 1</button>${stack.quantity > 1 ? `<button onclick="deleteTroop(${stack.id},${stack.quantity})" class="text-xs bg-red-900 hover:bg-red-800 text-white px-3 py-1 rounded">Dismiss all</button>` : ''}</div></div>` : '<p class="text-xs text-gray-500">No trained troops to dismiss.</p>'}
+        <p class="text-xs text-gray-500 mt-2">Dismiss refund is instant. Training is queued one-at-a-time.</p>
+      </section>
+    `;
+  }
+
+  if (data.ammo_type !== undefined) {
+    const label = data.ammo_type === 'cannon_ball' ? 'Cannon Balls' : 'Arrows';
+    html += `
+      <section>
+        <h4 class="text-sm font-semibold text-gray-300 mb-2">Defense Building Management</h4>
+        <div class="bg-gray-800 rounded-lg px-4 py-3 flex flex-wrap items-center gap-4 mb-3">
+          <div class="text-sm">Loaded ${label}: <b id="ammo-count-${b.id}" class="text-yellow-300">${data.ammo_count || 0}</b></div>
+          <div class="text-xs text-gray-500">Fires 1 ${label.toLowerCase().slice(0, -1)} per battle tick.</div>
+        </div>
+        <div class="flex flex-wrap items-center gap-2">
+          <span class="text-xs text-gray-400">Cost each: ${fmtCost(data.ammo_cost || {})}</span>
+          <div class="ml-auto flex gap-2">
+            <button onclick="loadAmmo(${b.id},1)" class="text-xs bg-amber-700 hover:bg-amber-600 text-white px-3 py-1 rounded">Load 1</button>
+            <button onclick="loadAmmo(${b.id},5)" class="text-xs bg-amber-700 hover:bg-amber-600 text-white px-3 py-1 rounded">Load 5</button>
+            <button onclick="loadAmmo(${b.id},10)" class="text-xs bg-amber-700 hover:bg-amber-600 text-white px-3 py-1 rounded">Load 10</button>
+          </div>
+        </div>
+      </section>
+    `;
+  }
+
+  document.getElementById('panel-body').innerHTML = html;
+
+  panelTimer = setInterval(() => {
+    const el = document.querySelector('[data-train-complete]');
+    if (!el) return;
+    const rem = Math.max(0, Math.ceil((new Date(el.dataset.trainComplete) - Date.now()) / 1000));
+    const m = Math.floor(rem / 60);
+    const s = rem % 60;
+    el.textContent = m > 0 ? `${m}m ${s}s` : `${s}s`;
+    if (rem <= 0) {
+      clearInterval(panelTimer);
+      refreshPanel();
+    }
+  }, 1000);
+}
+
+async function upgradeBuilding(buildingId) {
+  const r = await fetch('/api/building/upgrade', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ building_id: buildingId }),
+  });
+  const d = await r.json();
+  if (d.ok) location.reload();
+  else panelError(d.error);
+}
+
+async function trainTroop(buildingId) {
+  const r = await fetch('/api/troop/train', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ building_id: buildingId }),
+  });
+  const d = await r.json();
+  if (d.ok) refreshPanel();
+  else panelError(d.error);
+}
+
+async function deleteTroop(troopId, quantity) {
+  const r = await fetch('/api/troop/delete', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ troop_id: troopId, quantity }),
+  });
+  const d = await r.json();
+  if (d.ok) refreshPanel();
+  else panelError(d.error);
+}
+
+async function loadAmmo(buildingId, count) {
+  const r = await fetch('/api/ammo/load', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ building_id: buildingId, count }),
+  });
+  const d = await r.json();
+  if (d.ok) {
+    const el = document.getElementById(`ammo-count-${buildingId}`);
+    if (el) el.textContent = d.count;
+  } else panelError(d.error);
+}
+
+function updateCountdowns() {
+  document.querySelectorAll('[data-complete]').forEach((el) => {
+    const rem = Math.ceil((new Date(el.dataset.complete) - Date.now()) / 1000);
+    const label = el.querySelector('.countdown-label');
+    if (rem <= 0) {
+      if (!didReload) {
+        didReload = true;
+        location.reload();
+      }
+    } else if (label) {
+      label.textContent = `${rem}s left`;
     }
   });
 }
 
-// Run immediately and every second
 updateCountdowns();
 setInterval(updateCountdowns, 1000);
 
-/* ── Close modal on backdrop click ── */
-document.getElementById('build-modal').addEventListener('click', e => {
+document.getElementById('build-modal').addEventListener('click', (e) => {
   if (e.target === document.getElementById('build-modal')) closeBuildModal();
+});
+document.getElementById('building-panel').addEventListener('click', (e) => {
+  if (e.target === document.getElementById('building-panel')) closeBuildingPanel();
 });
 </script>
 {% endblock %}

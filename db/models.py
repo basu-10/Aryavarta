@@ -221,7 +221,17 @@ def place_building(location_type: str, location_id: int,
 
 
 def get_buildings(location_type: str, location_id: int) -> list[dict]:
-    rows = get_db().execute(
+    db = get_db()
+    # Auto-finalise buildings whose construction timer has elapsed
+    db.execute(
+        """UPDATE building SET build_complete_at=NULL
+           WHERE location_type=? AND location_id=?
+             AND build_complete_at IS NOT NULL
+             AND build_complete_at <= ?""",
+        (location_type, location_id, _now_iso()),
+    )
+    db.commit()
+    rows = db.execute(
         "SELECT * FROM building WHERE location_type=? AND location_id=?",
         (location_type, location_id),
     ).fetchall()
@@ -264,18 +274,6 @@ def _calc_accumulated(building: dict) -> dict[str, float]:
         elapsed = max(0.0, (datetime.now(timezone.utc) - last).total_seconds())
         multiplier = config.BUILDING_LEVEL_MULTIPLIER ** (building.get("level", 1) - 1)
         return {res: rate * elapsed * multiplier for res, rate in production.items()}
-
-    # Army buildings (troop production)
-    army = config.ARMY_PRODUCTION.get(btype)
-    if army:
-        if building.get("build_complete_at"):
-            complete = _parse_dt(building["build_complete_at"])
-            if datetime.now(timezone.utc) < complete:
-                return {}
-        last = _parse_dt(building["last_collected_at"])
-        elapsed = max(0.0, (datetime.now(timezone.utc) - last).total_seconds())
-        count = math.floor(elapsed / army["seconds_per_unit"])
-        return {army["unit_type"]: float(count)} if count > 0 else {}
 
     return {}
 
@@ -396,6 +394,181 @@ def get_troops_at(location_type: str, location_id: int) -> list[dict]:
         (location_type, location_id),
     ).fetchall()
     return [dict(r) for r in rows]
+
+
+def delete_troop_with_refund(troop_id: int, owner_id: int, quantity: int) -> bool:
+    """Delete *quantity* troops of a stack and refund TROOP_REFUND_RATE of their training cost."""
+    db = get_db()
+    troop = db.execute(
+        "SELECT * FROM troop WHERE id=? AND owner_id=? AND state='idle'",
+        (troop_id, owner_id),
+    ).fetchone()
+    if not troop:
+        return False
+    qty = min(quantity, troop["quantity"])
+    cost = config.TROOP_TRAIN_COST.get(troop["unit_type"], {})
+    if cost:
+        refund = {k: v * config.TROOP_REFUND_RATE * qty for k, v in cost.items()}
+        add_player_resources(
+            owner_id,
+            food=refund.get("food", 0),
+            timber=refund.get("timber", 0),
+            gold=refund.get("gold", 0),
+            metal=refund.get("metal", 0),
+        )
+    if qty >= troop["quantity"]:
+        db.execute("DELETE FROM troop WHERE id=?", (troop_id,))
+    else:
+        db.execute("UPDATE troop SET quantity=quantity-? WHERE id=?", (qty, troop_id))
+    db.commit()
+    return True
+
+
+# ── Training Queue ─────────────────────────────────────────────────────── #
+
+def get_training_queue(building_id: int) -> list[dict]:
+    """Return pending training entries for a building, oldest first."""
+    rows = get_db().execute(
+        "SELECT * FROM training_queue WHERE building_id=? ORDER BY complete_at",
+        (building_id,),
+    ).fetchall()
+    return [dict(r) for r in rows]
+
+
+def get_location_training_queue_count(location_type: str, location_id: int) -> int:
+    """Return total queued troops across all buildings at a location."""
+    row = get_db().execute(
+        """SELECT COUNT(*) AS c
+           FROM training_queue tq
+           JOIN building b ON b.id = tq.building_id
+           WHERE b.location_type=? AND b.location_id=?""",
+        (location_type, location_id),
+    ).fetchone()
+    return int(row["c"]) if row else 0
+
+
+def process_training_queue(building_id: int, location_type: str,
+                            location_id: int) -> int:
+    """Drain all completed entries: add the troops, remove rows. Returns count completed."""
+    now = _now_iso()
+    db = get_db()
+    done = db.execute(
+        """SELECT * FROM training_queue
+           WHERE building_id=? AND complete_at <= ?
+           ORDER BY complete_at""",
+        (building_id, now),
+    ).fetchall()
+    for entry in done:
+        add_troop(entry["owner_id"], entry["unit_type"], 1, location_type, location_id)
+        db.execute("DELETE FROM training_queue WHERE id=?", (entry["id"],))
+    if done:
+        db.commit()
+    return len(done)
+
+
+def queue_troop_training(building_id: int, owner_id: int,
+                          unit_type: str, training_seconds: int) -> dict:
+    """
+    Enqueue one unit for training. Computes complete_at based on the tail of
+    the existing queue (or now if empty). Resources must be deducted by caller.
+    Returns the new queue entry dict.
+    """
+    db = get_db()
+    last = db.execute(
+        """SELECT complete_at FROM training_queue
+           WHERE building_id=? ORDER BY complete_at DESC LIMIT 1""",
+        (building_id,),
+    ).fetchone()
+    if last:
+        start_from = _parse_dt(last["complete_at"])
+    else:
+        start_from = datetime.now(timezone.utc)
+    complete_at = (start_from + timedelta(seconds=training_seconds)).isoformat(timespec="seconds")
+    cur = db.execute(
+        "INSERT INTO training_queue (building_id, owner_id, unit_type, complete_at) VALUES (?,?,?,?)",
+        (building_id, owner_id, unit_type, complete_at),
+    )
+    db.commit()
+    return {"id": cur.lastrowid, "unit_type": unit_type, "complete_at": complete_at}
+
+
+def process_all_training_queues(location_type: str, location_id: int) -> None:
+    """Process training queues for all buildings at a location (called on page render)."""
+    buildings = get_db().execute(
+        "SELECT id FROM building WHERE location_type=? AND location_id=?",
+        (location_type, location_id),
+    ).fetchall()
+    for b in buildings:
+        process_training_queue(b["id"], location_type, location_id)
+
+
+# ── Building Upgrade ───────────────────────────────────────────────────── #
+
+def upgrade_building_with_cost(building_id: int, player_id: int) -> tuple[bool, str]:
+    """Upgrade a building one level, scaling cost by current level. Returns (ok, error_msg)."""
+    b = get_building_by_id(building_id)
+    if not b:
+        return False, "Building not found"
+    if b["is_destroyed"]:
+        return False, "Building is destroyed"
+    if b["build_complete_at"]:
+        return False, "Building is still under construction"
+    base = config.BUILDING_UPGRADE_COST.get(b["type"], {})
+    if not base:
+        return False, "This building cannot be upgraded"
+    level = b.get("level", 1)
+    scale = config.BUILDING_LEVEL_MULTIPLIER ** (level - 1)
+    cost = {k: int(v * scale) for k, v in base.items()}
+    if not deduct_player_resources(player_id, **cost):
+        return False, "Not enough resources"
+    upgrade_building(building_id)
+    return True, ""
+
+
+# ── Building Ammo ──────────────────────────────────────────────────────── #
+
+def get_building_ammo(building_id: int) -> dict:
+    """Return {ammo_type: count} for a defence building."""
+    rows = get_db().execute(
+        "SELECT ammo_type, count FROM building_ammo WHERE building_id=?",
+        (building_id,),
+    ).fetchall()
+    return {r["ammo_type"]: r["count"] for r in rows}
+
+
+def add_building_ammo(building_id: int, ammo_type: str,
+                       count: int, player_id: int) -> tuple[bool, str]:
+    """Purchase *count* units of ammo for a defence building. Deducts resources."""
+    if count < 1:
+        return False, "Count must be at least 1"
+    cost_per = config.AMMO_COST.get(ammo_type, {})
+    if not cost_per:
+        return False, "Unknown ammo type"
+    total = {k: v * count for k, v in cost_per.items()}
+    if not deduct_player_resources(player_id, **total):
+        return False, "Not enough resources"
+    db = get_db()
+    db.execute(
+        """INSERT INTO building_ammo (building_id, ammo_type, count)
+           VALUES (?,?,?)
+           ON CONFLICT(building_id, ammo_type) DO UPDATE SET count=count+excluded.count""",
+        (building_id, ammo_type, count),
+    )
+    db.commit()
+    return True, ""
+
+
+def set_building_ammo_count(building_id: int, ammo_type: str, count: int) -> None:
+    """Set absolute ammo count for a building/ammo_type pair."""
+    db = get_db()
+    value = max(0, int(count))
+    db.execute(
+        """INSERT INTO building_ammo (building_id, ammo_type, count)
+           VALUES (?,?,?)
+           ON CONFLICT(building_id, ammo_type) DO UPDATE SET count=excluded.count""",
+        (building_id, ammo_type, value),
+    )
+    db.commit()
 
 
 def get_troops_by_owner(owner_id: int) -> list[dict]:

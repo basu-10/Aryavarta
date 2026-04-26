@@ -31,6 +31,7 @@
       <a href="{{ url_for('fort.castle_page') }}"  class="text-gray-400 hover:text-white text-sm transition-colors">Castle</a>
       <a href="{{ url_for('clan.clan_page') }}"    class="text-gray-400 hover:text-white text-sm transition-colors">Clan</a>
       <a href="{{ url_for('battle.setup') }}"      class="text-gray-400 hover:text-white text-sm transition-colors">Simulate</a>
+      <a href="{{ url_for('auth.profile') }}#battles" class="text-gray-400 hover:text-white text-sm transition-colors">Battles</a>
       <a href="{{ url_for('auth.profile') }}"      class="text-gray-400 hover:text-white text-sm transition-colors">Profile</a>
       <span class="ml-auto text-gray-500 text-xs">{{ session.get('username') }}</span>
       <a href="{{ url_for('auth.logout') }}"       class="text-red-400 hover:text-red-300 text-sm">Logout</a>

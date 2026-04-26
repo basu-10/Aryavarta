@@ -14,7 +14,7 @@
       <h1 class="text-2xl font-bold">Battle Simulator</h1>
       <p class="text-gray-400 text-sm mt-1">
         Place units of BOTH teams on the grid — Team A (blue) on the left, Team B (red) on the right.
-        Click an empty cell to place a unit. Click an occupied cell or a unit in the summary to select it and edit its settings.
+        Click any cell to add or manage multiple troops. Use the "Add Troop to Cell" section to stack units on the same tile.
       </p>
     </div>
 
@@ -81,15 +81,23 @@
               </template>
 
               <!-- Empty team cell -->
-              <template x-if="!isNeutral(c - 1) && !getUnit(r - 1, c - 1)">
+              <template x-if="!isNeutral(c - 1) && getUnitCount(r - 1, c - 1) === 0">
                 <span class="text-gray-600 text-xs">+</span>
               </template>
 
-              <!-- Unit placed -->
-              <template x-if="getUnit(r - 1, c - 1)">
+              <!-- Single unit placed -->
+              <template x-if="getUnitCount(r - 1, c - 1) === 1">
                 <div class="text-center leading-tight">
-                  <div x-text="unitInitial(getUnit(r - 1, c - 1).type)" class="text-lg font-bold"></div>
-                  <div x-text="getUnit(r - 1, c - 1).type[0] + ' ' + getUnit(r - 1, c - 1).unit_id.split('_')[1]" class="text-xs opacity-75"></div>
+                  <div x-text="unitInitial(getUnits(r - 1, c - 1)[0].type)" class="text-lg font-bold"></div>
+                  <div x-text="getUnits(r - 1, c - 1)[0].type[0] + ' ' + getUnits(r - 1, c - 1)[0].unit_id.split('_')[1]" class="text-xs opacity-75"></div>
+                </div>
+              </template>
+
+              <!-- Multiple units: show count badge -->
+              <template x-if="getUnitCount(r - 1, c - 1) > 1">
+                <div class="text-center">
+                  <div class="bg-yellow-500 text-gray-900 rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold" x-text="getUnitCount(r - 1, c - 1)"></div>
+                  <div class="text-xs mt-1 text-gray-300">units</div>
                 </div>
               </template>
             </div>
@@ -106,38 +114,109 @@
     </div>
   </div>
 
-  <!-- ── UNIT EDITOR (shown when a unit is selected) ───────────────────── -->
-  <template x-if="selectedKey">
-    <div class="bg-gray-900 border border-gray-700 rounded-lg p-5 space-y-4">
-      <h2 class="font-semibold text-base" x-text="getUnit(...selectedKey.split(',').map(Number)) ? 'Editing: ' + getUnit(...selectedKey.split(',').map(Number)).unit_id : 'Empty cell (' + selectedKey + ')'" ></h2>
-      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-
-        <!-- Unit type -->
-        <label class="block">
-          <span class="text-xs text-gray-400 uppercase tracking-wider">Type</span>
-          <select
-            x-model="editForm.type"
-            @change="updateSelected()"
-            class="mt-1 w-full bg-gray-800 border border-gray-600 rounded px-3 py-2 text-sm"
-          >
-            <option value="__remove__" class="text-red-400">— Remove Unit —</option>
-            <template x-for="t in unitTypes" :key="t">
-              <option :value="t" x-text="t"></option>
-            </template>
-          </select>
-        </label>
-      </div>
-
-      <!-- Stat summary -->
-      <template x-if="editForm.type && editForm.type !== '__remove__'">
-        <div class="text-xs text-gray-400 flex gap-6 pt-1">
-          <span>HP: <span class="text-white" x-text="unitStats[editForm.type].hp"></span></span>
-          <span>DMG: <span class="text-white" x-text="unitStats[editForm.type].damage"></span></span>
-          <span>DEF: <span class="text-white" x-text="unitStats[editForm.type].defense"></span></span>
-          <span>Range: <span class="text-white" x-text="unitStats[editForm.type].range"></span> cells</span>
-          <span>Speed: <span class="text-white" x-text="unitStats[editForm.type].speed + 'x'"></span></span>
+  <!-- ── TROOP SELECTION MODAL ───────────────────────────────────────── -->
+  <template x-if="showTroopModal">
+    <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div class="bg-gray-900 border border-gray-700 rounded-lg shadow-2xl max-w-2xl w-full mx-4 max-h-96 overflow-y-auto">
+        <!-- Modal Header -->
+        <div class="sticky top-0 bg-gray-900 border-b border-gray-700 px-6 py-4 flex justify-between items-center">
+          <div>
+            <h2 class="font-semibold text-lg">Select Troop</h2>
+            <p class="text-sm text-gray-400 mt-1" x-text="'Position: (' + modalCell.r + ', ' + modalCell.c + ')'"></p>
+          </div>
         </div>
-      </template>
+
+        <!-- Modal Body: Current Troops (if exist) and Troop Categories -->
+        <div class="px-6 py-4 space-y-6">
+          <!-- Current Troops Display -->
+          <template x-if="modalCell.units && modalCell.units.length > 0">
+            <div class="bg-gray-800 border border-gray-700 rounded-lg p-4 space-y-2">
+              <h3 class="text-sm font-semibold text-gray-300 mb-3">Current Troops (<span x-text="modalCell.units.length"></span>)</h3>
+              <template x-for="troop in modalCell.units" :key="troop.unit_id">
+                <div class="flex items-center justify-between bg-gray-700 rounded px-3 py-2">
+                  <div>
+                    <div class="font-semibold text-sm" x-text="troop.unit_id + ' — ' + troop.type"></div>
+                    <div class="text-xs text-gray-500 mt-1">
+                      <span x-text="'HP: ' + UNIT_STATS[troop.type].hp"></span>
+                      <span class="mx-2">DMG: <span x-text="UNIT_STATS[troop.type].damage"></span></span>
+                      <span>DEF: <span x-text="UNIT_STATS[troop.type].defense"></span></span>
+                    </div>
+                  </div>
+                  <button
+                    @click="deleteSpecificTroop(troop.unit_id)"
+                    class="px-3 py-1 rounded bg-red-700 hover:bg-red-600 text-xs font-medium transition-colors ml-2 flex-shrink-0"
+                  >Remove</button>
+                </div>
+              </template>
+            </div>
+          </template>
+
+          <!-- Troop Categories for Adding Troops -->
+          <div class="space-y-4">
+            <h3 class="text-sm font-semibold text-gray-300">Add Troop to Cell</h3>
+            <template x-for="[faction, factionLabel] in [['human', 'Human Units'], ['monster', 'Monster Units']]" :key="faction">
+              <div x-show="getCategoryTroops(faction, 'melee').length > 0 || getCategoryTroops(faction, 'ranged').length > 0">
+                <h4 class="text-sm font-semibold text-gray-400 mb-3" x-text="factionLabel"></h4>
+                <div class="space-y-3">
+                  <!-- Melee Troops -->
+                  <template x-if="getCategoryTroops(faction, 'melee').length > 0">
+                    <div>
+                      <h5 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Melee</h5>
+                      <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        <template x-for="troop in getCategoryTroops(faction, 'melee')" :key="troop">
+                          <div
+                            @click="selectTroop(troop)"
+                            class="bg-gray-800 border border-gray-700 rounded-lg p-3 cursor-pointer hover:border-gray-500 transition-all"
+                          >
+                            <div class="font-semibold text-sm" x-text="troop"></div>
+                            <div class="text-xs text-gray-500 mt-2 grid grid-cols-2 gap-1">
+                              <span x-text="'HP: ' + UNIT_STATS[troop].hp"></span>
+                              <span x-text="'DMG: ' + UNIT_STATS[troop].damage"></span>
+                              <span x-text="'DEF: ' + UNIT_STATS[troop].defense"></span>
+                              <span x-text="'SPD: ' + UNIT_STATS[troop].speed + 'x'"></span>
+                            </div>
+                          </div>
+                        </template>
+                      </div>
+                    </div>
+                  </template>
+
+                  <!-- Ranged Troops -->
+                  <template x-if="getCategoryTroops(faction, 'ranged').length > 0">
+                    <div>
+                      <h5 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Ranged</h5>
+                      <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        <template x-for="troop in getCategoryTroops(faction, 'ranged')" :key="troop">
+                          <div
+                            @click="selectTroop(troop)"
+                            class="bg-gray-800 border border-gray-700 rounded-lg p-3 cursor-pointer hover:border-gray-500 transition-all"
+                          >
+                            <div class="font-semibold text-sm" x-text="troop"></div>
+                            <div class="text-xs text-gray-500 mt-2 grid grid-cols-2 gap-1">
+                              <span x-text="'HP: ' + UNIT_STATS[troop].hp"></span>
+                              <span x-text="'DMG: ' + UNIT_STATS[troop].damage"></span>
+                              <span x-text="'DEF: ' + UNIT_STATS[troop].defense"></span>
+                              <span x-text="'RNG: ' + UNIT_STATS[troop].range"></span>
+                            </div>
+                          </div>
+                        </template>
+                      </div>
+                    </div>
+                  </template>
+                </div>
+              </div>
+            </template>
+          </div>
+        </div>
+
+        <!-- Modal Footer: Cancel Button -->
+        <div class="sticky bottom-0 bg-gray-900 border-t border-gray-700 px-6 py-4 flex justify-end">
+          <button
+            @click="closeTroopModal()"
+            class="px-4 py-2 rounded bg-gray-700 hover:bg-gray-600 text-sm font-medium transition-colors"
+          >Cancel</button>
+        </div>
+      </div>
     </div>
   </template>
 
@@ -155,8 +234,7 @@
           <template x-for="u in armies[key]" :key="u.unit_id">
             <li
               @click="focusUnit(u)"
-              :class="selectedKey === u.row + ',' + u.col ? 'bg-gray-700 ring-1 ring-white' : 'hover:bg-gray-800'"
-              class="text-xs text-gray-300 rounded px-2 py-1 cursor-pointer transition-colors space-y-0.5"
+              class="text-xs text-gray-300 rounded px-2 py-1 cursor-pointer hover:bg-gray-800 transition-colors space-y-0.5"
             >
               <div class="flex justify-between">
                 <span class="font-semibold" x-text="u.unit_id + ' — ' + u.type"></span>
@@ -216,19 +294,23 @@
   const TEAM_B_COLS = {{ team_b_cols | tojson }};
   const UNIT_TYPES = {{ unit_types | tojson }};
   const UNIT_STATS = {{ unit_stats | tojson }};
+  const UNIT_CLASSIFICATION = {{ unit_classification | tojson }};
   const DEFAULT_PRESET = {{ preset | default('null') | tojson if preset is defined else 'null' }};
 
   function armyBuilder() {
     return {
-      // unit map: "row,col" -> unit object
+      // unit map: "row,col" -> array of unit objects
       unitMap: {},
       armies: { army_a: [], army_b: [] },
       unitTypes: UNIT_TYPES,
       unitStats: UNIT_STATS,
-      selectedKey: null,
-      editForm: { type: 'Barbarian' },
+      unitClassification: UNIT_CLASSIFICATION,
       errorMsg: '',
       submitting: false,
+
+      // Modal state
+      showTroopModal: false,
+      modalCell: { r: null, c: null, units: [] },
 
       // Preset state
       showPresetList: false,
@@ -260,28 +342,39 @@
       },
 
       getUnit(r, c) {
-        return this.unitMap[`${r},${c}`] || null;
+        // Legacy: return first unit or null for backward compatibility
+        const units = this.unitMap[`${r},${c}`];
+        return units && units.length > 0 ? units[0] : null;
+      },
+
+      getUnits(r, c) {
+        // Get all units in a cell
+        return this.unitMap[`${r},${c}`] || [];
+      },
+
+      getUnitCount(r, c) {
+        // Get count of units in a cell
+        return (this.unitMap[`${r},${c}`] || []).length;
       },
 
       cellClass(r, c) {
-        const unit = this.getUnit(r, c);
-        const isSelected = this.selectedKey === `${r},${c}`;
+        const units = this.getUnits(r, c);
 
         if (this.isNeutral(c)) {
           return 'bg-gray-800 border-gray-700 cursor-not-allowed opacity-40';
         }
-        if (unit) {
-          const base = unit.team === 'A'
+        if (units.length > 0) {
+          const base = units[0].team === 'A'
             ? 'bg-blue-900 border-blue-600'
             : 'bg-red-900 border-red-600';
-          return base + (isSelected ? ' ring-2 ring-white scale-105' : ' hover:scale-105');
+          return base + ' hover:scale-105';
         }
         // Empty
         const zone = this.teamOfCol(c);
         const emptyBase = zone === 'A'
           ? 'bg-blue-950 border-blue-900 hover:bg-blue-900 hover:border-blue-700'
           : 'bg-red-950 border-red-900 hover:bg-red-900 hover:border-red-700';
-        return emptyBase + (isSelected ? ' ring-2 ring-white scale-105' : '');
+        return emptyBase;
       },
 
       typeAbbrev(type) {
@@ -297,76 +390,99 @@
 
       toggleCell(r, c) {
         if (this.isNeutral(c)) return;
-
-        const key = `${r},${c}`;
-        const existing = this.unitMap[key];
-
-        if (existing) {
-          // Select or deselect occupied cell
-          if (this.selectedKey === key) {
-            this.selectedKey = null;
-          } else {
-            this.selectedKey = key;
-            this.editForm = { type: existing.type };
-          }
-        } else {
-          // Empty cell — select/deselect without placing a unit
-          if (this.selectedKey === key) {
-            this.selectedKey = null;
-          } else {
-            this.selectedKey = key;
-            this.editForm = { type: '__remove__' };
-          }
-        }
+        this.openTroopModal(r, c);
       },
 
-      updateSelected() {
-        if (!this.selectedKey) return;
-        const key = this.selectedKey;
-        const [r, c] = key.split(',').map(Number);
-        const unit = this.unitMap[key];
+      openTroopModal(r, c) {
+        if (this.isNeutral(c)) return;
+        const units = this.getUnits(r, c);
+        this.modalCell = {
+          r,
+          c,
+          units: units.map(u => ({ ...u })), // Deep copy
+        };
+        this.showTroopModal = true;
+      },
+
+      closeTroopModal() {
+        this.showTroopModal = false;
+        this.modalCell = { r: null, c: null, units: [] };
+      },
+
+      getCategoryTroops(faction, type) {
+        return UNIT_TYPES.filter(troopName => {
+          const classification = this.unitClassification[troopName];
+          return classification && classification.faction === faction && classification.type === type;
+        });
+      },
+
+      selectTroop(troopName) {
+        if (!this.modalCell || this.modalCell.r === null) return;
+        const { r, c } = this.modalCell;
+        const key = `${r},${c}`;
         const team = this.teamOfCol(c);
 
-        if (this.editForm.type === '__remove__') {
-          // Remove the unit if one exists; keep cell selected but empty
-          if (unit) {
-            delete this.unitMap[key];
-            this.rebuildArmies();
-          }
-          return;
+        // Initialize array if not exists
+        if (!this.unitMap[key]) {
+          this.unitMap[key] = [];
         }
 
-        if (unit) {
-          // Update existing unit
-          unit.type = this.editForm.type;
-          const typeInitial = this.typeAbbrev(unit.type);
-          const [_, rest] = unit.unit_id.split('_');
-          const num = rest.replace(/[^0-9]/g, '');
-          unit.unit_id = `${unit.team}_${typeInitial}${num}`;
-        } else {
-          // Place a new unit on this empty selected cell
-          const count = Object.values(this.unitMap).filter(u => u.team === team).length + 1;
-          const typeInitial = this.typeAbbrev(this.editForm.type);
-          this.unitMap[key] = {
-            unit_id: `${team}_${typeInitial}${count}`,
-            team,
-            type: this.editForm.type,
-            row: r,
-            col: c,
-          };
-        }
+        // Generate unique unit_id
+        const allUnits = Object.values(this.unitMap).flat();
+        const teamUnits = allUnits.filter(u => u.team === team);
+        const count = teamUnits.length + 1;
+        const typeInitial = this.typeAbbrev(troopName);
+
+        // Add new unit to the array
+        const newUnit = {
+          unit_id: `${team}_${typeInitial}${count}`,
+          team,
+          type: troopName,
+          row: r,
+          col: c,
+        };
+
+        this.unitMap[key].push(newUnit);
+        
+        // Update modal units display
+        this.modalCell.units.push({ ...newUnit });
+
         this.rebuildArmies();
       },
 
+      deleteSpecificTroop(unit_id) {
+        if (!this.modalCell || this.modalCell.r === null) return;
+        const key = `${this.modalCell.r},${this.modalCell.c}`;
+
+        // Remove from unitMap
+        if (this.unitMap[key]) {
+          this.unitMap[key] = this.unitMap[key].filter(u => u.unit_id !== unit_id);
+          // Clean up empty arrays
+          if (this.unitMap[key].length === 0) {
+            delete this.unitMap[key];
+          }
+        }
+
+        // Remove from modal display
+        this.modalCell.units = this.modalCell.units.filter(u => u.unit_id !== unit_id);
+
+        this.rebuildArmies();
+      },
+
+      updateSelected() {
+        // No longer used with modal-based troop selection
+      },
+
       focusUnit(u) {
-        const key = `${u.row},${u.col}`;
-        this.selectedKey = key;
-        this.editForm = { type: u.type };
+        // Open modal when clicking on a unit in the army summary
+        this.openTroopModal(u.row, u.col);
       },
 
       rebuildArmies() {
-        this.armies.army_a = Object.values(this.unitMap).filter(u => u.team === 'A');
-        this.armies.army_b = Object.values(this.unitMap).filter(u => u.team === 'B');
+        // Flatten all units from all cells
+        const allUnits = Object.values(this.unitMap).flat();
+        this.armies.army_a = allUnits.filter(u => u.team === 'A');
+        this.armies.army_b = allUnits.filter(u => u.team === 'B');
       },
 
       async togglePresetList() {
@@ -394,10 +510,13 @@
           const preset = await res.json();
           this.unitMap = {};
           for (const u of [...(preset.army_a || []), ...(preset.army_b || [])]) {
-            this.unitMap[`${u.row},${u.col}`] = { ...u };
+            const key = `${u.row},${u.col}`;
+            if (!this.unitMap[key]) {
+              this.unitMap[key] = [];
+            }
+            this.unitMap[key].push({ ...u });
           }
           this.rebuildArmies();
-          this.selectedKey = null;
           this.errorMsg = '';
           this.showPresetList = false;
           // Populate preset name field with the loaded preset's name

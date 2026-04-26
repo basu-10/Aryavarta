@@ -69,3 +69,17 @@ def init_app(app: Flask) -> None:
             print("World already seeded — skipped (database already contains forts/camps).")
         else:
             print(f"World seeded: {count['forts']} forts, {count['camps']} monster camps.")
+
+    @app.cli.command("seed-ref")
+    def _cli_seed_ref():
+        """Seed developer-reference level tables for buildings and troops (idempotent)."""
+        from db.ref_seeder import seed_ref
+        result = seed_ref(get_db())
+        if result.get("skipped"):
+            print("Reference tables already seeded — skipped.")
+        else:
+            print(
+                f"Reference tables seeded: "
+                f"{result['buildings']} building-level rows, "
+                f"{result['troops']} troop-level rows."
+            )

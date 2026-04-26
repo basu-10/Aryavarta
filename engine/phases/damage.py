@@ -34,12 +34,20 @@ def apply_damage(units: list["Unit"]) -> list[dict]:
             continue
         if attacker._intent != "attack" or attacker._target_id is None:
             continue
+
+        # Defence buildings with finite ammo cannot fire when empty.
+        if attacker.unit_type in ("Cannon", "Archer Tower") and attacker.ammo is not None and attacker.ammo <= 0:
+            attacker._action = "out_of_ammo"
+            continue
+
         target = unit_map.get(attacker._target_id)
         if target is None or not target.is_alive():
             attacker._target_id = None
             continue
 
         effective = max(0, attacker.damage - target.defense)
+        if attacker.unit_type in ("Cannon", "Archer Tower") and attacker.ammo is not None:
+            attacker.ammo = max(0, attacker.ammo - 1)
         pending[target.unit_id] += effective
         attacker._damage_dealt = effective
         attacker._action = "attack"

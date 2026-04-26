@@ -7,6 +7,7 @@ from __future__ import annotations
 import json
 import math
 import random
+import re
 import uuid
 from datetime import datetime, timezone, timedelta
 from pathlib import Path
@@ -23,12 +24,14 @@ from engine.unit import Unit
 from utils.battle_store import store_battle
 from utils.csv_writer import write_battle_csv
 from utils.serializer import build_tick_data
+from db.world_seeder import ensure_world_entities
 import config
 
 world_bp = Blueprint("world", __name__)
 
 _TEAM_A_POSITIONS = [(r, c) for r in range(config.GRID_ROWS) for c in config.TEAM_A_COLS]
 _TEAM_B_POSITIONS = [(r, c) for r in range(config.GRID_ROWS) for c in config.TEAM_B_COLS]
+_PRESETS_DIR = Path(__file__).parent.parent / "presets"
 
 
 # ── Pages ─────────────────────────────────────────────────────────────── #
@@ -98,6 +101,8 @@ def api_player_origins():
 def api_world_map():
     # Auto-populate NPCs if below cap (cheap check)
     m.ensure_npc_population()
+    # Top up monster forts/camps if any were defeated
+    ensure_world_entities()
     return jsonify({"items": m.get_world_map_snapshot()})
 
 
@@ -162,7 +167,13 @@ def api_attack():
     target_id   = data.get("target_id")
     origin_type = data.get("origin_type")
     origin_id   = data.get("origin_id")
-    formation   = data.get("formation", [])
+    preset_name = (data.get("preset_name") or "").strip()
+
+    # Prefer server-side preset resolution to ensure the selected preset is
+    # authoritative (frontend previews can still send formation for display).
+    formation = _formation_from_preset_name(preset_name)
+    if not formation:
+        formation = _normalize_formation(data.get("formation", []))
 
     if target_type not in ("fort", "monster_camp"):
         return jsonify({"error": "Invalid target_type"}), 400
@@ -183,8 +194,12 @@ def api_attack():
 
     # Deduct troops
     for entry in formation:
-        utype = entry.get("unit_type", "")
-        qty   = int(entry.get("quantity", 0))
+        utype = (entry.get("unit_type") or entry.get("type") or "").strip()
+        qty = entry.get("quantity", 1)
+        try:
+            qty = int(qty)
+        except (TypeError, ValueError):
+            qty = 1
         if qty <= 0:
             return jsonify({"error": f"Invalid quantity for {utype}"}), 400
         if not m.deduct_troop(player_id, utype, qty, origin_type, origin_id):
@@ -220,6 +235,65 @@ def api_attack():
         "arrive_time": arrive_time,
         "result": resolved_result,
     })
+
+
+def _normalize_formation(raw_formation: list[dict]) -> list[dict]:
+    """Normalize flexible formation payloads to [{unit_type, quantity}, ...]."""
+    counts: dict[str, int] = {}
+    if not isinstance(raw_formation, list):
+        return []
+
+    for entry in raw_formation:
+        if not isinstance(entry, dict):
+            continue
+        unit_type = (entry.get("unit_type") or entry.get("type") or "").strip()
+        if not unit_type:
+            continue
+        try:
+            qty = int(entry.get("quantity", 1))
+        except (TypeError, ValueError):
+            qty = 1
+        if qty <= 0:
+            continue
+        counts[unit_type] = counts.get(unit_type, 0) + qty
+
+    return [{"unit_type": unit_type, "quantity": qty} for unit_type, qty in counts.items()]
+
+
+def _safe_preset_name(name: str) -> str:
+    return re.sub(r'[<>:"/\\|?*\x00-\x1f]', "", name).strip()
+
+
+def _formation_from_preset_name(name: str) -> list[dict]:
+    """Load selected preset and derive attacker formation from Team A units."""
+    if not name:
+        return []
+
+    safe = _safe_preset_name(name)
+    if not safe:
+        return []
+
+    path = _PRESETS_DIR / f"{safe}.json"
+    if not path.exists():
+        return []
+
+    try:
+        preset = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return []
+
+    # Preserve explicit unit placements so attack presets are deterministic.
+    formation: list[dict] = []
+    for unit in preset.get("army_a", []):
+        if not isinstance(unit, dict):
+            continue
+        utype = (unit.get("type") or unit.get("unit_type") or "").strip()
+        row = unit.get("row")
+        col = unit.get("col")
+        if not utype or not isinstance(row, int) or not isinstance(col, int):
+            continue
+        formation.append({"unit_type": utype, "quantity": 1, "row": row, "col": col})
+    return formation
 
 
 # ── Mission resolution (player polls, server resolves on demand) ─────── #
@@ -295,16 +369,53 @@ def _slowest_speed(formation: list[dict]) -> float:
 
 
 def _build_attacker_units(formation: list[dict]) -> list[Unit]:
-    """Turn a formation spec into Unit objects placed on random Team A cells."""
-    positions = random.sample(_TEAM_A_POSITIONS, min(len(_TEAM_A_POSITIONS),
-                                                      sum(e["quantity"] for e in formation)))
+    """Turn formation data into Unit objects.
+
+    Supports two formats:
+      1) [{unit_type, quantity}, ...] -> random Team A placement
+      2) [{unit_type/type, row, col}, ...] -> explicit preset placement
+    """
     all_stats = config.UNIT_STATS
     units: list[Unit] = []
+
+    has_explicit_positions = any("row" in e and "col" in e for e in formation)
+    if has_explicit_positions:
+        occupied: set[tuple[int, int]] = set()
+        for entry in formation:
+            utype = (entry.get("unit_type") or entry.get("type") or "").strip()
+            if not utype or utype not in all_stats:
+                continue
+            row = entry.get("row")
+            col = entry.get("col")
+            if not isinstance(row, int) or not isinstance(col, int):
+                continue
+            if not (0 <= row < config.GRID_ROWS and col in config.TEAM_A_COLS):
+                continue
+            if (row, col) in occupied:
+                continue
+            occupied.add((row, col))
+            stats = all_stats[utype]
+            units.append(Unit(
+                unit_id=f"A_{utype[0]}{len(units)+1}",
+                team="A",
+                unit_type=utype,
+                row=row, col=col,
+                hp=stats["hp"], max_hp=stats["hp"],
+                damage=stats["damage"], defense=stats["defense"],
+                range=stats["range"], speed=stats["speed"],
+            ))
+        return units
+
+    total_units = sum(max(0, int(e.get("quantity", 0))) for e in formation)
+    positions = random.sample(_TEAM_A_POSITIONS, min(len(_TEAM_A_POSITIONS), total_units))
     pos_idx = 0
     for entry in formation:
-        utype = entry["unit_type"]
-        stats = all_stats.get(utype, {})
-        for n in range(entry["quantity"]):
+        utype = (entry.get("unit_type") or entry.get("type") or "").strip()
+        if not utype or utype not in all_stats:
+            continue
+        stats = all_stats[utype]
+        qty = max(0, int(entry.get("quantity", 0)))
+        for n in range(qty):
             if pos_idx >= len(positions):
                 break
             row, col = positions[pos_idx]; pos_idx += 1
@@ -337,14 +448,21 @@ def _build_defender_units(defender_spec: list[dict]) -> list[Unit]:
             if pos_idx >= len(positions):
                 break
             row, col = positions[pos_idx]; pos_idx += 1
+            unit_id = f"B_{utype[0]}{len(units)+1}"
+            ammo = None
+            # Defence buildings are represented as one unit per building with per-building ammo.
+            if entry.get("building_id") is not None:
+                unit_id = f"B_DEF_{entry['building_id']}"
+                ammo = int(entry.get("ammo_count", 0))
             units.append(Unit(
-                unit_id=f"B_{utype[0]}{len(units)+1}",
+                unit_id=unit_id,
                 team="B",
                 unit_type=utype,
                 row=row, col=col,
                 hp=stats["hp"], max_hp=stats["hp"],
                 damage=stats["damage"], defense=stats["defense"],
                 range=stats["range"], speed=stats["speed"],
+                ammo=ammo,
             ))
     return units
 
@@ -366,21 +484,90 @@ def _get_defender_spec(mission: dict) -> list[dict]:
     if fort.get("owner_id") is None:
         return fort.get("monster_data") or []
 
-    # Player-owned fort: defence buildings + garrisoned troops
-    spec: dict[str, int] = {}
+    # Player-owned fort: defence buildings (with ammo) + garrisoned troops
+    spec_entries: list[dict] = []
+    troop_spec: dict[str, int] = {}
     buildings = m.get_buildings("fort", target_id)
     for b in buildings:
         if b["is_destroyed"]:
             continue
         if b["type"] == "Cannon":
-            spec["Cannon"] = spec.get("Cannon", 0) + 1
+            ammo = m.get_building_ammo(b["id"]).get("cannon_ball", 0)
+            spec_entries.append({"type": "Cannon", "count": 1, "building_id": b["id"], "ammo_count": ammo})
         elif b["type"] == "Archer Tower":
-            spec["Archer Tower"] = spec.get("Archer Tower", 0) + 1
+            ammo = m.get_building_ammo(b["id"]).get("arrow", 0)
+            spec_entries.append({"type": "Archer Tower", "count": 1, "building_id": b["id"], "ammo_count": ammo})
     troops = m.get_troops_at("fort", target_id)
     for t in troops:
-        spec[t["unit_type"]] = spec.get(t["unit_type"], 0) + t["quantity"]
+        troop_spec[t["unit_type"]] = troop_spec.get(t["unit_type"], 0) + t["quantity"]
 
-    return [{"type": k, "count": v} for k, v in spec.items()]
+    for k, v in troop_spec.items():
+        spec_entries.append({"type": k, "count": v})
+
+    return spec_entries
+
+
+def _persist_defence_ammo_after_battle(target_id: int, all_units: list[Unit]) -> None:
+    """Persist remaining ammo for defence-building units after a fort defence battle."""
+    for u in all_units:
+        if not u.unit_id.startswith("B_DEF_"):
+            continue
+        if u.unit_type == "Cannon":
+            ammo_type = "cannon_ball"
+        elif u.unit_type == "Archer Tower":
+            ammo_type = "arrow"
+        else:
+            continue
+        try:
+            building_id = int(u.unit_id.split("B_DEF_")[1])
+        except (ValueError, IndexError):
+            continue
+        m.set_building_ammo_count(building_id, ammo_type, u.ammo or 0)
+
+
+def _build_uncontested_tick_data(attacker_units: list[Unit]) -> list[dict]:
+    """Create a single replay snapshot for uncontested attacker victories."""
+    cells: dict[str, dict] = {}
+    units: list[dict] = []
+
+    for u in attacker_units:
+        unit = {
+            "unit_id": u.unit_id,
+            "team": u.team,
+            "type": u.unit_type,
+            "row": u.row,
+            "col": u.col,
+            "hp": u.hp,
+            "max_hp": u.max_hp,
+            "alive": u.alive,
+            "status": "alive" if u.alive else "dead",
+            "action": "hold",
+            "target_id": None,
+            "damage_dealt": 0,
+        }
+        units.append(unit)
+
+        if u.alive:
+            key = f"{u.row},{u.col}"
+            cells[key] = {
+                "unit_id": u.unit_id,
+                "team": u.team,
+                "type": u.unit_type,
+                "hp": u.hp,
+                "max_hp": u.max_hp,
+                "status": "alive",
+                "action": "hold",
+            }
+
+    return [
+        {
+            "tick": 0,
+            "events": [],
+            "log": ["Target had no defenders — instant attacker victory."],
+            "cells": cells,
+            "units": units,
+        }
+    ]
 
 
 def _resolve_one_mission(mission: dict) -> dict:
@@ -391,8 +578,14 @@ def _resolve_one_mission(mission: dict) -> dict:
     winner_label = "attacker"
 
     if not defender_units:
-        # Empty target — attacker wins uncontested
+        # Empty target — attacker wins uncontested; still store one replay snapshot.
         battle_id = str(uuid.uuid4())
+        store_battle(battle_id, {
+            "tick_data": _build_uncontested_tick_data(attacker_units),
+            "csv_path": "",
+            "winner": "A",
+            "total_ticks": 0,
+        })
     else:
         battle = Battle(attacker_units, defender_units)
         result = battle.run()
@@ -407,6 +600,12 @@ def _resolve_one_mission(mission: dict) -> dict:
             "winner": result.winner,
             "total_ticks": result.total_ticks,
         })
+
+        # For defended player-owned forts, persist consumed defence ammo.
+        if mission["target_type"] == "fort" and result.winner == "B":
+            fort = m.get_fort(mission["target_id"])
+            if fort and fort.get("owner_id") is not None:
+                _persist_defence_ammo_after_battle(mission["target_id"], result.all_units)
 
         winner_label = "attacker" if result.winner == "A" else "defender"
 

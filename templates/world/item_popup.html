@@ -102,7 +102,8 @@ function attackPanel() {
       // Collapse army_a into {unit_type, quantity} entries
       const counts = {};
       for (const unit of (data.army_a || [])) {
-        const t = unit.type;
+        const t = unit.type || unit.unit_type;
+        if (!t) continue;
         counts[t] = (counts[t] || 0) + 1;
       }
       this.presetFormation = Object.entries(counts).map(([unit_type, quantity]) => ({unit_type, quantity}));
@@ -122,6 +123,7 @@ function attackPanel() {
           target_id:   this.targetId,
           origin_type,
           origin_id,
+          preset_name: this.selectedPreset,
           formation:   this.presetFormation,
         })
       });

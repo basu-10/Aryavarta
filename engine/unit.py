@@ -25,6 +25,7 @@ class Unit:
     defense: int
     range: int            # Chebyshev range
     speed: float          # movement credit per tick: 1.0 = 1x, 0.5 = 0.5x
+    ammo: Optional[int] = None  # Used by defence units; None means unlimited/not applicable
     alive: bool = True
     # Ephemeral per-tick fields (not serialised to CSV/JSON directly)
     _intent: str = field(default="hold", repr=False, compare=False)
@@ -65,7 +66,7 @@ class Unit:
 
     def to_dict(self) -> dict:
         """Serialise to a plain dict (used by csv_writer and serializer)."""
-        return {
+        d = {
             "unit_id": self.unit_id,
             "team": self.team,
             "type": self.unit_type,
@@ -75,6 +76,9 @@ class Unit:
             "max_hp": self.max_hp,
             "alive": self.alive,
         }
+        if self.ammo is not None:
+            d["ammo"] = self.ammo
+        return d
 
     @classmethod
     def from_dict(cls, data: dict) -> "Unit":
@@ -99,4 +103,5 @@ class Unit:
             defense=stats["defense"],
             range=stats["range"],
             speed=stats["speed"],
+            ammo=data.get("ammo"),
         )

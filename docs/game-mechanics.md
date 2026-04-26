@@ -94,16 +94,36 @@ Four resources: **food**, **timber**, **gold**, **metal**.
 
 ---
 
-## Troop production
+## Troop training
 
-Army buildings produce troops over time (same lazy eval as resources):
+Army buildings train only human troops and use a real queue (not passive lazy production):
 
-| Building | Produces | Interval |
+| Building | Produces | Base training time |
 |---|---|---|
-| Garrison | Longbowman | 60 s / unit |
+| Garrison (Barracks) | Longbowman | 60 s / unit |
 | Stable | Hussar | 90 s / unit |
 
-Troops are added to the troop table as an idle stack at the building's location when collected.
+- Training is one-at-a-time per building, but multiple troops can be queued.
+- Resources are deducted immediately when a unit is queued.
+- Completed units are deployed instantly to the same location (`castle` or `fort`) as idle troops.
+- UI shows both queue length and available troop count for the trained type.
+
+### Dismissal and refund
+
+- Dismissing troops is instant.
+- Refund is immediate and currently set to 50% of that troop's training cost (`config.TROOP_REFUND_RATE`).
+
+### Training queue storage
+
+- Queue rows are stored in `training_queue` with absolute `complete_at` timestamps.
+- Queue completion is processed when location/building data is fetched.
+
+### Defense ammo system
+
+- `Cannon` consumes `cannon_ball` ammo; `Archer Tower` consumes `arrow` ammo.
+- Ammo is purchased with resources and loaded in bulk per building.
+- Defense buildings are expected to hold multiple ammo units.
+- During battle simulation, 1 ammo is consumed for each attack tick fired by a defense building unit.
 
 ---
 

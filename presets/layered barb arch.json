@@ -1,0 +1,69 @@
+{
+  "name": "layered barb arch",
+  "army_a": [
+    {
+      "unit_id": "A_B1",
+      "team": "A",
+      "type": "Barbarian",
+      "row": 0,
+      "col": 3
+    },
+    {
+      "unit_id": "A_B2",
+      "team": "A",
+      "type": "Barbarian",
+      "row": 1,
+      "col": 3
+    },
+    {
+      "unit_id": "A_B3",
+      "team": "A",
+      "type": "Barbarian",
+      "row": 2,
+      "col": 3
+    },
+    {
+      "unit_id": "A_B4",
+      "team": "A",
+      "type": "Barbarian",
+      "row": 3,
+      "col": 3
+    },
+    {
+      "unit_id": "A_AR5",
+      "team": "A",
+      "type": "Archer",
+      "row": 0,
+      "col": 2
+    },
+    {
+      "unit_id": "A_AR6",
+      "team": "A",
+      "type": "Archer",
+      "row": 1,
+      "col": 2
+    },
+    {
+      "unit_id": "A_AR7",
+      "team": "A",
+      "type": "Archer",
+      "row": 2,
+      "col": 2
+    },
+    {
+      "unit_id": "A_AR8",
+      "team": "A",
+      "type": "Archer",
+      "row": 3,
+      "col": 2
+    },
+    {
+      "unit_id": "A_B9",
+      "team": "A",
+      "type": "Barbarian",
+      "row": 0,
+      "col": 1
+    }
+  ],
+  "army_b": []
+}

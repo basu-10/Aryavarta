@@ -54,6 +54,16 @@ def index():
 @battle_bp.route("/setup")
 def setup():
     all_stats = get_all_unit_stats()
+    # Build classification dict for all units (built-in + custom)
+    unit_classification = dict(config.UNIT_CLASSIFICATION)
+    for unit_type in all_stats.keys():
+        if unit_type not in unit_classification:
+            # Default classification for custom troops: infer from range
+            stats = all_stats[unit_type]
+            faction = "human"  # default to human
+            troop_type = "melee" if stats.get("range", 1) <= 1 else "ranged"
+            unit_classification[unit_type] = {"faction": faction, "type": troop_type}
+    
     return render_template(
         "setup.html",
         grid_rows=config.GRID_ROWS,
@@ -62,6 +72,7 @@ def setup():
         team_b_cols=config.TEAM_B_COLS,
         unit_types=list(all_stats.keys()),
         unit_stats=all_stats,
+        unit_classification=unit_classification,
     )
 
 
