@@ -11,7 +11,7 @@ import os
 import secrets
 from pathlib import Path
 
-from flask import Flask
+from flask import Flask, send_from_directory
 
 from blueprints.battle_bp import battle_bp
 from blueprints.auth_bp import auth_bp
@@ -19,6 +19,7 @@ from blueprints.world_bp import world_bp
 from blueprints.fort_bp import fort_bp
 from blueprints.clan_bp import clan_bp
 from blueprints.admin_bp import admin_bp
+from blueprints.wiki_bp import wiki_bp
 import db as database
 from utils.battle_store import init_store
 
@@ -47,6 +48,14 @@ def create_app(output_dir: str | None = None) -> Flask:
     app.register_blueprint(fort_bp)
     app.register_blueprint(clan_bp)
     app.register_blueprint(admin_bp)
+    app.register_blueprint(wiki_bp)
+
+    # Serve the assets folder at /assets/<path>
+    assets_dir = str(base / "assets")
+
+    @app.route("/assets/<path:filename>")
+    def serve_asset(filename: str):
+        return send_from_directory(assets_dir, filename)
 
     # Seed monster forts and camps on startup (tops up to configured maximums)
     with app.app_context():

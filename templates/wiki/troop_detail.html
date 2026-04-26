@@ -1,0 +1,163 @@
+{% extends "base.html" %}
+{% block title %}{{ troop_name }} — Troopedia — BattleCells{% endblock %}
+
+{% block content %}
+<div class="space-y-8 max-w-3xl">
+
+  <!-- Breadcrumb -->
+  <nav class="text-xs text-gray-500 flex items-center gap-1">
+    <a href="{{ url_for('wiki.troopedia_index') }}" class="hover:text-white transition-colors">Troopedia</a>
+    <span>/</span>
+    <span class="text-gray-300">{{ troop_name }}</span>
+  </nav>
+
+  <!-- ── Hero card ──────────────────────────────────────────────────── -->
+  <div class="bg-gray-900 border border-gray-800 rounded-2xl overflow-hidden flex flex-col sm:flex-row gap-0">
+
+    <!-- Art -->
+    <div class="sm:w-52 shrink-0 bg-gray-800 flex items-center justify-center p-6 border-b sm:border-b-0 sm:border-r border-gray-700">
+      {% if image %}
+        <img src="{{ image }}"
+             alt="{{ troop_name }}"
+             class="h-36 w-36 object-contain drop-shadow-xl" />
+      {% else %}
+        <span class="text-8xl opacity-20 select-none">⚔</span>
+      {% endif %}
+    </div>
+
+    <!-- Identity -->
+    <div class="p-6 flex flex-col justify-center gap-3 flex-1">
+      <div>
+        <p class="text-xs {{ category_color }} font-semibold uppercase tracking-wider mb-1">
+          {{ category_label }}
+        </p>
+        <h1 class="text-2xl font-bold">{{ troop_name }}</h1>
+      </div>
+
+      {% if base.lore %}
+      <blockquote class="border-l-2 border-gray-700 pl-3 text-gray-400 text-sm italic leading-relaxed">
+        "{{ base.lore }}"
+      </blockquote>
+      {% endif %}
+
+      {% if base.notes %}
+      <p class="text-xs text-yellow-400/80 bg-yellow-900/20 border border-yellow-900/40 rounded px-3 py-1.5">
+        📌 {{ base.notes }}
+      </p>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- ── Base stats (Level 1) ───────────────────────────────────────── -->
+  <div>
+    <h2 class="text-xs font-semibold uppercase tracking-widest text-gray-500 mb-3">Base Stats — Level 1</h2>
+    <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+
+      {% set stat_items = [
+        ("❤️", "Hit Points",   base.hp,      "HP at base level"),
+        ("⚔️", "Damage",       base.damage,  "Attack damage per hit"),
+        ("🛡️", "Defense",      base.defense, "Damage reduction"),
+        ("🏹", "Range",        base.range,   "Attack range in cells"),
+        ("💨", "Speed",        base.speed ~ "×", "Movement multiplier"),
+        ("⏱️", "Training Time", base.training_time_seconds ~ "s", "Time to train one unit"),
+      ] %}
+
+      {% for icon, label, value, hint in stat_items %}
+      <div class="bg-gray-900 border border-gray-800 rounded-lg px-4 py-3 flex items-center gap-3"
+           title="{{ hint }}">
+        <span class="text-lg">{{ icon }}</span>
+        <div>
+          <p class="text-xs text-gray-500 leading-none">{{ label }}</p>
+          <p class="text-white font-semibold text-sm mt-0.5">{{ value }}</p>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- ── Training cost (Level 1) ───────────────────────────────────── -->
+  <div>
+    <h2 class="text-xs font-semibold uppercase tracking-widest text-gray-500 mb-3">Training Cost — Level 1</h2>
+    <div class="flex flex-wrap gap-3">
+      {% if base.gold_cost > 0 %}
+      <div class="bg-gray-900 border border-gray-800 rounded-lg px-4 py-2 flex items-center gap-2">
+        <span class="text-yellow-400 text-sm">💰</span>
+        <span class="text-xs text-gray-400">Gold</span>
+        <span class="text-white font-semibold text-sm ml-1">{{ base.gold_cost }}</span>
+      </div>
+      {% endif %}
+      {% if base.food_cost > 0 %}
+      <div class="bg-gray-900 border border-gray-800 rounded-lg px-4 py-2 flex items-center gap-2">
+        <span class="text-green-400 text-sm">🌾</span>
+        <span class="text-xs text-gray-400">Food</span>
+        <span class="text-white font-semibold text-sm ml-1">{{ base.food_cost }}</span>
+      </div>
+      {% endif %}
+      {% if base.timber_cost > 0 %}
+      <div class="bg-gray-900 border border-gray-800 rounded-lg px-4 py-2 flex items-center gap-2">
+        <span class="text-amber-600 text-sm">🪵</span>
+        <span class="text-xs text-gray-400">Timber</span>
+        <span class="text-white font-semibold text-sm ml-1">{{ base.timber_cost }}</span>
+      </div>
+      {% endif %}
+      {% if base.metal_cost > 0 %}
+      <div class="bg-gray-900 border border-gray-800 rounded-lg px-4 py-2 flex items-center gap-2">
+        <span class="text-gray-300 text-sm">⚙️</span>
+        <span class="text-xs text-gray-400">Metal</span>
+        <span class="text-white font-semibold text-sm ml-1">{{ base.metal_cost }}</span>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- ── Stats by level ────────────────────────────────────────────── -->
+  <div>
+    <h2 class="text-xs font-semibold uppercase tracking-widest text-gray-500 mb-3">Stats by Level</h2>
+    <div class="overflow-x-auto rounded-xl border border-gray-800">
+      <table class="w-full text-sm text-left">
+        <thead class="bg-gray-800 text-xs text-gray-400 uppercase tracking-wider">
+          <tr>
+            <th class="px-4 py-2">Lvl</th>
+            <th class="px-4 py-2">HP</th>
+            <th class="px-4 py-2">DMG</th>
+            <th class="px-4 py-2">DEF</th>
+            <th class="px-4 py-2">Range</th>
+            <th class="px-4 py-2">Speed</th>
+            <th class="px-4 py-2">Gold</th>
+            <th class="px-4 py-2">Food</th>
+            <th class="px-4 py-2">Timber</th>
+            <th class="px-4 py-2">Metal</th>
+            <th class="px-4 py-2">Train (s)</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for lvl in levels %}
+          <tr class="border-t border-gray-800
+            {% if lvl.level == 1 %}bg-gray-900{% elif loop.index is even %}bg-gray-900/50{% else %}bg-gray-900/20{% endif %}
+            hover:bg-gray-800 transition-colors">
+            <td class="px-4 py-2 font-bold text-gray-300">{{ lvl.level }}</td>
+            <td class="px-4 py-2 text-green-300">{{ lvl.hp }}</td>
+            <td class="px-4 py-2 text-red-300">{{ lvl.damage }}</td>
+            <td class="px-4 py-2 text-blue-300">{{ lvl.defense }}</td>
+            <td class="px-4 py-2">{{ lvl.range }}</td>
+            <td class="px-4 py-2">{{ lvl.speed }}×</td>
+            <td class="px-4 py-2 text-yellow-400">{{ lvl.gold_cost }}</td>
+            <td class="px-4 py-2 text-green-400">{{ lvl.food_cost }}</td>
+            <td class="px-4 py-2 text-amber-600">{{ lvl.timber_cost }}</td>
+            <td class="px-4 py-2 text-gray-300">{{ lvl.metal_cost }}</td>
+            <td class="px-4 py-2 text-gray-400">{{ lvl.training_time_seconds }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Back link -->
+  <div>
+    <a href="{{ url_for('wiki.troopedia_index') }}"
+       class="text-sm text-gray-500 hover:text-white transition-colors">← Back to Troopedia</a>
+  </div>
+
+</div>
+{% endblock %}

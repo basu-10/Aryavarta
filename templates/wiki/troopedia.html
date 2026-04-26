@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% block title %}Troopedia — BattleCells{% endblock %}
+
+{% block content %}
+<div class="space-y-10">
+
+  <!-- Header -->
+  <div>
+    <h1 class="text-3xl font-bold tracking-tight">⚔ Troopedia</h1>
+    <p class="text-gray-400 text-sm mt-2">
+      The complete field guide to every unit in BattleCells. Tap a card to learn more.
+    </p>
+  </div>
+
+  {% for category_label, troops in categories.items() %}
+  <section>
+    <h2 class="text-xs font-semibold uppercase tracking-widest text-gray-500 mb-4 border-b border-gray-800 pb-1">
+      {{ category_label }}
+    </h2>
+    <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+      {% for t in troops %}
+      <a href="{{ url_for('wiki.troop_detail', slug=t.slug) }}"
+         class="group bg-gray-900 border border-gray-800 rounded-xl overflow-hidden
+                hover:border-gray-600 hover:bg-gray-800 transition-all duration-150 flex flex-col">
+
+        <!-- Art panel -->
+        <div class="bg-gray-850 flex items-center justify-center h-32 border-b border-gray-800 bg-gray-800">
+          {% if t.image %}
+            <img src="{{ t.image }}"
+                 alt="{{ t.troop_type }}"
+                 class="h-24 w-24 object-contain drop-shadow-lg" />
+          {% else %}
+            <span class="text-5xl select-none opacity-30">⚔</span>
+          {% endif %}
+        </div>
+
+        <!-- Info panel -->
+        <div class="p-3 flex flex-col gap-1 flex-1">
+          <div class="flex items-start justify-between gap-1">
+            <span class="font-semibold text-sm leading-tight">{{ t.troop_type }}</span>
+            <span class="text-xs {{ t.category_color }} shrink-0">{{ t.category_label }}</span>
+          </div>
+
+          <!-- Quick stats -->
+          <div class="grid grid-cols-3 gap-x-2 gap-y-0.5 text-xs text-gray-400 mt-1">
+            <span>HP <span class="text-white font-medium">{{ t.hp }}</span></span>
+            <span>DMG <span class="text-white font-medium">{{ t.damage }}</span></span>
+            <span>DEF <span class="text-white font-medium">{{ t.defense }}</span></span>
+            <span>RNG <span class="text-white font-medium">{{ t.range }}</span></span>
+            <span>SPD <span class="text-white font-medium">{{ t.speed }}×</span></span>
+          </div>
+
+          {% if t.lore %}
+          <p class="text-gray-500 text-xs mt-1 line-clamp-2 leading-relaxed italic">
+            "{{ t.lore }}"
+          </p>
+          {% endif %}
+        </div>
+
+      </a>
+      {% endfor %}
+    </div>
+  </section>
+  {% endfor %}
+
+</div>
+{% endblock %}

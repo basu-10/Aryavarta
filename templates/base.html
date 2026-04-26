@@ -33,9 +33,11 @@
       <a href="{{ url_for('battle.setup') }}"      class="text-gray-400 hover:text-white text-sm transition-colors">Simulate</a>
       <a href="{{ url_for('auth.profile') }}#battles" class="text-gray-400 hover:text-white text-sm transition-colors">Battles</a>
       <a href="{{ url_for('auth.profile') }}"      class="text-gray-400 hover:text-white text-sm transition-colors">Profile</a>
+      <a href="{{ url_for('wiki.troopedia_index') }}" class="text-gray-400 hover:text-white text-sm transition-colors">Troopedia</a>
       <span class="ml-auto text-gray-500 text-xs">{{ session.get('username') }}</span>
       <a href="{{ url_for('auth.logout') }}"       class="text-red-400 hover:text-red-300 text-sm">Logout</a>
     {% else %}
+      <a href="{{ url_for('wiki.troopedia_index') }}" class="text-gray-400 hover:text-white text-sm transition-colors">Troopedia</a>
       <a href="{{ url_for('auth.login') }}"    class="ml-auto text-gray-400 hover:text-white text-sm">Login</a>
       <a href="{{ url_for('auth.register') }}" class="text-gray-400 hover:text-white text-sm">Register</a>
     {% endif %}
