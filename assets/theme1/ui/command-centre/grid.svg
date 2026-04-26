@@ -1,1 +1,31 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1" height="1"/>
+﻿<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256" role="img"
+  aria-label="Command Centre 3 by 3 Grid">
+  <defs>
+    <linearGradient id="tileTop" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#6fba64" />
+      <stop offset="100%" stop-color="#4d9647" />
+    </linearGradient>
+  </defs>
+
+  <rect x="28" y="28" width="200" height="200" rx="14" fill="#355f35" stroke="#223e23" stroke-width="4" />
+
+  <g transform="translate(52 52)" fill="url(#tileTop)" stroke="#2f6f35" stroke-width="2">
+    <rect x="0" y="0" width="44" height="44" rx="6" />
+    <rect x="54" y="0" width="44" height="44" rx="6" />
+    <rect x="108" y="0" width="44" height="44" rx="6" />
+
+    <rect x="0" y="54" width="44" height="44" rx="6" />
+    <rect x="54" y="54" width="44" height="44" rx="6" />
+    <rect x="108" y="54" width="44" height="44" rx="6" />
+
+    <rect x="0" y="108" width="44" height="44" rx="6" />
+    <rect x="54" y="108" width="44" height="44" rx="6" />
+    <rect x="108" y="108" width="44" height="44" rx="6" />
+  </g>
+
+  <g stroke="#8fd17f" stroke-width="1.2" opacity="0.45">
+    <path d="M56 66h36M110 66h36M164 66h36" />
+    <path d="M56 120h36M110 120h36M164 120h36" />
+    <path d="M56 174h36M110 174h36M164 174h36" />
+  </g>
+</svg>

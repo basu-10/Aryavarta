@@ -1,1 +1,5 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1" height="1"/>
+﻿<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256" role="img" aria-label="Pond">
+  <ellipse cx="128" cy="162" rx="82" ry="44" fill="#5aa9de" stroke="#2c6f9f" stroke-width="4"/>
+  <ellipse cx="128" cy="162" rx="60" ry="28" fill="#86c6ef" opacity="0.7"/>
+  <path d="M84 150h88M92 172h72" stroke="#d6f0ff" stroke-width="3" stroke-linecap="round" opacity="0.7"/>
+</svg>

@@ -1,1 +1,6 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1" height="1"/>
+﻿<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" role="img" aria-label="Troll Map Icon">
+  <circle cx="32" cy="20" r="10" fill="#7f9f5a" stroke="#4a6237" stroke-width="2"/>
+  <rect x="19" y="28" width="26" height="24" rx="7" fill="#6f8d4f" stroke="#445a33" stroke-width="2"/>
+  <circle cx="28" cy="18" r="1.8" fill="#111"/>
+  <circle cx="36" cy="18" r="1.8" fill="#111"/>
+</svg>

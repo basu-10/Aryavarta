@@ -1,23 +1,8 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256" role="img" aria-label="Farm">
-	<defs>
-		<linearGradient id="farm-sky" x1="0" y1="0" x2="0" y2="1">
-			<stop offset="0%" stop-color="#a8dcff"/>
-			<stop offset="100%" stop-color="#eaf8ff"/>
-		</linearGradient>
-	</defs>
+    <path d="M64 156h128v62H64z" fill="#b74434" stroke="#7a251a" stroke-width="4" />
+    <path d="M50 156l78-56 78 56z" fill="#6a3925" stroke="#3f1f13" stroke-width="4" />
+    <rect x="116" y="176" width="24" height="42" fill="#f2d8a7" stroke="#8f6a34" stroke-width="3" />
+    <rect x="84" y="174" width="20" height="18" fill="#f3e7c4" stroke="#8f6a34" stroke-width="3" />
+    <rect x="152" y="174" width="20" height="18" fill="#f3e7c4" stroke="#8f6a34" stroke-width="3" />
 
-	<rect width="256" height="256" fill="url(#farm-sky)"/>
-	<rect y="160" width="256" height="96" fill="#8dbc62"/>
-
-	<path d="M64 156h128v62H64z" fill="#b74434" stroke="#7a251a" stroke-width="4"/>
-	<path d="M50 156l78-56 78 56z" fill="#6a3925" stroke="#3f1f13" stroke-width="4"/>
-	<rect x="116" y="176" width="24" height="42" fill="#f2d8a7" stroke="#8f6a34" stroke-width="3"/>
-	<rect x="84" y="174" width="20" height="18" fill="#f3e7c4" stroke="#8f6a34" stroke-width="3"/>
-	<rect x="152" y="174" width="20" height="18" fill="#f3e7c4" stroke="#8f6a34" stroke-width="3"/>
-
-	<path d="M20 204h216" stroke="#6a5226" stroke-width="4"/>
-	<g stroke="#dcb93b" stroke-width="4" stroke-linecap="round">
-		<path d="M34 214l4-20m8 20l4-20m8 20l4-20m8 20l4-20"/>
-		<path d="M150 214l4-20m8 20l4-20m8 20l4-20m8 20l4-20"/>
-	</g>
 </svg>

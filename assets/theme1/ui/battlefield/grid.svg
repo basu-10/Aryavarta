@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 220" width="400" height="220" role="img"
+    aria-label="Battlefield Grid 4 by 9 with no-man zone">
+    <defs>
+        <linearGradient id="panel" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#2f3845" />
+            <stop offset="100%" stop-color="#232a34" />
+        </linearGradient>
+    </defs>
+
+    <rect x="16" y="20" width="368" height="180" rx="10" fill="url(#panel)" stroke="#1b2129" stroke-width="3" />
+
+    <rect x="20" y="30" width="160" height="160" fill="#3e5571" opacity="0.35" />
+    <rect x="180" y="30" width="40" height="160" fill="#7b6a43" opacity="0.45" />
+    <rect x="220" y="30" width="160" height="160" fill="#724646" opacity="0.35" />
+
+    <g stroke="#95a2b4" stroke-width="1.8" opacity="0.45">
+        <path
+            d="M20 30v160M60 30v160M100 30v160M140 30v160M180 30v160M220 30v160M260 30v160M300 30v160M340 30v160M380 30v160" />
+        <path d="M20 30h360M20 70h360M20 110h360M20 150h360M20 190h360" />
+    </g>
+
+    <g stroke="#d8c590" stroke-width="2" opacity="0.6" stroke-linecap="round">
+        <path d="M188 42l8 10-9 8m20-4l-7 8 9 10" />
+        <path d="M190 82l10 9-10 8m18-2l-8 9 10 9" />
+        <path d="M189 122l9 8-8 8m18-4l-9 10 10 8" />
+        <path d="M190 162l9 8-8 8m18-4l-9 9 10 8" />
+    </g>
+
+    <text x="200" y="212" text-anchor="middle" font-size="11" fill="#b6c2d3" opacity="0.8">4x9 battlefield (col 4 no-man
+        zone)</text>
+</svg>

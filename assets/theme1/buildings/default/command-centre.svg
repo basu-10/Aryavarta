@@ -1,1 +1,10 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1" height="1"/>
+﻿<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256" role="img" aria-label="Command Centre">
+  <rect x="44" y="86" width="168" height="112" rx="8" fill="#8f95a0" stroke="#5e6674" stroke-width="4"/>
+  <rect x="32" y="72" width="192" height="18" fill="#656d79" stroke="#4b525d" stroke-width="3"/>
+  <rect x="112" y="134" width="32" height="64" rx="4" fill="#5b3723" stroke="#301a11" stroke-width="3"/>
+  <rect x="70" y="110" width="20" height="22" fill="#2f3640"/>
+  <rect x="104" y="110" width="20" height="22" fill="#2f3640"/>
+  <rect x="132" y="110" width="20" height="22" fill="#2f3640"/>
+  <rect x="166" y="110" width="20" height="22" fill="#2f3640"/>
+  <circle cx="128" cy="64" r="16" fill="#c8a33a" stroke="#80631f" stroke-width="3"/>
+</svg>

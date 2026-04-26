@@ -16,8 +16,8 @@
 
     <div id="world-map-shell" class="relative overflow-hidden border border-gray-700 rounded bg-gray-950">
       <div class="overflow-auto" style="max-height:74vh">
-        <div id="world-grid"
-             style="display:inline-grid;grid-template-columns:repeat({{ world_w }},26px);gap:1px;padding:4px;background:#030712;min-width:max-content">
+           <div id="world-grid"
+             style="display:inline-grid;grid-template-columns:repeat({{ world_w }},26px);gap:1px;padding:4px;min-width:max-content;background:#2f4b2f;">
           <!-- filled by buildGrid() -->
         </div>
       </div>
@@ -49,18 +49,62 @@ const WORLD_H   = {{ world_h }};
 const PLAYER_ID = {{ session.get('player_id') | tojson }};
 
 const BG = {
-  empty:        '#030712',
-  castle_own:   '#2563eb',
-  castle_npc:   '#7c3aed',
-  castle_other: '#1e3a8a',
-  fort_own:     '#16a34a',
-  fort_npc:     '#b45309',   // amber — NPC-owned fort
-  fort_enemy:   '#dc2626',
-  fort_monster: '#ea580c',
-  camp:         '#9333ea',
+  empty:        'transparent',
+  castle_own:   'rgba(37, 99, 235, 0.78)',
+  castle_npc:   'rgba(124, 58, 237, 0.78)',
+  castle_other: 'rgba(30, 58, 138, 0.78)',
+  fort_own:     'rgba(22, 163, 74, 0.78)',
+  fort_npc:     'rgba(180, 83, 9, 0.78)',
+  fort_enemy:   'rgba(220, 38, 38, 0.78)',
+  fort_monster: 'rgba(234, 88, 12, 0.78)',
+  camp:         'rgba(147, 51, 234, 0.78)',
 };
 
 const ICON = { castle: '\u{1F3F0}', fort: '\u{1F3EF}', monster_camp: '\u{1F47E}' };
+
+// Tile-set oriented renderer (platformer-style map tiling). This can be
+// switched by admin later by replacing ACTIVE_TILESET_KEY and tile data.
+const TILESETS = {
+  classic: {
+    grass: "data:image/svg+xml;utf8," + encodeURIComponent(`
+      <svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 26 26' width='26' height='26'>
+        <defs>
+          <linearGradient id='g' x1='0' y1='0' x2='0' y2='1'>
+            <stop offset='0%' stop-color='#63b152'/>
+            <stop offset='100%' stop-color='#4e9844'/>
+          </linearGradient>
+        </defs>
+        <rect width='26' height='26' fill='url(#g)'/>
+        <g fill='#73c363' opacity='0.45'>
+          <ellipse cx='5' cy='4' rx='4' ry='2'/>
+          <ellipse cx='18' cy='6' rx='5' ry='3'/>
+          <ellipse cx='8' cy='15' rx='4' ry='2'/>
+          <ellipse cx='21' cy='18' rx='4' ry='2'/>
+        </g>
+        <g stroke='#89d676' stroke-width='1' stroke-linecap='round' opacity='0.55'>
+          <path d='M3 11l2-5M9 12l2-5M14 10l2-4M20 12l2-5'/>
+          <path d='M5 23l2-5M12 24l2-5M18 23l2-5'/>
+        </g>
+      </svg>
+    `)
+  }
+};
+
+const ACTIVE_TILESET_KEY = 'classic';
+const BASE_TILE_ID = 'grass';
+
+function tileUrl(tileId) {
+  const set = TILESETS[ACTIVE_TILESET_KEY] || TILESETS.classic;
+  return set[tileId] || set[BASE_TILE_ID];
+}
+
+function cellStyle(overlayColor) {
+  const tile = tileUrl(BASE_TILE_ID);
+  if (!overlayColor || overlayColor === 'transparent') {
+    return `width:26px;height:26px;background-image:url(${tile});background-size:26px 26px;background-repeat:no-repeat;`;
+  }
+  return `width:26px;height:26px;background-image:linear-gradient(${overlayColor},${overlayColor}),url(${tile});background-size:26px 26px,26px 26px;background-repeat:no-repeat;`;
+}
 
 let entityMap = {};
 let showLabels = false;
@@ -96,7 +140,7 @@ function rebuildGrid() {
     for (let x = 0; x < WORLD_W; x++) {
       const item = entityMap[`${x},${y}`];
       if (!item) {
-        parts.push(`<div style="width:26px;height:26px;background:${BG.empty}"></div>`);
+        parts.push(`<div style="${cellStyle(BG.empty)}"></div>`);
         continue;
       }
 
@@ -140,8 +184,8 @@ function rebuildGrid() {
 
       parts.push(
         `<div data-type="${item.type}" data-id="${item.id}"` +
-        ` style="width:26px;height:26px;background:${bg};font-size:14px;line-height:26px;` +
-        `text-align:center;cursor:pointer;border-radius:2px;position:relative;"` +
+        ` style="${cellStyle(bg)}font-size:14px;line-height:26px;` +
+        `text-align:center;cursor:pointer;border-radius:2px;position:relative;box-shadow:inset 0 0 0 1px rgba(255,255,255,.12);"` +
         ` title="${tooltipFull}">${icon}${labelHtml}</div>`
       );
     }

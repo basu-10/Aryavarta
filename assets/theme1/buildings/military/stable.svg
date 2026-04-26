@@ -1,1 +1,8 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1" height="1"/>
+﻿<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256" role="img" aria-label="Stable">
+  <path d="M48 96h160v102H48z" fill="#a76a3a" stroke="#6d3f1e" stroke-width="4"/>
+  <path d="M34 96l94-58 94 58z" fill="#5a3a22" stroke="#3a2516" stroke-width="4"/>
+  <rect x="62" y="124" width="42" height="74" fill="#6a3d1f" stroke="#3a2112" stroke-width="3"/>
+  <rect x="112" y="124" width="32" height="74" fill="#5f351a" stroke="#3a2112" stroke-width="3"/>
+  <rect x="152" y="124" width="42" height="74" fill="#6a3d1f" stroke="#3a2112" stroke-width="3"/>
+  <circle cx="128" cy="84" r="7" fill="#2f9e44"/>
+</svg>

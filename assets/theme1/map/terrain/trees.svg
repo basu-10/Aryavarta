@@ -1,1 +1,8 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1" height="1"/>
+﻿<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256" role="img" aria-label="Trees">
+  <rect x="72" y="150" width="14" height="48" fill="#6b4a2f"/>
+  <rect x="122" y="144" width="14" height="54" fill="#6b4a2f"/>
+  <rect x="170" y="154" width="14" height="44" fill="#6b4a2f"/>
+  <circle cx="79" cy="132" r="30" fill="#4f9b53"/>
+  <circle cx="129" cy="124" r="36" fill="#5aa85f"/>
+  <circle cx="177" cy="136" r="28" fill="#4b934f"/>
+</svg>

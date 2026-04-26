@@ -1,1 +1,7 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1" height="1"/>
+﻿<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256" role="img" aria-label="Fort">
+  <rect x="54" y="94" width="148" height="102" fill="#8f95a0" stroke="#5e6674" stroke-width="4"/>
+  <rect x="44" y="80" width="168" height="16" fill="#666e7b" stroke="#4b525d" stroke-width="3"/>
+  <rect x="66" y="68" width="34" height="24" fill="#8f95a0" stroke="#5e6674" stroke-width="4"/>
+  <rect x="156" y="68" width="34" height="24" fill="#8f95a0" stroke="#5e6674" stroke-width="4"/>
+  <rect x="112" y="138" width="32" height="58" rx="4" fill="#5b3723" stroke="#2e1a11" stroke-width="3"/>
+</svg>

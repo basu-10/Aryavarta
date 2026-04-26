@@ -1,1 +1,9 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1" height="1"/>
+﻿<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256" role="img" aria-label="Merchant">
+  <rect x="50" y="96" width="156" height="102" rx="8" fill="#7a4c92" stroke="#4f2f61" stroke-width="4"/>
+  <path d="M40 96h176l-14 24H54z" fill="#b476d5" stroke="#7a4c92" stroke-width="3"/>
+  <rect x="112" y="134" width="32" height="64" fill="#4b2e1e" stroke="#2d1a11" stroke-width="3"/>
+  <rect x="68" y="132" width="26" height="22" fill="#e7d3a2" stroke="#8d7143" stroke-width="3"/>
+  <rect x="162" y="132" width="26" height="22" fill="#e7d3a2" stroke="#8d7143" stroke-width="3"/>
+  <circle cx="128" cy="78" r="14" fill="#d4af37" stroke="#8b6a1e" stroke-width="3"/>
+  <path d="M128 68v20M118 78h20" stroke="#8b6a1e" stroke-width="3"/>
+</svg>

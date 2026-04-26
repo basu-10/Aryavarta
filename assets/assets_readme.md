@@ -25,6 +25,7 @@ assets/
 			terrain/
 		ui/
 			command-centre/
+			battlefield/
 ```
 
 ## Placement rules
@@ -34,6 +35,18 @@ assets/
 3. World map location markers/icons (fort, camp, castle) go in `map/locations/...`.
 4. Terrain visuals (grass, bushes, trees, pond) go in `map/terrain/...`.
 5. Non-entity UI visuals (grid, decoration, frames) go in `ui/...`.
+
+### Grid assets
+
+- Building placement grid: `assets/theme1/ui/command-centre/grid.svg` (3x3)
+- Battlefield combat grid: `assets/theme1/ui/battlefield/grid.svg` (4x9 with center no-man's-land column)
+- World map terrain base tile: `assets/theme1/map/terrain/grass.svg` (single-cell tile mapped to each map cell)
+
+### Tile-map design notes
+
+- World cells are tile-first: each cell gets a base terrain tile (grass) before entity overlays.
+- Entity visuals (fort/camp/castle/terrain props) are layered on top of the base tile.
+- This supports future theme switching by swapping tile-set mappings rather than rewriting map logic.
 
 ## Your Troll/Wraith question
 

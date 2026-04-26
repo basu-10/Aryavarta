@@ -1,1 +1,11 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1" height="1"/>
+﻿<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256" role="img" aria-label="Troll">
+  <rect x="76" y="82" width="104" height="106" rx="26" fill="#6f8d4f" stroke="#445a33" stroke-width="4"/>
+  <circle cx="128" cy="64" r="28" fill="#7f9f5a" stroke="#4a6237" stroke-width="4"/>
+  <circle cx="118" cy="60" r="4" fill="#111"/>
+  <circle cx="138" cy="60" r="4" fill="#111"/>
+  <rect x="94" y="186" width="22" height="34" rx="6" fill="#4f6a39"/>
+  <rect x="140" y="186" width="22" height="34" rx="6" fill="#4f6a39"/>
+  <rect x="58" y="112" width="20" height="56" rx="8" fill="#648248"/>
+  <rect x="178" y="112" width="20" height="56" rx="8" fill="#648248"/>
+  <rect x="112" y="74" width="32" height="8" rx="4" fill="#d6e3b5"/>
+</svg>
