@@ -1,103 +1,109 @@
 """
 movement.py — Phase 2: Movement Resolution
 
-Units with intent='move' attempt to advance toward the enemy.
-Movement is resolved simultaneously using a pre-tick position snapshot.
+Units with intent='move' advance toward the enemy; units with intent='retreat'
+back away to re-establish optimal attack range. Movement is limited to the
+column axis — row never changes.
 
-Rules:
-- Units move ONLY forward (column direction). Row NEVER changes.
-- Team A forward = +col; Team B forward = −col.
-- If the cell directly ahead is occupied or out-of-bounds the unit stops
-  (no diagonal fallback, no sideways drift).
-- Each speed step is resolved simultaneously for all movers.
-- Conflict tie-break: alphabetically earliest unit_id wins the contested cell.
+Speed model (fractional):
+  Each tick a moving/retreating unit gains `unit.speed` movement credit
+  (_move_acc).  When credit reaches >= 1.0 the unit attempts to move 1 cell;
+  the credit is then reduced by 1.0.  Credit is capped at 1.0 to prevent
+  banked-up burst movement when a unit is repeatedly blocked.
+
+  Examples:
+    speed=1.0 → moves every tick (1x)
+    speed=0.5 → accumulates 0.5/tick, moves on every 2nd tick (0.5x)
+
+Conflict tie-break:
+  When two units desire the same cell the alphabetically-earliest unit_id wins
+  (deterministic, prevents deadlocks).
+
+Blocked retreat → fall back to attack:
+  If a ranged unit wants to retreat but is blocked (edge of grid or occupied
+  cell behind), its intent is switched to 'attack' so the targeting phase can
+  still fire.
 """
 
 from __future__ import annotations
+from collections import defaultdict
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from engine.unit import Unit
     from engine.grid import Grid
 
+from engine.phases.intent import enemies_in_range
+
 
 def _desired_step(unit: "Unit", snapshot: dict, grid: "Grid") -> tuple[int, int] | None:
     """
-    Return the cell directly ahead (same row, one column forward) if free.
-    Returns None if blocked or out-of-bounds — no diagonal/sideways fallback.
+    Return the next cell for this unit based on its intent:
+      'move'    → one step in forward_dir  (+col for A, -col for B)
+      'retreat' → one step in -forward_dir (opposite direction)
+    Returns None if the target cell is out-of-bounds or occupied.
     """
     r, c = unit.row, unit.col
-    dc = unit.forward_dir  # +1 for A, -1 for B
-
-    ahead = (r, c + dc)
-    if grid.in_bounds(*ahead) and ahead not in snapshot:
-        return ahead
-
-    return None  # blocked — unit stops, no alternate path
+    dc = unit.forward_dir if unit._intent == "move" else -unit.forward_dir
+    target = (r, c + dc)
+    if grid.in_bounds(*target) and target not in snapshot:
+        return target
+    return None
 
 
 def resolve_movement(units: list["Unit"], grid: "Grid") -> list[dict]:
     """
-    Advance all 'move'-intent units up to their speed, simultaneously.
-    Returns a list of event dicts for the battle log.
+    Resolve movement for all 'move' and 'retreat' intent units.
+    Returns a list of event dicts (currently empty; battle.py handles logging).
     """
-    events: list[dict] = []
-    movers = [u for u in units if u.is_alive() and u._intent == "move"]
+    movers = [u for u in units if u.is_alive() and u._intent in ("move", "retreat")]
 
-    for _step in range(_max_speed(movers)):
-        snapshot = grid.snapshot()
+    # Accumulate movement credit for this tick (capped at 1.0)
+    for unit in movers:
+        unit._move_acc = min(unit._move_acc + unit.speed, 1.0)
 
-        # Compute desired moves for units that still have steps left
-        desired: dict[str, tuple[int, int]] = {}  # unit_id -> target cell
-        for unit in movers:
-            if _steps_remaining(unit, _step):
-                target = _desired_step(unit, snapshot, grid)
-                if target is not None:
-                    desired[unit.unit_id] = target
+    # Only units with enough credit attempt to move
+    ready = [u for u in movers if unit._move_acc >= 1.0  # intentional shadow avoided below
+             ] if False else [u for u in movers if u._move_acc >= 1.0]
 
-        # Resolve conflicts: when multiple units want the same cell,
-        # give it to the unit_id that sorts first (deterministic tie-break).
-        # This prevents symmetrical deadlocks (e.g., two enemies closing
-        # distance on the same column).
-        from collections import defaultdict
-        dest_map: dict[tuple, list] = defaultdict(list)
-        for uid, target in desired.items():
-            dest_map[target].append(uid)
+    if not ready:
+        return []
 
-        allowed_uids: set[str] = set()
-        for dest, uid_list in dest_map.items():
-            winner = sorted(uid_list)[0]  # alphabetical first wins
-            allowed_uids.add(winner)
+    snapshot = grid.snapshot()
 
-        # Apply valid moves
-        moved_ids: set[str] = set()
-        for unit in movers:
-            if unit.unit_id not in allowed_uids:
-                continue
-            target = desired[unit.unit_id]
-            if grid.move_unit(unit.row, unit.col, *target):
-                unit.row, unit.col = target
-                moved_ids.add(unit.unit_id)
+    # Compute each unit's desired next cell
+    desired: dict[str, tuple[int, int]] = {}
+    for unit in ready:
+        target = _desired_step(unit, snapshot, grid)
+        if target is not None:
+            desired[unit.unit_id] = target
 
-        # Units that didn't move this step → stop trying further steps
-        movers = [u for u in movers if u.unit_id in moved_ids]
+    # Conflict resolution: give contested cells to alphabetically-first unit_id
+    dest_map: dict[tuple, list[str]] = defaultdict(list)
+    for uid, target in desired.items():
+        dest_map[target].append(uid)
 
-    # Build events for units that moved at all
-    for unit in [u for u in units if u.is_alive() and u._intent == "move"]:
-        if unit._action == "":
-            # Will be set after we know final position vs initial
-            pass
+    allowed_uids: set[str] = set()
+    for dest, uid_list in dest_map.items():
+        allowed_uids.add(sorted(uid_list)[0])
 
-    # Record final actions (compare against pre-phase positions captured by caller)
-    # The battle.py caller records start positions and uses this list:
-    return events
+    # Apply valid moves
+    retreated_ids: set[str] = set()
+    for unit in ready:
+        if unit.unit_id not in allowed_uids:
+            continue
+        target = desired.get(unit.unit_id)
+        if target and grid.move_unit(unit.row, unit.col, *target):
+            unit.row, unit.col = target
+            unit._move_acc -= 1.0
+            if unit._intent == "retreat":
+                retreated_ids.add(unit.unit_id)
 
+    # Blocked retreaters: switch intent to 'attack' so targeting can fire
+    living = [u for u in units if u.is_alive()]
+    for unit in ready:
+        if unit._intent == "retreat" and unit.unit_id not in retreated_ids:
+            # Couldn't retreat — attack if anything is still in range
+            unit._intent = "attack"
 
-def _max_speed(movers: list) -> int:
-    if not movers:
-        return 0
-    return max((u.speed for u in movers), default=0)
-
-
-def _steps_remaining(unit: "Unit", step_index: int) -> bool:
-    return step_index < unit.speed
+    return []

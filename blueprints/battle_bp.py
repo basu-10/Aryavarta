@@ -32,6 +32,7 @@ from flask import (
 
 from engine.battle import Battle
 from engine.unit import Unit
+from utils.battle_store import store_battle, get_battle
 from utils.csv_writer import write_battle_csv
 from utils.serializer import build_tick_data, army_from_json
 from utils.troops_store import (
@@ -43,10 +44,6 @@ from utils.troops_store import (
 import config
 
 battle_bp = Blueprint("battle", __name__)
-
-# In-memory battle store: battle_id -> { tick_data, csv_path, winner, total_ticks }
-# In production you'd persist this, but for V1 an in-process dict is fine.
-_battles: dict[str, dict] = {}
 
 
 @battle_bp.route("/")
@@ -65,8 +62,6 @@ def setup():
         team_b_cols=config.TEAM_B_COLS,
         unit_types=list(all_stats.keys()),
         unit_stats=all_stats,
-        move_behaviors=config.MOVE_BEHAVIORS,
-        attack_behaviors=config.ATTACK_BEHAVIORS,
     )
 
 
@@ -79,8 +74,6 @@ def troops_page():
     return render_template(
         "troops.html",
         builtin_stats=config.UNIT_STATS,
-        move_behaviors=config.MOVE_BEHAVIORS,
-        attack_behaviors=config.ATTACK_BEHAVIORS,
     )
 
 
@@ -118,15 +111,19 @@ def api_create_troop():
         except (TypeError, ValueError):
             return default
 
+    def _float_field(key: str, default: float, min_val: float = 0.0) -> float:
+        try:
+            return max(min_val, float(data.get(key, default)))
+        except (TypeError, ValueError):
+            return default
+
     new_troop = {
         "name": name,
         "hp": _int_field("hp", 10, 1),
         "damage": _int_field("damage", 1, 0),
         "defense": _int_field("defense", 0, 0),
         "range": _int_field("range", 1, 1),
-        "speed": _int_field("speed", 1, 1),
-        "default_move": data.get("default_move", config.MOVE_BEHAVIORS[0]),
-        "default_attack": data.get("default_attack", config.ATTACK_BEHAVIORS[0]),
+        "speed": _float_field("speed", 1.0, 0.1),
     }
     custom.append(new_troop)
     save_custom_troops(custom)
@@ -246,12 +243,12 @@ def run():
 
     tick_data = build_tick_data(result)
 
-    _battles[battle_id] = {
+    store_battle(battle_id, {
         "tick_data": tick_data,
         "csv_path": str(csv_path),
         "winner": result.winner,
         "total_ticks": result.total_ticks,
-    }
+    })
 
     return jsonify(
         {
@@ -263,7 +260,7 @@ def run():
 
 @battle_bp.route("/results/<battle_id>")
 def results(battle_id: str):
-    record = _battles.get(battle_id)
+    record = get_battle(battle_id)
     if record is None:
         return "Battle not found. It may have expired (server restart clears memory).", 404
 
@@ -280,7 +277,7 @@ def results(battle_id: str):
 
 @battle_bp.route("/download/<battle_id>")
 def download(battle_id: str):
-    record = _battles.get(battle_id)
+    record = get_battle(battle_id)
     if record is None:
         return "Battle not found.", 404
 

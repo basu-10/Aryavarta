@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% block title %}Profile — {{ player.username }}{% endblock %}
+{% block content %}
+<h1 class="text-2xl font-bold mb-6">{{ player.username }}</h1>
+
+<div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+  {% for res in ['food', 'timber', 'gold', 'metal'] %}
+  <div class="bg-gray-800 rounded p-4 text-center">
+    <div class="text-xs text-gray-400 uppercase mb-1">{{ res }}</div>
+    <div class="text-lg font-mono text-white">{{ "%.1f"|format(player[res]) }}</div>
+  </div>
+  {% endfor %}
+</div>
+
+{% if clan %}
+<p class="text-sm text-gray-400 mb-6">Clan: <span class="text-white font-semibold">{{ clan.name }}</span></p>
+{% endif %}
+
+<h2 class="text-lg font-semibold mb-3">Castle</h2>
+{% if castle %}
+<p class="text-sm text-gray-300 mb-6">
+  Position ({{ castle.grid_x }}, {{ castle.grid_y }}) — {{ castle.slot_count }} slots
+  <a href="{{ url_for('fort.castle_page') }}" class="ml-3 text-blue-400 hover:underline text-xs">Manage →</a>
+</p>
+{% endif %}
+
+<h2 class="text-lg font-semibold mb-3">Owned Forts ({{ forts|length }})</h2>
+{% if forts %}
+<ul class="space-y-2 mb-6">
+  {% for fort in forts %}
+  <li class="flex items-center gap-4 bg-gray-800 rounded px-4 py-2 text-sm">
+    <span class="text-gray-300">Fort #{{ fort.id }}</span>
+    <span class="text-gray-500">({{ fort.grid_x }}, {{ fort.grid_y }})</span>
+    <a href="{{ url_for('fort.fort_page', fort_id=fort.id) }}" class="ml-auto text-blue-400 hover:underline text-xs">Manage →</a>
+  </li>
+  {% endfor %}
+</ul>
+{% else %}
+<p class="text-gray-500 text-sm mb-6">No forts owned.</p>
+{% endif %}
+
+<h2 class="text-lg font-semibold mb-3">Recent Battles</h2>
+{% if missions %}
+<ul class="space-y-1 text-sm">
+  {% for mis in missions %}
+  <li class="flex gap-4 bg-gray-800 rounded px-4 py-2">
+    <span class="text-gray-400">{{ mis.target_type }} #{{ mis.target_id }}</span>
+    <span class="{% if mis.winner == 'attacker' %}text-green-400{% else %}text-red-400{% endif %}">
+      {{ 'Victory' if mis.winner == 'attacker' else 'Defeat' }}
+    </span>
+    {% if mis.result_battle_id %}
+    <a href="{{ url_for('battle.results', battle_id=mis.result_battle_id) }}"
+       class="ml-auto text-blue-400 hover:underline text-xs">View →</a>
+    {% endif %}
+  </li>
+  {% endfor %}
+</ul>
+{% else %}
+<p class="text-gray-500 text-sm">No battles yet.</p>
+{% endif %}
+{% endblock %}

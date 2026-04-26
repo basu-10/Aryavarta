@@ -56,7 +56,7 @@ def get_all_unit_stats() -> dict[str, dict]:
             "damage": troop.get("damage", 1),
             "defense": troop.get("defense", 0),
             "range": troop.get("range", 1),
-            "speed": troop.get("speed", 1),
+            "speed": float(troop.get("speed", 1.0)),
         }
     return merged
 

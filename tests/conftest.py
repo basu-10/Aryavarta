@@ -22,8 +22,6 @@ def make_unit(
     unit_type: str,
     row: int,
     col: int,
-    move_behavior: str = "Advance",
-    attack_behavior: str = "Closest",
 ) -> Unit:
     """Factory helper — creates a Unit from stats table."""
     stats = UNIT_STATS[unit_type]
@@ -39,8 +37,6 @@ def make_unit(
         defense=stats["defense"],
         range=stats["range"],
         speed=stats["speed"],
-        move_behavior=move_behavior,
-        attack_behavior=attack_behavior,
     )
 
 
@@ -51,12 +47,12 @@ def barb_a():
 
 @pytest.fixture
 def barb_b():
-    return make_unit("B_B1", "B", "Barbarian", row=0, col=4)
+    return make_unit("B_B1", "B", "Barbarian", row=0, col=8)
 
 
 @pytest.fixture
 def archer_b():
-    return make_unit("B_AR1", "B", "Archer", row=0, col=4)
+    return make_unit("B_AR1", "B", "Archer", row=0, col=8)
 
 
 @pytest.fixture

@@ -1,11 +1,10 @@
 """tests/test_phases.py — Tests for each battle phase module."""
 
-import random
 import pytest
 from engine.grid import Grid
 from engine.phases.intent import evaluate_intents, chebyshev, enemies_in_range
 from engine.phases.movement import resolve_movement
-from engine.phases.targeting import resolve_targeting, select_target, direction_of
+from engine.phases.targeting import resolve_targeting, select_target
 from engine.phases.damage import apply_damage
 from engine.phases.death import resolve_deaths
 from tests.conftest import make_unit
@@ -28,16 +27,16 @@ class TestIntentPhase:
         assert chebyshev(u1, u2) == 2
 
     def test_enemy_in_range_archer(self):
-        archer = make_unit("B_AR1", "B", "Archer", 0, 4)
-        barb = make_unit("A_B1", "A", "Barbarian", 0, 1)
+        archer = make_unit("B_AR1", "B", "Archer", 0, 8)
+        barb = make_unit("A_B1", "A", "Barbarian", 0, 6)
         result = enemies_in_range(archer, [archer, barb])
-        assert barb in result  # distance 3, archer range 3
+        assert barb in result  # distance 2, archer range 2
 
-    def test_enemy_out_of_range(self):
-        barb = make_unit("A_B1", "A", "Barbarian", 0, 0)
-        enemy = make_unit("B_B1", "B", "Barbarian", 0, 2)  # dist=2, barb range=1
-        result = enemies_in_range(barb, [barb, enemy])
-        assert enemy not in result
+    def test_enemy_out_of_range_archer(self):
+        archer = make_unit("B_AR1", "B", "Archer", 0, 8)
+        barb = make_unit("A_B1", "A", "Barbarian", 0, 5)  # dist=3, range=2
+        result = enemies_in_range(archer, [archer, barb])
+        assert barb not in result
 
     def test_intent_attack_when_in_range(self):
         barb = make_unit("A_B1", "A", "Barbarian", 0, 1)
@@ -47,15 +46,28 @@ class TestIntentPhase:
 
     def test_intent_move_when_out_of_range(self):
         barb = make_unit("A_B1", "A", "Barbarian", 0, 0)
-        enemy = make_unit("B_B1", "B", "Barbarian", 0, 4)  # dist=4, out of range
+        enemy = make_unit("B_B1", "B", "Barbarian", 0, 8)  # dist=8, out of range
         evaluate_intents([barb, enemy])
         assert barb._intent == "move"
 
-    def test_intent_hold_when_behavior_hold(self):
-        barb = make_unit("A_B1", "A", "Barbarian", 0, 0, move_behavior="Hold")
-        enemy = make_unit("B_B1", "B", "Barbarian", 0, 4)
-        evaluate_intents([barb, enemy])
+    def test_intent_hold_when_no_enemies(self):
+        barb = make_unit("A_B1", "A", "Barbarian", 0, 0)
+        evaluate_intents([barb])
         assert barb._intent == "hold"
+
+    def test_intent_retreat_ranged_too_close(self):
+        """Ranged unit retreats when front enemy is closer than its range."""
+        archer = make_unit("B_AR1", "B", "Archer", 0, 6)  # range=2
+        barb = make_unit("A_B1", "A", "Barbarian", 0, 5)  # distance=1 < range=2
+        evaluate_intents([archer, barb])
+        assert archer._intent == "retreat"
+
+    def test_intent_attack_ranged_at_optimal_range(self):
+        """Ranged unit attacks when front enemy is exactly at range."""
+        archer = make_unit("B_AR1", "B", "Archer", 0, 7)  # range=2
+        barb = make_unit("A_B1", "A", "Barbarian", 0, 5)  # distance=2 == range=2
+        evaluate_intents([archer, barb])
+        assert archer._intent == "attack"
 
     def test_dead_units_are_ignored(self):
         barb = make_unit("A_B1", "A", "Barbarian", 0, 0)
@@ -63,8 +75,8 @@ class TestIntentPhase:
         dead_enemy.alive = False
         dead_enemy.hp = 0
         evaluate_intents([barb, dead_enemy])
-        # No living enemies in range — should still want to move
-        assert barb._intent == "move"
+        # No living enemies — should hold
+        assert barb._intent == "hold"
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -74,26 +86,31 @@ class TestIntentPhase:
 class TestMovementPhase:
 
     def _placed_grid(self, *units):
-        g = Grid(4, 5)
+        g = Grid(4, 9)
         for u in units:
             g.place(u.unit_id, u.row, u.col)
         return g
 
-    def test_barbarian_advances_two_cells(self):
-        barb = make_unit("A_B1", "A", "Barbarian", 0, 0)  # speed=2
+    def test_barbarian_advances_one_cell(self):
+        """Barbarian speed=1.0: moves 1 cell in the first tick."""
+        barb = make_unit("A_B1", "A", "Barbarian", 0, 0)  # speed=1.0
         barb._intent = "move"
         g = self._placed_grid(barb)
         resolve_movement([barb], g)
-        assert barb.col == 2  # moved 2 steps right
+        assert barb.col == 1  # moved 1 step right
         assert barb.row == 0  # row unchanged
 
-    def test_archer_advances_one_cell(self):
-        archer = make_unit("B_AR1", "B", "Archer", 0, 4)  # speed=1
+    def test_archer_moves_every_two_ticks(self):
+        """Archer speed=0.5: accumulates credit, moves on 2nd resolve call."""
+        archer = make_unit("B_AR1", "B", "Archer", 0, 8)  # speed=0.5
         archer._intent = "move"
         g = self._placed_grid(archer)
-        resolve_movement([archer], g)
-        assert archer.col == 3  # moved 1 step left
-        assert archer.row == 0  # row unchanged
+        resolve_movement([archer], g)  # tick 1: acc=0.5, no move
+        assert archer.col == 8
+        archer._intent = "move"        # set intent again for tick 2
+        resolve_movement([archer], g)  # tick 2: acc=1.0, moves
+        assert archer.col == 7  # moved 1 step left (toward Team A)
+        assert archer.row == 0
 
     def test_no_diagonal_movement(self):
         """Unit blocked straight ahead stays put — no diagonal fallback."""
@@ -117,210 +134,100 @@ class TestMovementPhase:
         resolve_movement([b1, wall], g)
         assert b1.row == 2  # row locked
 
-    def test_conflict_both_blocked(self):
+    def test_conflict_both_advance(self):
         """
-        Two opposing-team units advancing into the same cell get resolved:
-        the alphabetically-first unit_id wins, the other stops.
-
-        Setup (Barbarians speed=2, same row):
-          A_B1 at col 0 → step1: (r,1) step2: (r,2)
-          B_B1 at col 4 → step1: (r,3) step2: (r,2)   ← conflict at step 2
+        Two opposing-team units advancing toward each other on the same row.
+        They stop when they would collide in the same cell.
         """
-        a = make_unit("A_B1", "A", "Barbarian", 1, 0)
-        b = make_unit("B_B1", "B", "Barbarian", 1, 4)
+        a = make_unit("A_B1", "A", "Barbarian", 0, 0)
+        b = make_unit("B_B1", "B", "Barbarian", 0, 2)
         a._intent = "move"
         b._intent = "move"
-        g = Grid(4, 5)
+        g = Grid(4, 9)
         g.place(a.unit_id, a.row, a.col)
         g.place(b.unit_id, b.row, b.col)
         resolve_movement([a, b], g)
-        # "A_B1" < "B_B1" → A wins the contested (1,2), B stops at col 3
-        assert a.col == 2
-        assert b.col == 3
+        # A wants col 1, B wants col 1 — conflict: alphabetical "A_B1" wins
+        assert a.col == 1
+        assert b.col == 2  # B blocked
 
     def test_grid_updated_after_move(self):
         barb = make_unit("A_B1", "A", "Barbarian", 1, 1)
         barb._intent = "move"
-        g = Grid(4, 5)
+        g = Grid(4, 9)
         g.place(barb.unit_id, barb.row, barb.col)
         resolve_movement([barb], g)
         if barb.col != 1:  # if actually moved
             assert not g.is_occupied(1, 1)
 
     def test_forward_stop_at_edge(self):
-        """Unit at the edge column cannot move further — stops cleanly."""
-        barb = make_unit("A_B1", "A", "Barbarian", 0, 4)  # already at right edge
+        """Unit at the last column cannot move further — stops cleanly."""
+        barb = make_unit("A_B1", "A", "Barbarian", 0, 8)  # right edge of 9-col grid
         barb._intent = "move"
         g = self._placed_grid(barb)
         resolve_movement([barb], g)
-        assert barb.col == 4  # can't go beyond col 4
+        assert barb.col == 8  # can't go beyond col 8
 
+    def test_retreat_moves_backward(self):
+        """Ranged unit with retreat intent moves backward (away from enemy)."""
+        archer = make_unit("B_AR1", "B", "Archer", 0, 6)  # Team B forward=-1, retreat=+1
+        archer._intent = "retreat"
+        g = self._placed_grid(archer)
+        resolve_movement([archer], g)  # tick 1: acc=0.5, no move
+        archer._intent = "retreat"
+        resolve_movement([archer], g)  # tick 2: acc=1.0, retreats
+        assert archer.col == 7  # moved right (away from Team A enemies)
 
-def barb_col_after(u):
-    return u.col
+    def test_blocked_retreat_switches_to_attack(self):
+        """Archer at the back wall can't retreat — intent switches to attack."""
+        archer = make_unit("B_AR1", "B", "Archer", 0, 8)  # at right edge
+        archer._intent = "retreat"
+        # Give enough credit to attempt movement
+        archer._move_acc = 1.0
+        g = self._placed_grid(archer)
+        resolve_movement([archer], g)
+        assert archer._intent == "attack"  # switched because retreat was blocked
 
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Phase 3 — Targeting
 # ─────────────────────────────────────────────────────────────────────────────
 
-class TestDirectionOf:
-    """Unit tests for the direction_of helper."""
-
-    def test_front_team_a(self):
-        # Team A moves right (+col); enemy to the right = front
-        a = make_unit("A_B1", "A", "Barbarian", 2, 2)
-        e = make_unit("B_B1", "B", "Barbarian", 2, 4)
-        assert direction_of(a, e) == "front"
-
-    def test_back_team_a(self):
-        a = make_unit("A_B1", "A", "Barbarian", 2, 3)
-        e = make_unit("B_B1", "B", "Barbarian", 2, 0)
-        assert direction_of(a, e) == "back"
-
-    def test_side_same_col(self):
-        a = make_unit("A_B1", "A", "Barbarian", 1, 2)
-        e = make_unit("B_B1", "B", "Barbarian", 3, 2)
-        assert direction_of(a, e) == "side"
-
-    def test_side_different_col_and_row(self):
-        # Different row AND different col — classified as side
-        a = make_unit("A_B1", "A", "Barbarian", 1, 2)
-        e = make_unit("B_B1", "B", "Barbarian", 3, 4)
-        assert direction_of(a, e) == "side"
-
-    def test_front_team_b(self):
-        # Team B moves left (-col); enemy to the left = front
-        b = make_unit("B_B1", "B", "Barbarian", 2, 4)
-        e = make_unit("A_B1", "A", "Barbarian", 2, 1)
-        assert direction_of(b, e) == "front"
-
-    def test_back_team_b(self):
-        b = make_unit("B_B1", "B", "Barbarian", 2, 1)
-        e = make_unit("A_B1", "A", "Barbarian", 2, 4)
-        assert direction_of(b, e) == "back"
-
-
 class TestTargetingPhase:
 
-    # ── Front priority ──────────────────────────────────────────────── #
-
-    def test_front_enemy_chosen_over_side(self):
-        """Front enemy is always preferred, even if the side enemy has lower HP."""
-        attacker = make_unit("A_B1", "A", "Barbarian", 0, 3, attack_behavior="LowestHP")
-        front_e  = make_unit("B_B1", "B", "Barbarian", 0, 4)  # same row, ahead
-        side_e   = make_unit("B_B2", "B", "Barbarian", 2, 4)  # different row
-        front_e.hp = 9
-        side_e.hp  = 1  # much lower HP, but NOT in front
-        attacker._intent = "attack"
-        resolve_targeting([attacker, front_e, side_e])
-        assert attacker._target_id == "B_B1"
-
-    def test_front_behavior_closest(self):
-        """Among front enemies, Closest behavior picks the nearer one."""
-        attacker = make_unit("A_AR1", "A", "Archer", 0, 0, attack_behavior="Closest")
-        attacker.range = 3
-        near = make_unit("B_B1", "B", "Barbarian", 0, 1)  # closer
-        far  = make_unit("B_B2", "B", "Barbarian", 0, 3)  # further
+    def test_picks_closest_enemy(self):
+        """Targeting always picks the closest in-range enemy."""
+        attacker = make_unit("A_B1", "A", "Barbarian", 0, 3)
+        near = make_unit("B_B1", "B", "Barbarian", 0, 4)  # dist=1
+        far  = make_unit("B_B2", "B", "Barbarian", 0, 5)  # dist=2, out of barb range
         attacker._intent = "attack"
         resolve_targeting([attacker, near, far])
         assert attacker._target_id == "B_B1"
 
-    def test_front_behavior_lowest_hp(self):
-        """Among front enemies, LowestHP applies correctly."""
-        attacker = make_unit("A_AR1", "A", "Archer", 0, 0, attack_behavior="LowestHP")
-        attacker.range = 4
-        e1 = make_unit("B_B1", "B", "Barbarian", 0, 1)
-        e2 = make_unit("B_B2", "B", "Barbarian", 0, 2)
-        e1.hp = 9
-        e2.hp = 4  # lower HP, also in front
+    def test_tie_break_by_unit_id(self):
+        """Two equidistant in-range enemies — alphabetically-first unit_id wins."""
+        attacker = make_unit("A_B1", "A", "Barbarian", 0, 3)
+        e1 = make_unit("B_B2", "B", "Barbarian", 0, 4)
+        e2 = make_unit("B_B1", "B", "Barbarian", 1, 4)  # same Chebyshev=1
         attacker._intent = "attack"
         resolve_targeting([attacker, e1, e2])
-        assert attacker._target_id == "B_B2"
-
-    def test_front_behavior_highest_hp(self):
-        """Among front enemies, HighestHP applies correctly."""
-        attacker = make_unit("A_AR1", "A", "Archer", 0, 0, attack_behavior="HighestHP")
-        attacker.range = 4
-        e1 = make_unit("B_B1", "B", "Barbarian", 0, 1)
-        e2 = make_unit("B_B2", "B", "Barbarian", 0, 2)
-        e1.hp = 9
-        e2.hp = 4
-        attacker._intent = "attack"
-        resolve_targeting([attacker, e1, e2])
-        assert attacker._target_id == "B_B1"  # higher HP
-
-    def test_front_tie_break_by_id(self):
-        """Two equidistant front enemies — deterministic via unit_id."""
-        attacker = make_unit("A_AR1", "A", "Archer", 1, 0, attack_behavior="Closest")
-        attacker.range = 4
-        e1 = make_unit("B_B2", "B", "Barbarian", 1, 1)  # same row ahead
-        e2 = make_unit("B_B1", "B", "Barbarian", 1, 1)  # would collide in real game; ok for unit test
-        # give them distinct cols so range works; same Cheby distance
-        e2.col = 2
-        e2.hp = 10
-        attacker._intent = "attack"
-        resolve_targeting([attacker, e1, e2])
-        # e1 is closer (col 1 vs col 2), so Closest picks e1
-        assert attacker._target_id == "B_B2"
-
-    # ── Flank (back / side) ──────────────────────────────────────────── #
-
-    def test_flank_random_from_side_only(self):
-        """No front enemy — random pick from the side pool."""
-        attacker = make_unit("A_AR1", "A", "Archer", 1, 2, attack_behavior="Closest")
-        attacker.range = 3
-        side1 = make_unit("B_B1", "B", "Barbarian", 0, 2)  # same col, different row
-        side2 = make_unit("B_B2", "B", "Barbarian", 3, 2)  # same col, different row
-        # No enemy in front (row=1, col>2) within range
-        attacker._intent = "attack"
-
-        chosen = set()
-        for seed in range(30):  # collect draws across many seeds
-            random.seed(seed)
-            resolve_targeting([attacker, side1, side2])
-            chosen.add(attacker._target_id)
-            attacker.reset_tick_state()
-            attacker._intent = "attack"
-
-        assert "B_B1" in chosen
-        assert "B_B2" in chosen
-
-    def test_flank_random_from_back_and_side(self):
-        """No front enemy — random pick from combined back+side pool."""
-        attacker = make_unit("A_AR1", "A", "Archer", 1, 4, attack_behavior="Closest")
-        attacker.range = 3
-        back_e = make_unit("B_B1", "B", "Barbarian", 1, 2)   # same row, behind
-        side_e = make_unit("B_B2", "B", "Barbarian", 0, 4)   # different row
-        # No enemy in front (col > 4 OOB)
-        attacker._intent = "attack"
-
-        chosen = set()
-        for seed in range(30):
-            random.seed(seed)
-            resolve_targeting([attacker, back_e, side_e])
-            chosen.add(attacker._target_id)
-            attacker.reset_tick_state()
-            attacker._intent = "attack"
-
-        assert "B_B1" in chosen
-        assert "B_B2" in chosen
-
-    # ── Edge cases ──────────────────────────────────────────────────── #
+        assert attacker._target_id == "B_B1"  # alphabetically first
 
     def test_no_target_if_out_of_range(self):
-        attacker = make_unit("A_B1", "A", "Barbarian", 0, 0, attack_behavior="Closest")
+        attacker = make_unit("A_B1", "A", "Barbarian", 0, 0)
         enemy = make_unit("B_B1", "B", "Barbarian", 0, 3)  # dist=3, barb range=1
         attacker._intent = "attack"
         resolve_targeting([attacker, enemy])
         assert attacker._target_id is None
 
-
-def evaluate_with_mock_intent(units):
-    """Set _intent=attack for Team A, hold for Team B (for targeting tests)."""
-    for u in units:
-        if u.team == "A":
-            u._intent = "attack"
+    def test_archer_picks_closest_in_range(self):
+        """Archer range=2 — picks closest within 2 cells."""
+        archer = make_unit("B_AR1", "B", "Archer", 0, 7)  # range=2
+        e1 = make_unit("A_B1", "A", "Barbarian", 0, 5)  # dist=2, in range
+        e2 = make_unit("A_B2", "A", "Barbarian", 0, 4)  # dist=3, out of range
+        archer._intent = "attack"
+        resolve_targeting([archer, e1, e2])
+        assert archer._target_id == "A_B1"
 
 
 # ─────────────────────────────────────────────────────────────────────────────

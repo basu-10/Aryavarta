@@ -73,14 +73,12 @@ def test_from_dict_round_trip():
         "team": "B",
         "type": "Archer",
         "row": 3,
-        "col": 4,
-        "move_behavior": "Hold",
-        "attack_behavior": "LowestHP",
+        "col": 8,
     }
     u = Unit.from_dict(data)
     assert u.unit_id == "B_AR1"
     assert u.team == "B"
     assert u.hp == 6          # Archer base HP
     assert u.damage == 2
-    assert u.range == 3
-    assert u.move_behavior == "Hold"
+    assert u.range == 2       # updated Archer range
+    assert u.speed == 0.5     # updated Archer speed

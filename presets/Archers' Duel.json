@@ -1,23 +1,24 @@
 {
   "name": "Archers' Duel",
   "army_a": [
-    { "unit_id": "A_AR1", "team": "A", "type": "Archer", "row": 0, "col": 0, "move_behavior": "Hold", "attack_behavior": "LowestHP" },
-    { "unit_id": "A_AR2", "team": "A", "type": "Archer", "row": 1, "col": 0, "move_behavior": "Hold", "attack_behavior": "LowestHP" },
-    { "unit_id": "A_AR3", "team": "A", "type": "Archer", "row": 2, "col": 0, "move_behavior": "Hold", "attack_behavior": "LowestHP" },
-    { "unit_id": "A_AR4", "team": "A", "type": "Archer", "row": 3, "col": 0, "move_behavior": "Hold", "attack_behavior": "LowestHP" },
-    { "unit_id": "A_AR5", "team": "A", "type": "Archer", "row": 0, "col": 1, "move_behavior": "Hold", "attack_behavior": "HighestHP" },
-    { "unit_id": "A_AR6", "team": "A", "type": "Archer", "row": 1, "col": 1, "move_behavior": "Hold", "attack_behavior": "HighestHP" },
-    { "unit_id": "A_AR7", "team": "A", "type": "Archer", "row": 2, "col": 1, "move_behavior": "Hold", "attack_behavior": "HighestHP" },
-    { "unit_id": "A_AR8", "team": "A", "type": "Archer", "row": 3, "col": 1, "move_behavior": "Hold", "attack_behavior": "HighestHP" }
+    { "unit_id": "A_AR1", "team": "A", "type": "Archer", "row": 0, "col": 0 },
+    { "unit_id": "A_AR2", "team": "A", "type": "Archer", "row": 1, "col": 0 },
+    { "unit_id": "A_AR3", "team": "A", "type": "Archer", "row": 2, "col": 0 },
+    { "unit_id": "A_AR4", "team": "A", "type": "Archer", "row": 3, "col": 0 },
+    { "unit_id": "A_AR5", "team": "A", "type": "Archer", "row": 0, "col": 1 },
+    { "unit_id": "A_AR6", "team": "A", "type": "Archer", "row": 1, "col": 1 },
+    { "unit_id": "A_AR7", "team": "A", "type": "Archer", "row": 2, "col": 1 },
+    { "unit_id": "A_AR8", "team": "A", "type": "Archer", "row": 3, "col": 1 }
   ],
   "army_b": [
-    { "unit_id": "B_AR1", "team": "B", "type": "Archer", "row": 0, "col": 4, "move_behavior": "Hold", "attack_behavior": "LowestHP" },
-    { "unit_id": "B_AR2", "team": "B", "type": "Archer", "row": 1, "col": 4, "move_behavior": "Hold", "attack_behavior": "LowestHP" },
-    { "unit_id": "B_AR3", "team": "B", "type": "Archer", "row": 2, "col": 4, "move_behavior": "Hold", "attack_behavior": "LowestHP" },
-    { "unit_id": "B_AR4", "team": "B", "type": "Archer", "row": 3, "col": 4, "move_behavior": "Hold", "attack_behavior": "LowestHP" },
-    { "unit_id": "B_AR5", "team": "B", "type": "Archer", "row": 0, "col": 3, "move_behavior": "Hold", "attack_behavior": "HighestHP" },
-    { "unit_id": "B_AR6", "team": "B", "type": "Archer", "row": 1, "col": 3, "move_behavior": "Hold", "attack_behavior": "HighestHP" },
-    { "unit_id": "B_AR7", "team": "B", "type": "Archer", "row": 2, "col": 3, "move_behavior": "Hold", "attack_behavior": "HighestHP" },
-    { "unit_id": "B_AR8", "team": "B", "type": "Archer", "row": 3, "col": 3, "move_behavior": "Hold", "attack_behavior": "HighestHP" }
+    { "unit_id": "B_AR1", "team": "B", "type": "Archer", "row": 0, "col": 8 },
+    { "unit_id": "B_AR2", "team": "B", "type": "Archer", "row": 1, "col": 8 },
+    { "unit_id": "B_AR3", "team": "B", "type": "Archer", "row": 2, "col": 8 },
+    { "unit_id": "B_AR4", "team": "B", "type": "Archer", "row": 3, "col": 8 },
+    { "unit_id": "B_AR5", "team": "B", "type": "Archer", "row": 0, "col": 7 },
+    { "unit_id": "B_AR6", "team": "B", "type": "Archer", "row": 1, "col": 7 },
+    { "unit_id": "B_AR7", "team": "B", "type": "Archer", "row": 2, "col": 7 },
+    { "unit_id": "B_AR8", "team": "B", "type": "Archer", "row": 3, "col": 7 }
   ]
 }
+

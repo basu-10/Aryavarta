@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+{% block title %}Clan — BattleCells{% endblock %}
+{% block content %}
+
+{% if clan %}
+  <div class="flex items-center justify-between mb-4">
+    <h1 class="text-2xl font-bold">⚔ {{ clan.name }}</h1>
+    <form method="POST" action="{{ url_for('clan.api_leave_clan') }}"
+          onsubmit="event.preventDefault(); fetch(this.action,{method:'POST'}).then(()=>location.reload())">
+      <button class="text-xs text-red-400 hover:text-red-300">Leave clan</button>
+    </form>
+  </div>
+
+  <h2 class="text-sm font-semibold text-gray-400 uppercase mb-2">Members</h2>
+  <ul class="mb-6 space-y-1">
+    {% for m in members %}
+    <li class="text-sm bg-gray-800 rounded px-3 py-1">
+      {{ m.username }} {% if m.id == clan.leader_id %}<span class="text-yellow-400 text-xs">(Leader)</span>{% endif %}
+    </li>
+    {% endfor %}
+  </ul>
+
+  <!-- Chat -->
+  <h2 class="text-sm font-semibold text-gray-400 uppercase mb-2">Chat</h2>
+  <div id="chat-box"
+       class="bg-gray-900 border border-gray-700 rounded p-3 h-64 overflow-y-auto mb-3 space-y-1"
+       hx-get="{{ url_for('clan.api_clan_chat', clan_id=clan.id) }}"
+       hx-trigger="every 3s"
+       hx-swap="innerHTML">
+    {% include "clan/chat_messages.html" %}
+  </div>
+
+  <div class="flex gap-2" x-data="{ msg: '' }">
+    <input type="text" x-model="msg" placeholder="Message…" maxlength="500"
+           @keydown.enter="sendMsg()"
+           class="flex-1 bg-gray-800 border border-gray-700 rounded px-3 py-2 text-sm text-white focus:outline-none focus:border-blue-500" />
+    <button @click="sendMsg()"
+            class="bg-blue-600 hover:bg-blue-500 text-white text-sm px-4 rounded">Send</button>
+  </div>
+
+  <script>
+  function sendMsg() {
+    const el = document.querySelector('[x-data]');
+    const comp = Alpine.$data(el);
+    const msg = comp.msg.trim();
+    if (!msg) return;
+    fetch('/api/clan/{{ clan.id }}/chat', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({message: msg})
+    }).then(r => r.json()).then(d => { if(d.ok) comp.msg = ''; });
+  }
+  </script>
+
+{% else %}
+  <h1 class="text-2xl font-bold mb-6">Clans</h1>
+
+  <div class="grid md:grid-cols-2 gap-6 mb-8">
+    <!-- Create -->
+    <div class="bg-gray-800 rounded p-4" x-data="{ name: '', status: '' }">
+      <h2 class="font-semibold mb-3">Create a Clan</h2>
+      <input type="text" x-model="name" placeholder="Clan name" maxlength="40"
+             class="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 text-sm text-white mb-2 focus:outline-none" />
+      <button @click="createClan()"
+              class="w-full bg-blue-600 hover:bg-blue-500 text-white text-sm py-2 rounded">Create</button>
+      <p class="text-xs text-yellow-400 mt-2" x-text="status"></p>
+      <script>
+      function createClan() {
+        const el = document.querySelectorAll('[x-data]')[0];
+        const d = Alpine.$data(el);
+        fetch('/api/clan/create', {
+          method:'POST', headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({name: d.name})
+        }).then(r=>r.json()).then(j => {
+          if(j.ok) location.reload(); else d.status = j.error;
+        });
+      }
+      </script>
+    </div>
+
+    <!-- Join -->
+    <div class="bg-gray-800 rounded p-4">
+      <h2 class="font-semibold mb-3">Join a Clan</h2>
+      {% if all_clans %}
+      <ul class="space-y-2">
+        {% for c in all_clans %}
+        <li class="flex items-center justify-between text-sm bg-gray-700 rounded px-3 py-2">
+          <span>{{ c.name }}</span>
+          <button onclick="joinClan({{ c.id }})"
+                  class="text-xs bg-green-700 hover:bg-green-600 text-white px-2 py-1 rounded">Join</button>
+        </li>
+        {% endfor %}
+      </ul>
+      {% else %}
+      <p class="text-gray-500 text-sm">No clans yet.</p>
+      {% endif %}
+    </div>
+  </div>
+
+  <script>
+  function joinClan(id) {
+    fetch('/api/clan/join', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({clan_id: id})
+    }).then(r=>r.json()).then(j => { if(j.ok) location.reload(); else alert(j.error); });
+  }
+  </script>
+{% endif %}
+{% endblock %}

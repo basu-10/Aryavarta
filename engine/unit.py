@@ -16,7 +16,7 @@ from typing import Optional
 class Unit:
     unit_id: str          # e.g. "A_B1", "B_AR2"
     team: str             # 'A' or 'B'
-    unit_type: str        # 'Barbarian' or 'Archer'
+    unit_type: str        # 'Barbarian', 'Archer', 'Troll', 'Wraith', etc.
     row: int
     col: int
     hp: int
@@ -24,15 +24,15 @@ class Unit:
     damage: int
     defense: int
     range: int            # Chebyshev range
-    speed: int            # cells per tick
-    move_behavior: str = "Advance"   # 'Advance' | 'Hold'
-    attack_behavior: str = "Closest" # 'Closest' | 'LowestHP' | 'HighestHP'
+    speed: float          # movement credit per tick: 1.0 = 1x, 0.5 = 0.5x
     alive: bool = True
     # Ephemeral per-tick fields (not serialised to CSV/JSON directly)
     _intent: str = field(default="hold", repr=False, compare=False)
     _target_id: Optional[str] = field(default=None, repr=False, compare=False)
     _damage_dealt: int = field(default=0, repr=False, compare=False)
     _action: str = field(default="", repr=False, compare=False)
+    # Persists across ticks — movement credit accumulator for fractional speed
+    _move_acc: float = field(default=0.0, repr=False, compare=False)
 
     # ------------------------------------------------------------------ #
     # Helpers                                                              #
@@ -74,8 +74,6 @@ class Unit:
             "hp": self.hp,
             "max_hp": self.max_hp,
             "alive": self.alive,
-            "move_behavior": self.move_behavior,
-            "attack_behavior": self.attack_behavior,
         }
 
     @classmethod
@@ -101,6 +99,4 @@ class Unit:
             defense=stats["defense"],
             range=stats["range"],
             speed=stats["speed"],
-            move_behavior=data.get("move_behavior", "Advance"),
-            attack_behavior=data.get("attack_behavior", "Closest"),
         )

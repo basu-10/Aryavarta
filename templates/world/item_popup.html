@@ -1,0 +1,146 @@
+<!-- world/item_popup.html — rendered into #item-popup via HTMX -->
+<div class="bg-gray-800 border border-gray-700 rounded p-4 max-w-sm" x-data="attackPanel()">
+
+  {% if item_type == 'castle' %}
+    <h2 class="font-bold text-lg mb-1">
+      🏰 {{ item.owner_name if item.owner_name else 'Castle' }}
+    </h2>
+    <p class="text-sm text-gray-400 mb-3">Castle — cannot be attacked</p>
+    {% if is_own %}
+      <a href="{{ url_for('fort.castle_page') }}"
+         class="inline-block bg-blue-600 hover:bg-blue-500 text-white text-sm px-3 py-1 rounded">Manage</a>
+    {% else %}
+      <p class="text-xs text-gray-500">You can scout this castle in a future update.</p>
+    {% endif %}
+
+  {% elif item_type == 'fort' %}
+    <h2 class="font-bold text-lg mb-1">
+      🏯 {% if item.owner_name %}{{ item.owner_name }}'s Fort{% elif is_monster_fort %}Monster Fort{% else %}Fort{% endif %}
+    </h2>
+    {% if item.star_level and is_monster_fort %}
+      <p class="text-yellow-400 text-sm mb-1">{{ '★' * item.star_level }}</p>
+    {% endif %}
+    <p class="text-sm text-gray-400 mb-3">
+      {% if is_own %}Your fort{% elif is_monster_fort %}Occupied by monsters{% else %}Owned by {{ item.owner_name }}{% endif %}
+    </p>
+
+    {% if is_own %}
+      <a href="{{ url_for('fort.fort_page', fort_id=item.id) }}"
+         class="inline-block bg-blue-600 hover:bg-blue-500 text-white text-sm px-3 py-1 rounded">Manage</a>
+    {% else %}
+      <button @click="openAttack()"
+              class="bg-red-700 hover:bg-red-600 text-white text-sm px-3 py-1 rounded mr-2">Attack</button>
+    {% endif %}
+
+  {% elif item_type == 'monster_camp' %}
+    <h2 class="font-bold text-lg mb-1">👾 Monster Camp</h2>
+    <p class="text-yellow-400 text-sm mb-1">{{ '★' * item.star_level }}</p>
+    <p class="text-sm text-gray-400 mb-3">Defeat to capture monsters &amp; loot gold/metal.</p>
+    <button @click="openAttack()"
+            class="bg-red-700 hover:bg-red-600 text-white text-sm px-3 py-1 rounded">Attack</button>
+  {% endif %}
+
+  <!-- ── Attack modal overlay ── -->
+  <div x-show="showAttack"
+       @click.self="showAttack = false"
+       @keydown.escape.window="showAttack = false"
+       style="position:fixed;inset:0;z-index:50;background:rgba(0,0,0,0.75);">
+    <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:22rem;max-width:calc(100vw - 2rem);">
+      <div class="bg-gray-800 border border-gray-600 rounded-lg p-5 shadow-xl">
+        <div class="flex justify-between items-center mb-4">
+          <h3 class="font-semibold text-white text-base">
+            ⚔️ Attack
+            {% if item_type == 'fort' and is_monster_fort %}Monster Fort{% elif item_type == 'fort' %}Fort{% else %}Monster Camp{% endif %}
+          </h3>
+          <button @click="showAttack = false" class="text-gray-400 hover:text-white leading-none text-lg">&times;</button>
+        </div>
+        {% include "world/_attack_form.html" %}
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+function attackPanel() {
+  return {
+    showAttack: false,
+    targetType: {{ item_type | tojson }},
+    targetId:   {{ item.id | tojson }},
+    origins:    [],
+    selectedOriginKey: '',
+    presets:    [],
+    selectedPreset: '',
+    presetFormation: [],
+    status: '',
+
+    async openAttack() {
+      this.showAttack = true;
+      this.status = '';
+      this.selectedPreset = '';
+      this.presetFormation = [];
+      // Load origins and presets in parallel (only once)
+      if (this.origins.length === 0 || this.presets.length === 0) {
+        const [origRes, presRes] = await Promise.all([
+          fetch('/api/player/origins'),
+          fetch('/presets'),
+        ]);
+        const origData = await origRes.json();
+        const presData = await presRes.json();
+        this.origins = origData.origins || [];
+        this.presets = presData.presets || [];
+        if (this.origins.length > 0 && !this.selectedOriginKey) {
+          this.selectedOriginKey = this.origins[0].type + ':' + this.origins[0].id;
+        }
+      }
+    },
+
+    async loadPreset() {
+      if (!this.selectedPreset) { this.presetFormation = []; return; }
+      const res = await fetch('/presets/' + encodeURIComponent(this.selectedPreset));
+      const data = await res.json();
+      // Collapse army_a into {unit_type, quantity} entries
+      const counts = {};
+      for (const unit of (data.army_a || [])) {
+        const t = unit.type;
+        counts[t] = (counts[t] || 0) + 1;
+      }
+      this.presetFormation = Object.entries(counts).map(([unit_type, quantity]) => ({unit_type, quantity}));
+    },
+
+    async sendAttack() {
+      if (!this.selectedPreset || this.origins.length === 0) return;
+      const colonIdx = this.selectedOriginKey.indexOf(':');
+      const origin_type = this.selectedOriginKey.slice(0, colonIdx);
+      const origin_id   = parseInt(this.selectedOriginKey.slice(colonIdx + 1));
+      this.status = 'Sending…';
+      const res = await fetch('/api/attack', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+          target_type: this.targetType,
+          target_id:   this.targetId,
+          origin_type,
+          origin_id,
+          formation:   this.presetFormation,
+        })
+      });
+      const data = await res.json();
+      if (data.ok) {
+        const r = data.result;
+        if (r) {
+          const won = r.winner === 'attacker';
+          this.status = won
+            ? `⚔️ Victory! (Battle #${r.battle_id.slice(0,8)}…)`
+            : `💀 Defeat. The defender held.`;
+        } else {
+          this.status = `Dispatched — arrives in ${data.travel_seconds}s.`;
+        }
+        this.showAttack = false;
+      } else {
+        this.status = data.error || 'Error';
+      }
+    }
+  }
+}
+</script>

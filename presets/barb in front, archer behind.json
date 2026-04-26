@@ -1,0 +1,119 @@
+{
+  "name": "barb in front, archer behind",
+  "army_a": [
+    {
+      "col": 0,
+      "row": 0,
+      "team": "A",
+      "type": "Archer",
+      "unit_id": "A_AR1"
+    },
+    {
+      "col": 0,
+      "row": 1,
+      "team": "A",
+      "type": "Archer",
+      "unit_id": "A_AR2"
+    },
+    {
+      "col": 0,
+      "row": 2,
+      "team": "A",
+      "type": "Archer",
+      "unit_id": "A_AR3"
+    },
+    {
+      "col": 0,
+      "row": 3,
+      "team": "A",
+      "type": "Archer",
+      "unit_id": "A_AR4"
+    },
+    {
+      "col": 1,
+      "row": 0,
+      "team": "A",
+      "type": "Barbarian",
+      "unit_id": "A_B5"
+    },
+    {
+      "col": 1,
+      "row": 1,
+      "team": "A",
+      "type": "Barbarian",
+      "unit_id": "A_B6"
+    },
+    {
+      "col": 1,
+      "row": 2,
+      "team": "A",
+      "type": "Barbarian",
+      "unit_id": "A_B7"
+    },
+    {
+      "col": 1,
+      "row": 3,
+      "team": "A",
+      "type": "Barbarian",
+      "unit_id": "A_B8"
+    }
+  ],
+  "army_b": [
+    {
+      "col": 8,
+      "row": 0,
+      "team": "B",
+      "type": "Archer",
+      "unit_id": "B_AR1"
+    },
+    {
+      "col": 8,
+      "row": 1,
+      "team": "B",
+      "type": "Archer",
+      "unit_id": "B_AR2"
+    },
+    {
+      "col": 8,
+      "row": 2,
+      "team": "B",
+      "type": "Archer",
+      "unit_id": "B_AR3"
+    },
+    {
+      "col": 8,
+      "row": 3,
+      "team": "B",
+      "type": "Archer",
+      "unit_id": "B_AR4"
+    },
+    {
+      "col": 7,
+      "row": 0,
+      "team": "B",
+      "type": "Barbarian",
+      "unit_id": "B_B5"
+    },
+    {
+      "col": 7,
+      "row": 1,
+      "team": "B",
+      "type": "Barbarian",
+      "unit_id": "B_B6"
+    },
+    {
+      "col": 7,
+      "row": 2,
+      "team": "B",
+      "type": "Archer",
+      "unit_id": "B_AR7"
+    },
+    {
+      "col": 7,
+      "row": 3,
+      "team": "B",
+      "type": "Archer",
+      "unit_id": "B_AR8"
+    }
+  ]
+}

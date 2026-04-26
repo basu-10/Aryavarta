@@ -1,0 +1,16 @@
+<!-- fort/_resource_bar.html — partial refreshed by HTMX every 5s -->
+{% set icons = {"food": "🍖", "timber": "🪵", "gold": "💰", "metal": "⚙️"} %}
+{% if pending %}
+<div class="flex flex-wrap gap-2">
+  {% for res, val in pending.items() %}
+  <span class="flex items-center gap-1 bg-gray-800 border border-gray-700 rounded-full px-3 py-1 text-xs font-mono">
+    <span>{{ icons.get(res, '📦') }}</span>
+    <span class="text-gray-300 capitalize">{{ res }}</span>
+    <span class="text-white font-semibold ml-1">{{ "%.1f"|format(val) }}</span>
+    <span class="text-gray-500 text-[10px]">pending</span>
+  </span>
+  {% endfor %}
+</div>
+{% else %}
+<span class="text-xs text-gray-600 italic">No resources pending</span>
+{% endif %}

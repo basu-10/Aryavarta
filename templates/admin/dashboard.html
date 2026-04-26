@@ -1,0 +1,347 @@
+{% extends "base.html" %}
+{% block title %}Admin Dashboard — BattleCells{% endblock %}
+{% block content %}
+<h1 class="text-2xl font-bold mb-6">Admin Dashboard</h1>
+
+<!-- ── Stats bar ─────────────────────────────────────────────────────── -->
+<div class="grid md:grid-cols-4 gap-4 mb-8 text-center">
+  <div class="bg-gray-800 rounded p-4">
+    <div class="text-3xl font-bold">{{ players|length }}</div>
+    <div class="text-xs text-gray-400 uppercase mt-1">Players</div>
+  </div>
+  <div class="bg-gray-800 rounded p-4">
+    <div class="text-3xl font-bold">{{ forts|length }}</div>
+    <div class="text-xs text-gray-400 uppercase mt-1">Forts</div>
+  </div>
+  <div class="bg-gray-800 rounded p-4">
+    <div class="text-3xl font-bold">{{ camps|length }}</div>
+    <div class="text-xs text-gray-400 uppercase mt-1">Monster Camps</div>
+  </div>
+  <div class="bg-gray-800 rounded p-4">
+    <div class="text-3xl font-bold">{{ clans|length }}</div>
+    <div class="text-xs text-gray-400 uppercase mt-1">Clans</div>
+  </div>
+</div>
+
+<!-- ── Create user ───────────────────────────────────────────────────── -->
+<section class="bg-gray-800 rounded p-4 mb-8"
+         x-data="{username:'', password:'', role:'player', msg:'', err:''}">
+  <h2 class="font-semibold mb-3">Create User</h2>
+  <div class="flex flex-wrap gap-3 items-end">
+    <div>
+      <label class="block text-xs text-gray-400 mb-1">Username</label>
+      <input type="text" x-model="username" placeholder="username"
+             class="bg-gray-700 border border-gray-600 rounded px-2 py-1 w-40 text-white" />
+    </div>
+    <div>
+      <label class="block text-xs text-gray-400 mb-1">Password</label>
+      <input type="password" x-model="password" placeholder="password"
+             class="bg-gray-700 border border-gray-600 rounded px-2 py-1 w-40 text-white" />
+    </div>
+    <div>
+      <label class="block text-xs text-gray-400 mb-1">Role</label>
+      <select x-model="role" class="bg-gray-700 border border-gray-600 rounded px-2 py-1 text-white">
+        <option value="player">Player</option>
+        <option value="admin">Admin</option>
+      </select>
+    </div>
+    <button @click="createUser()"
+            class="bg-green-700 hover:bg-green-600 text-white text-sm px-4 py-2 rounded">
+      Create
+    </button>
+    <span class="text-xs text-green-400" x-text="msg"></span>
+    <span class="text-xs text-red-400"   x-text="err"></span>
+  </div>
+</section>
+
+<!-- ── Spawn world entities ──────────────────────────────────────────── -->
+<section class="bg-gray-800 rounded p-4 mb-8"
+         x-data="{forts:5, camps:5, msg:''}">
+  <h2 class="font-semibold mb-3">Spawn World Entities</h2>
+  <div class="flex gap-4 items-end">
+    <div>
+      <label class="block text-xs text-gray-400 mb-1">Forts</label>
+      <input type="number" x-model.number="forts" min="0"
+             class="bg-gray-700 border border-gray-600 rounded px-2 py-1 w-20 text-white" />
+    </div>
+    <div>
+      <label class="block text-xs text-gray-400 mb-1">Monster Camps</label>
+      <input type="number" x-model.number="camps" min="0"
+             class="bg-gray-700 border border-gray-600 rounded px-2 py-1 w-20 text-white" />
+    </div>
+    <button @click="spawnEntities(forts, camps).then(r => msg = `Spawned ${r.forts} forts, ${r.camps} camps.`)"
+            class="bg-orange-700 hover:bg-orange-600 text-white text-sm px-4 py-2 rounded">
+      Spawn
+    </button>
+    <span class="text-xs text-green-400" x-text="msg"></span>
+  </div>
+</section>
+
+<!-- ── Players table ─────────────────────────────────────────────────── -->
+<section class="mb-8">
+  <h2 class="font-semibold mb-3">Players</h2>
+  <div class="overflow-x-auto">
+    <table class="w-full text-sm">
+      <thead class="bg-gray-800">
+        <tr class="text-left text-gray-400">
+          <th class="px-3 py-2 w-8"></th>
+          <th class="px-3 py-2">ID</th>
+          <th class="px-3 py-2">Username</th>
+          <th class="px-3 py-2">Role</th>
+          <th class="px-3 py-2">Resources</th>
+          <th class="px-3 py-2">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for p in players %}
+        <tr class="border-t border-gray-700"
+            x-data="playerRow({{ p.id }}, {{ p.food }}, {{ p.timber }}, {{ p.gold }}, {{ p.metal }})">
+
+          <!-- Expand toggle -->
+          <td class="px-3 py-2">
+            <button @click="open = !open" class="text-gray-500 hover:text-white text-lg leading-none">
+              <span x-text="open ? '▾' : '▸'"></span>
+            </button>
+          </td>
+
+          <td class="px-3 py-2 text-gray-500">{{ p.id }}</td>
+          <td class="px-3 py-2 font-medium">{{ p.username }}</td>
+          <td class="px-3 py-2
+            {% if p.role == 'banned' %}text-red-400
+            {% elif p.role == 'admin' %}text-yellow-400
+            {% elif p.role == 'npc' %}text-purple-400
+            {% else %}text-gray-300{% endif %}">
+            {{ p.role }}
+          </td>
+          <td class="px-3 py-2 text-xs text-gray-400">
+            🌾<span x-text="food.toFixed(0)"></span>
+            🪵<span x-text="timber.toFixed(0)"></span>
+            💰<span x-text="gold.toFixed(0)"></span>
+            ⚙️<span x-text="metal.toFixed(0)"></span>
+          </td>
+          <td class="px-3 py-2 flex flex-wrap gap-1">
+            {% if p.role == 'banned' %}
+            <button @click="postAction('/admin/unban/{{ p.id }}')"
+                    class="text-xs bg-green-900 hover:bg-green-800 text-green-200 px-2 py-1 rounded">
+              Unban
+            </button>
+            {% elif p.role != 'npc' %}
+            <button @click="postAction('/admin/ban/{{ p.id }}')"
+                    class="text-xs bg-red-900 hover:bg-red-800 text-red-200 px-2 py-1 rounded">
+              Ban
+            </button>
+            {% endif %}
+            {% if p.role == 'player' %}
+            <button @click="postAction('/admin/promote/{{ p.id }}')"
+                    class="text-xs bg-yellow-900 hover:bg-yellow-800 text-yellow-200 px-2 py-1 rounded">
+              → Admin
+            </button>
+            {% elif p.role == 'admin' %}
+            <button @click="postAction('/admin/demote/{{ p.id }}')"
+                    class="text-xs bg-gray-700 hover:bg-gray-600 text-gray-200 px-2 py-1 rounded">
+              → Player
+            </button>
+            {% endif %}
+            {% if p.role != 'npc' %}
+            <button @click="confirmDelete({{ p.id }}, '{{ p.username }}')"
+                    class="text-xs bg-red-950 hover:bg-red-900 text-red-300 px-2 py-1 rounded">
+              Delete
+            </button>
+            {% endif %}
+          </td>
+        </tr>
+
+        <!-- Expanded management panel -->
+        <tr x-show="open" class="bg-gray-900 border-t border-gray-700">
+          <td></td>
+          <td colspan="5" class="px-4 py-4">
+            <div class="grid md:grid-cols-3 gap-4">
+
+              <!-- Resources panel -->
+              <div class="bg-gray-800 rounded p-3"
+                   x-data="{action:'add', r_food:'', r_timber:'', r_gold:'', r_metal:'', msg:'', err:''}">
+                <h3 class="text-xs font-semibold text-gray-400 uppercase mb-2">Resources</h3>
+                <div class="flex gap-2 mb-2">
+                  <label class="text-xs text-gray-400 flex items-center gap-1">
+                    <input type="radio" x-model="action" value="add"> Add
+                  </label>
+                  <label class="text-xs text-gray-400 flex items-center gap-1">
+                    <input type="radio" x-model="action" value="set"> Set
+                  </label>
+                </div>
+                <div class="grid grid-cols-2 gap-1 mb-2">
+                  <input type="number" x-model="r_food"   placeholder="🌾 Food"
+                         class="bg-gray-700 border border-gray-600 rounded px-2 py-1 text-xs text-white w-full" />
+                  <input type="number" x-model="r_timber" placeholder="🪵 Timber"
+                         class="bg-gray-700 border border-gray-600 rounded px-2 py-1 text-xs text-white w-full" />
+                  <input type="number" x-model="r_gold"   placeholder="💰 Gold"
+                         class="bg-gray-700 border border-gray-600 rounded px-2 py-1 text-xs text-white w-full" />
+                  <input type="number" x-model="r_metal"  placeholder="⚙️ Metal"
+                         class="bg-gray-700 border border-gray-600 rounded px-2 py-1 text-xs text-white w-full" />
+                </div>
+                <button @click="editResources({{ p.id }}, action, r_food, r_timber, r_gold, r_metal)
+                                 .then(r => { if(r.ok){ food=r.food; timber=r.timber; gold=r.gold; metal=r.metal; msg='Updated!'; err=''; } else { err=r.error; msg=''; } })"
+                        class="bg-blue-700 hover:bg-blue-600 text-white text-xs px-3 py-1 rounded w-full">
+                  Apply
+                </button>
+                <p class="text-xs text-green-400 mt-1" x-text="msg"></p>
+                <p class="text-xs text-red-400  mt-1" x-text="err"></p>
+              </div>
+
+              <!-- Troops panel -->
+              <div class="bg-gray-800 rounded p-3"
+                   x-data="{unit_type:'{{ unit_types[0] }}', qty:10, msg:'', err:''}">
+                <h3 class="text-xs font-semibold text-gray-400 uppercase mb-2">Add Troops (to Castle)</h3>
+                <select x-model="unit_type"
+                        class="bg-gray-700 border border-gray-600 rounded px-2 py-1 text-xs text-white w-full mb-2">
+                  {% for ut in unit_types %}
+                  <option value="{{ ut }}">{{ ut }}</option>
+                  {% endfor %}
+                </select>
+                <input type="number" x-model.number="qty" min="1" placeholder="Quantity"
+                       class="bg-gray-700 border border-gray-600 rounded px-2 py-1 text-xs text-white w-full mb-2" />
+                <button @click="addTroops({{ p.id }}, unit_type, qty)
+                                 .then(r => { if(r.ok){ msg='Added!'; err=''; } else { err=r.error; msg=''; } })"
+                        class="bg-green-700 hover:bg-green-600 text-white text-xs px-3 py-1 rounded w-full">
+                  Add Troops
+                </button>
+                <p class="text-xs text-green-400 mt-1" x-text="msg"></p>
+                <p class="text-xs text-red-400  mt-1" x-text="err"></p>
+              </div>
+
+              <!-- Grant Fort panel -->
+              <div class="bg-gray-800 rounded p-3"
+                   x-data="{slots:6, fully_built:false, msg:'', err:''}">
+                <h3 class="text-xs font-semibold text-gray-400 uppercase mb-2">Grant Fort</h3>
+                <div class="mb-2">
+                  <label class="block text-xs text-gray-400 mb-1">Slots (4–10)</label>
+                  <input type="number" x-model.number="slots" min="4" max="10"
+                         class="bg-gray-700 border border-gray-600 rounded px-2 py-1 text-xs text-white w-full" />
+                </div>
+                <label class="flex items-center gap-2 text-xs text-gray-400 mb-2 cursor-pointer">
+                  <input type="checkbox" x-model="fully_built" class="accent-orange-500" />
+                  Fully built (all slots pre-constructed)
+                </label>
+                <button @click="grantFort({{ p.id }}, slots, fully_built)
+                                 .then(r => { if(r.ok){ msg='Fort #'+r.fort_id+' granted!'; err=''; } else { err=r.error; msg=''; } })"
+                        class="bg-orange-700 hover:bg-orange-600 text-white text-xs px-3 py-1 rounded w-full">
+                  Grant Fort
+                </button>
+                <p class="text-xs text-green-400 mt-1" x-text="msg"></p>
+                <p class="text-xs text-red-400  mt-1" x-text="err"></p>
+              </div>
+
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ── Clans ──────────────────────────────────────────────────────────── -->
+<section class="mb-8">
+  <h2 class="font-semibold mb-3">Clans</h2>
+  {% if clans %}
+  <ul class="space-y-1">
+    {% for c in clans %}
+    <li class="flex items-center gap-4 bg-gray-800 rounded px-4 py-2 text-sm">
+      <span class="text-gray-500">#{{ c.id }}</span>
+      <span class="font-semibold">{{ c.name }}</span>
+      <button onclick="postAction('/admin/disband-clan/{{ c.id }}')"
+              class="ml-auto text-xs bg-red-900 hover:bg-red-800 text-red-200 px-2 py-1 rounded">
+        Disband
+      </button>
+    </li>
+    {% endfor %}
+  </ul>
+  {% else %}
+  <p class="text-gray-500 text-sm">No clans.</p>
+  {% endif %}
+</section>
+
+<!-- ── JS helpers ─────────────────────────────────────────────────────── -->
+<script>
+function playerRow(pid, food, timber, gold, metal) {
+  return { open: false, pid, food, timber, gold, metal };
+}
+
+async function postAction(url) {
+  const r = await fetch(url, { method: 'POST' });
+  const j = await r.json();
+  if (j.ok) location.reload(); else alert(j.error || JSON.stringify(j));
+}
+
+async function spawnEntities(forts, camps) {
+  const r = await fetch('/admin/spawn', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ forts, camps }),
+  });
+  return r.json();
+}
+
+async function createUser() {
+  // Reached via Alpine x-data on the create-user section
+  const sec = document.querySelector('[x-data*="createUser"]')?.__x?.$data
+           || Alpine.$data(document.querySelector('[x-data*="username"]'));
+  const { username, password, role } = sec;
+  const r = await fetch('/admin/users/create', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ username, password, role }),
+  });
+  const j = await r.json();
+  if (j.ok) {
+    sec.msg = `User "${j.username}" created (id ${j.player_id}).`;
+    sec.err = '';
+    sec.username = ''; sec.password = '';
+    setTimeout(() => location.reload(), 1200);
+  } else {
+    sec.err = j.error || 'Unknown error';
+    sec.msg = '';
+  }
+}
+
+async function confirmDelete(pid, name) {
+  if (!confirm(`Permanently delete player "${name}" (id ${pid}) and all their data?`)) return;
+  const r = await fetch(`/admin/users/${pid}/delete`, { method: 'POST' });
+  const j = await r.json();
+  if (j.ok) location.reload(); else alert(j.error || JSON.stringify(j));
+}
+
+async function editResources(pid, action, food, timber, gold, metal) {
+  const body = { action };
+  if (food   !== '') body.food   = +food;
+  if (timber !== '') body.timber = +timber;
+  if (gold   !== '') body.gold   = +gold;
+  if (metal  !== '') body.metal  = +metal;
+  const r = await fetch(`/admin/users/${pid}/resources`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+  return r.json();
+}
+
+async function addTroops(pid, unit_type, qty) {
+  const r = await fetch(`/admin/users/${pid}/troops`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ unit_type, quantity: qty }),
+  });
+  return r.json();
+}
+
+async function grantFort(pid, slot_count, fully_built) {
+  const r = await fetch(`/admin/users/${pid}/grant-fort`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ slot_count, fully_built }),
+  });
+  return r.json();
+}
+</script>
+{% endblock %}
+

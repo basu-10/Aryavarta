@@ -1,0 +1,33 @@
+<!-- world/_missions.html — HTMX partial, polled every 3s into #active-missions -->
+<h3 class="font-semibold text-sm mb-2 text-gray-300">Active Missions</h3>
+{% if missions %}
+  {% for mis in missions %}
+  <div class="bg-gray-700 rounded p-2 mb-2 text-sm">
+    <div class="flex justify-between items-center">
+      <span class="text-white">
+        &#x2694;&#xFE0F; Attack
+        <span class="text-gray-300">{{ mis.target_type }} #{{ mis.target_id }}</span>
+      </span>
+      <span class="font-mono text-yellow-400 text-xs">
+        {% if mis.seconds_left > 0 %}{{ mis.seconds_left }}s{% else %}Arrived{% endif %}
+      </span>
+    </div>
+    {% if mis.seconds_left <= 0 %}
+    <form hx-post="/api/missions/resolve?mission_id={{ mis.mission_id }}"
+          hx-target="#item-popup" hx-swap="innerHTML" class="mt-1">
+      <button type="submit"
+              class="bg-green-700 hover:bg-green-600 text-white text-xs px-2 py-0.5 rounded w-full">
+        Resolve Battle
+      </button>
+    </form>
+    {% else %}
+    <div class="mt-1 h-1 rounded bg-gray-600 overflow-hidden">
+      <div class="h-full bg-yellow-400 transition-all"
+           style="width:{{ [100 - ((mis.seconds_left / mis.total_seconds * 100) | int), 0] | max }}%"></div>
+    </div>
+    {% endif %}
+  </div>
+  {% endfor %}
+{% else %}
+  <p class="text-gray-500 text-xs">No active missions.</p>
+{% endif %}

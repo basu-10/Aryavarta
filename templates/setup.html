@@ -110,7 +110,7 @@
   <template x-if="selectedKey">
     <div class="bg-gray-900 border border-gray-700 rounded-lg p-5 space-y-4">
       <h2 class="font-semibold text-base" x-text="getUnit(...selectedKey.split(',').map(Number)) ? 'Editing: ' + getUnit(...selectedKey.split(',').map(Number)).unit_id : 'Empty cell (' + selectedKey + ')'" ></h2>
-      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
 
         <!-- Unit type -->
         <label class="block">
@@ -126,36 +126,6 @@
             </template>
           </select>
         </label>
-
-        <!-- Move behavior -->
-        <label class="block">
-          <span class="text-xs text-gray-400 uppercase tracking-wider">Movement</span>
-          <select
-            x-model="editForm.move_behavior"
-            @change="updateSelected()"
-            :disabled="editForm.type === '__remove__'"
-            class="mt-1 w-full bg-gray-800 border border-gray-600 rounded px-3 py-2 text-sm disabled:opacity-40 disabled:cursor-not-allowed"
-          >
-            <template x-for="b in moveBehaviors" :key="b">
-              <option :value="b" x-text="b"></option>
-            </template>
-          </select>
-        </label>
-
-        <!-- Attack behavior -->
-        <label class="block">
-          <span class="text-xs text-gray-400 uppercase tracking-wider">Target Priority</span>
-          <select
-            x-model="editForm.attack_behavior"
-            @change="updateSelected()"
-            :disabled="editForm.type === '__remove__'"
-            class="mt-1 w-full bg-gray-800 border border-gray-600 rounded px-3 py-2 text-sm disabled:opacity-40 disabled:cursor-not-allowed"
-          >
-            <template x-for="b in attackBehaviors" :key="b">
-              <option :value="b" x-text="b"></option>
-            </template>
-          </select>
-        </label>
       </div>
 
       <!-- Stat summary -->
@@ -163,8 +133,9 @@
         <div class="text-xs text-gray-400 flex gap-6 pt-1">
           <span>HP: <span class="text-white" x-text="unitStats[editForm.type].hp"></span></span>
           <span>DMG: <span class="text-white" x-text="unitStats[editForm.type].damage"></span></span>
+          <span>DEF: <span class="text-white" x-text="unitStats[editForm.type].defense"></span></span>
           <span>Range: <span class="text-white" x-text="unitStats[editForm.type].range"></span> cells</span>
-          <span>Speed: <span class="text-white" x-text="unitStats[editForm.type].speed"></span> cells/tick</span>
+          <span>Speed: <span class="text-white" x-text="unitStats[editForm.type].speed + 'x'"></span></span>
         </div>
       </template>
     </div>
@@ -192,8 +163,7 @@
                 <span class="text-gray-500" x-text="'(' + u.row + ',' + u.col + ')'"></span>
               </div>
               <div class="flex gap-3 text-gray-500">
-                <span>Move: <span class="text-gray-300" x-text="u.move_behavior"></span></span>
-                <span>Target: <span class="text-gray-300" x-text="u.attack_behavior"></span></span>
+                <span x-text="u.type"></span>
               </div>
             </li>
           </template>
@@ -246,9 +216,6 @@
   const TEAM_B_COLS = {{ team_b_cols | tojson }};
   const UNIT_TYPES = {{ unit_types | tojson }};
   const UNIT_STATS = {{ unit_stats | tojson }};
-  const MOVE_BEHAVIORS = {{ move_behaviors | tojson }};
-  const ATTACK_BEHAVIORS = {{ attack_behaviors | tojson }};
-
   const DEFAULT_PRESET = {{ preset | default('null') | tojson if preset is defined else 'null' }};
 
   function armyBuilder() {
@@ -258,10 +225,8 @@
       armies: { army_a: [], army_b: [] },
       unitTypes: UNIT_TYPES,
       unitStats: UNIT_STATS,
-      moveBehaviors: MOVE_BEHAVIORS,
-      attackBehaviors: ATTACK_BEHAVIORS,
       selectedKey: null,
-      editForm: { type: 'Barbarian', move_behavior: 'Advance', attack_behavior: 'Closest' },
+      editForm: { type: 'Barbarian' },
       errorMsg: '',
       submitting: false,
 
@@ -342,11 +307,7 @@
             this.selectedKey = null;
           } else {
             this.selectedKey = key;
-            this.editForm = {
-              type: existing.type,
-              move_behavior: existing.move_behavior,
-              attack_behavior: existing.attack_behavior,
-            };
+            this.editForm = { type: existing.type };
           }
         } else {
           // Empty cell — select/deselect without placing a unit
@@ -354,11 +315,7 @@
             this.selectedKey = null;
           } else {
             this.selectedKey = key;
-            this.editForm = {
-              type: '__remove__',
-              move_behavior: this.moveBehaviors[0],
-              attack_behavior: this.attackBehaviors[0],
-            };
+            this.editForm = { type: '__remove__' };
           }
         }
       },
@@ -382,8 +339,6 @@
         if (unit) {
           // Update existing unit
           unit.type = this.editForm.type;
-          unit.move_behavior = this.editForm.move_behavior;
-          unit.attack_behavior = this.editForm.attack_behavior;
           const typeInitial = this.typeAbbrev(unit.type);
           const [_, rest] = unit.unit_id.split('_');
           const num = rest.replace(/[^0-9]/g, '');
@@ -398,8 +353,6 @@
             type: this.editForm.type,
             row: r,
             col: c,
-            move_behavior: this.editForm.move_behavior,
-            attack_behavior: this.editForm.attack_behavior,
           };
         }
         this.rebuildArmies();
@@ -408,11 +361,7 @@
       focusUnit(u) {
         const key = `${u.row},${u.col}`;
         this.selectedKey = key;
-        this.editForm = {
-          type: u.type,
-          move_behavior: u.move_behavior,
-          attack_behavior: u.attack_behavior,
-        };
+        this.editForm = { type: u.type };
       },
 
       rebuildArmies() {

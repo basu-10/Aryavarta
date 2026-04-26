@@ -125,14 +125,14 @@ class Battle:
         # --- Phase 2: Movement Resolution ---
         resolve_movement(self.units, self.grid)
 
-        # Log movement events
+        # Log movement events (covers both 'move' and 'retreat' intents)
         for unit in self.units:
-            if unit.is_alive() and unit._intent == "move":
+            if unit.is_alive() and unit._intent in ("move", "retreat"):
                 if unit.pos != pre_move_pos.get(unit.unit_id):
-                    unit._action = "move"
+                    unit._action = unit._intent  # 'move' or 'retreat'
                     events.append(
                         {
-                            "type": "move",
+                            "type": unit._intent,
                             "unit_id": unit.unit_id,
                             "from": list(pre_move_pos[unit.unit_id]),
                             "to": list(unit.pos),

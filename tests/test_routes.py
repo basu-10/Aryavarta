@@ -16,16 +16,12 @@ def client(tmp_path):
 
 VALID_PAYLOAD = {
     "army_a": [
-        {"unit_id": "A_B1", "team": "A", "type": "Barbarian", "row": 0, "col": 0,
-         "move_behavior": "Advance", "attack_behavior": "Closest"},
-        {"unit_id": "A_B2", "team": "A", "type": "Barbarian", "row": 1, "col": 1,
-         "move_behavior": "Advance", "attack_behavior": "Closest"},
+        {"unit_id": "A_B1", "team": "A", "type": "Barbarian", "row": 0, "col": 0},
+        {"unit_id": "A_B2", "team": "A", "type": "Barbarian", "row": 1, "col": 1},
     ],
     "army_b": [
-        {"unit_id": "B_AR1", "team": "B", "type": "Archer", "row": 0, "col": 4,
-         "move_behavior": "Hold", "attack_behavior": "Closest"},
-        {"unit_id": "B_AR2", "team": "B", "type": "Archer", "row": 1, "col": 3,
-         "move_behavior": "Hold", "attack_behavior": "LowestHP"},
+        {"unit_id": "B_AR1", "team": "B", "type": "Archer", "row": 0, "col": 8},
+        {"unit_id": "B_AR2", "team": "B", "type": "Archer", "row": 1, "col": 7},
     ],
 }
 
@@ -35,7 +31,7 @@ class TestSetupRoute:
     def test_get_setup(self, client):
         res = client.get("/setup")
         assert res.status_code == 200
-        assert b"Army Builder" in res.data
+        assert b"Battle Simulator" in res.data
 
     def test_root_redirects_to_setup(self, client):
         res = client.get("/")
@@ -72,8 +68,7 @@ class TestRunRoute:
         bad_payload = {
             "army_a": [
                 {"unit_id": "A_B1", "team": "A", "type": "Barbarian",
-                 "row": 0, "col": 3,  # col 3 is Team B's zone
-                 "move_behavior": "Advance", "attack_behavior": "Closest"},
+                 "row": 0, "col": 5},  # col 5 is Team B's zone
             ],
             "army_b": VALID_PAYLOAD["army_b"],
         }
@@ -88,10 +83,9 @@ class TestRunRoute:
         bad_payload = {
             "army_a": [
                 {"unit_id": "A_B1", "team": "A", "type": "Barbarian",
-                 "row": 0, "col": 0, "move_behavior": "Advance", "attack_behavior": "Closest"},
+                 "row": 0, "col": 0},
                 {"unit_id": "A_B2", "team": "A", "type": "Barbarian",
-                 "row": 0, "col": 0,  # same cell!
-                 "move_behavior": "Advance", "attack_behavior": "Closest"},
+                 "row": 0, "col": 0},  # same cell!
             ],
             "army_b": VALID_PAYLOAD["army_b"],
         }

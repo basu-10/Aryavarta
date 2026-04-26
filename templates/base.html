@@ -4,8 +4,6 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>{% block title %}BattleCells{% endblock %}</title>
-
-  <!-- Tailwind CSS (CDN) -->
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
@@ -19,27 +17,48 @@
       }
     }
   </script>
-
-  <!-- Alpine.js (CDN — lightweight reactivity, no build step) -->
   <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
-
+  <script src="https://unpkg.com/htmx.org@1.9.12"></script>
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
 </head>
 <body class="bg-gray-950 text-gray-100 min-h-screen flex flex-col">
 
-  <!-- Nav -->
-  <nav class="bg-gray-900 border-b border-gray-800 px-6 py-3 flex items-center gap-6">
+  <nav class="bg-gray-900 border-b border-gray-800 px-6 py-3 flex items-center gap-6 flex-wrap">
     <span class="font-bold text-lg tracking-wide text-white">⚔ BattleCells</span>
-    <a href="/setup" class="text-gray-400 hover:text-white text-sm transition-colors">Simulate New Battle</a>
-    <a href="/troops" class="text-gray-400 hover:text-white text-sm transition-colors">Manage Troops</a>
+
+    {% if session.get('player_id') %}
+      <a href="{{ url_for('world.world_map') }}"   class="text-gray-400 hover:text-white text-sm transition-colors">World</a>
+      <a href="{{ url_for('fort.castle_page') }}"  class="text-gray-400 hover:text-white text-sm transition-colors">Castle</a>
+      <a href="{{ url_for('clan.clan_page') }}"    class="text-gray-400 hover:text-white text-sm transition-colors">Clan</a>
+      <a href="{{ url_for('battle.setup') }}"      class="text-gray-400 hover:text-white text-sm transition-colors">Simulate</a>
+      <a href="{{ url_for('auth.profile') }}"      class="text-gray-400 hover:text-white text-sm transition-colors">Profile</a>
+      <span class="ml-auto text-gray-500 text-xs">{{ session.get('username') }}</span>
+      <a href="{{ url_for('auth.logout') }}"       class="text-red-400 hover:text-red-300 text-sm">Logout</a>
+    {% else %}
+      <a href="{{ url_for('auth.login') }}"    class="ml-auto text-gray-400 hover:text-white text-sm">Login</a>
+      <a href="{{ url_for('auth.register') }}" class="text-gray-400 hover:text-white text-sm">Register</a>
+    {% endif %}
   </nav>
+
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      <div class="max-w-5xl mx-auto w-full px-4 pt-4">
+        {% for category, message in messages %}
+          <div class="mb-2 px-4 py-2 rounded text-sm
+            {% if category == 'error' %}bg-red-900 text-red-200{% else %}bg-green-900 text-green-200{% endif %}">
+            {{ message }}
+          </div>
+        {% endfor %}
+      </div>
+    {% endif %}
+  {% endwith %}
 
   <main class="flex-1 px-4 py-8 max-w-5xl mx-auto w-full">
     {% block content %}{% endblock %}
   </main>
 
   <footer class="text-center text-xs text-gray-600 py-4">
-    BattleCells V1 — Deterministic Auto-Battler
+    BattleCells — Multiplayer World
   </footer>
 
 </body>

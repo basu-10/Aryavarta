@@ -1,43 +1,11 @@
 {
   "name": "1",
   "army_a": [
-    {
-      "attack_behavior": "Closest",
-      "col": 1,
-      "move_behavior": "Advance",
-      "row": 0,
-      "team": "A",
-      "type": "Barbarian",
-      "unit_id": "A_B1"
-    },
-    {
-      "unit_id": "A_AR2",
-      "team": "A",
-      "type": "Archer",
-      "row": 0,
-      "col": 0,
-      "move_behavior": "Advance",
-      "attack_behavior": "Closest"
-    }
+    { "unit_id": "A_B1", "team": "A", "type": "Barbarian", "row": 0, "col": 1 },
+    { "unit_id": "A_AR2", "team": "A", "type": "Archer", "row": 0, "col": 0 }
   ],
   "army_b": [
-    {
-      "attack_behavior": "Closest",
-      "col": 3,
-      "move_behavior": "Advance",
-      "row": 0,
-      "team": "B",
-      "type": "Barbarian",
-      "unit_id": "B_B1"
-    },
-    {
-      "unit_id": "B_AR2",
-      "team": "B",
-      "type": "Archer",
-      "row": 0,
-      "col": 4,
-      "move_behavior": "Advance",
-      "attack_behavior": "Closest"
-    }
+    { "unit_id": "B_B1", "team": "B", "type": "Barbarian", "row": 0, "col": 7 },
+    { "unit_id": "B_AR2", "team": "B", "type": "Archer", "row": 0, "col": 8 }
   ]
 }

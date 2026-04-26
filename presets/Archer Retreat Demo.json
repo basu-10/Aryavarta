@@ -1,0 +1,12 @@
+{
+  "name": "Archer Retreat Demo",
+  "description": "2 Barbarians vs 2 Archers — same rows, single lane. Watch archers retreat as barbarians charge across the wide grid.",
+  "army_a": [
+    { "unit_id": "A_B1", "team": "A", "type": "Barbarian", "row": 0, "col": 0 },
+    { "unit_id": "A_B2", "team": "A", "type": "Barbarian", "row": 1, "col": 0 }
+  ],
+  "army_b": [
+    { "unit_id": "B_AR1", "team": "B", "type": "Archer", "row": 0, "col": 5 },
+    { "unit_id": "B_AR2", "team": "B", "type": "Archer", "row": 1, "col": 5 }
+  ]
+}

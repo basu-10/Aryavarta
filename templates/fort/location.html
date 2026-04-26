@@ -1,0 +1,260 @@
+{% extends "base.html" %}
+{% block title %}{{ 'Castle' if location_type == 'castle' else 'Fort #' ~ location.id }} — BattleCells{% endblock %}
+{% block content %}
+
+<!-- ── Header ── -->
+<div class="flex flex-wrap items-center justify-between gap-3 mb-5">
+  <h1 class="text-2xl font-bold">
+    {% if location_type == 'castle' %}🏰 Your Castle{% else %}🏯 Fort #{{ location.id }}{% endif %}
+  </h1>
+
+  <!-- Resource bar -->
+  <div id="pending-resources"
+       hx-get="{% if location_type == 'castle' %}{{ url_for('fort.api_castle_resources') }}{% else %}{{ url_for('fort.api_fort_resources', fort_id=location.id) }}{% endif %}"
+       hx-trigger="every 5s"
+       hx-swap="innerHTML">
+    {% include "fort/_resource_bar.html" with context %}
+  </div>
+</div>
+
+<!-- Collect button -->
+<div class="mb-6 flex items-center gap-3">
+  <button type="button" onclick="collectAll()"
+          class="bg-green-700 hover:bg-green-600 text-white text-sm px-5 py-2 rounded font-medium">
+    Collect All Resources
+  </button>
+  <span id="collect-msg" class="text-xs text-gray-400"></span>
+</div>
+
+<!-- ── Building slots ── -->
+<h2 class="text-lg font-semibold mb-3">Buildings ({{ location.slot_count }} slots)</h2>
+
+{# Build build_complete_at list for JS #}
+{% set completion_times = [] %}
+{% for b in buildings %}
+  {% if b.build_complete_at %}
+    {% set _ = completion_times.append(b.build_complete_at) %}
+  {% endif %}
+{% endfor %}
+
+<div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-8">
+  {% set occupied = {} %}
+  {% for b in buildings %}
+    {% set _ = occupied.update({b.slot_index: b}) %}
+  {% endfor %}
+
+  {% for slot in all_slots %}
+    {% if slot in occupied %}
+      {% set b = occupied[slot] %}
+      <div class="bg-gray-800 border {% if b.is_destroyed %}border-red-700{% elif b.build_complete_at %}border-yellow-700{% else %}border-gray-600{% endif %} rounded-lg p-3 relative">
+        <div class="font-semibold text-sm">{{ b.type }}</div>
+        <div class="text-xs text-gray-400 mb-2">Level {{ b.level }}</div>
+        {% if b.is_destroyed %}
+          <span class="text-red-400 text-xs block">💀 Destroyed</span>
+          <button onclick="repairBuilding({{ b.id }})"
+                  class="mt-2 text-xs bg-yellow-700 hover:bg-yellow-600 text-white px-2 py-1 rounded w-full">
+            Repair
+          </button>
+        {% elif b.build_complete_at %}
+          <span class="text-yellow-400 text-xs block">🔨 Building…</span>
+          <div class="text-xs text-gray-500 mt-1" data-complete="{{ b.build_complete_at }}">
+            <span class="countdown-label">⏳ calculating…</span>
+          </div>
+        {% else %}
+          <span class="text-green-400 text-xs block">✅ Active</span>
+        {% endif %}
+      </div>
+    {% else %}
+      <div class="bg-gray-900 border border-dashed border-gray-700 rounded-lg p-3 flex flex-col items-center justify-center min-h-[90px]">
+        <span class="text-gray-600 text-xs mb-2">Empty slot {{ slot }}</span>
+        <button onclick="openBuildModal({{ slot }})"
+                class="text-xs bg-blue-700 hover:bg-blue-600 text-white px-3 py-1 rounded">
+          Build
+        </button>
+      </div>
+    {% endif %}
+  {% endfor %}
+</div>
+
+<!-- ── Troops ── -->
+<h2 class="text-lg font-semibold mb-3">Troops</h2>
+{% if troops %}
+<ul class="space-y-1 text-sm mb-6">
+  {% for t in troops %}
+  <li class="bg-gray-800 rounded-lg px-4 py-2 flex gap-4">
+    <span class="font-mono">{{ t.unit_type }}</span>
+    <span class="text-gray-400">×{{ t.quantity }}</span>
+  </li>
+  {% endfor %}
+</ul>
+{% else %}
+<p class="text-gray-500 text-sm mb-6">No troops stationed here.</p>
+{% endif %}
+
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<!--  BUILD MODAL                                                  -->
+<!-- ══════════════════════════════════════════════════════════════ -->
+<div id="build-modal"
+     class="fixed inset-0 z-50 flex items-center justify-center bg-black/70 hidden">
+  <div class="bg-gray-900 border border-gray-700 rounded-xl shadow-2xl w-full max-w-3xl mx-4 max-h-[90vh] flex flex-col">
+
+    <div class="flex items-center justify-between px-6 py-4 border-b border-gray-700">
+      <h3 class="text-lg font-bold">Choose a Building</h3>
+      <button onclick="closeBuildModal()" class="text-gray-400 hover:text-white text-xl leading-none">&times;</button>
+    </div>
+
+    <div class="overflow-y-auto p-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4" id="build-cards">
+      <!-- cards injected by JS -->
+    </div>
+  </div>
+</div>
+
+
+<script>
+/* ── Building catalogue from Jinja ── */
+const BUILD_COSTS = {{ build_costs | tojson }};
+
+const BUILDING_INFO = {
+  "Farm":         { icon:"🌾", category:"Resources", desc:"Generates Food over time.",    gain:"🍖 Food / sec" },
+  "Lumber Mill":  { icon:"🪵", category:"Resources", desc:"Generates Timber over time.",  gain:"🪵 Timber / sec" },
+  "Merchant":     { icon:"💰", category:"Resources", desc:"Generates Gold over time.",    gain:"💰 Gold / sec" },
+  "Mine":         { icon:"⛏️", category:"Resources", desc:"Generates Metal over time.",   gain:"⚙️ Metal / sec" },
+  "Garrison":     { icon:"🏹", category:"Military",  desc:"Trains Longbowmen.",           gain:"🏹 Longbowman / min" },
+  "Stable":       { icon:"🐴", category:"Military",  desc:"Trains Hussars.",              gain:"🐴 Hussar / 90 s" },
+  "Cannon":       { icon:"💣", category:"Defense",   desc:"Stationary heavy cannon.",     gain:"🛡️ Defense unit" },
+  "Archer Tower": { icon:"🗼", category:"Defense",   desc:"Stationary archer tower.",     gain:"🛡️ Defense unit" },
+};
+
+const CATEGORY_ORDER = ["Resources", "Military", "Defense"];
+
+let _pendingSlot = null;
+
+function openBuildModal(slot) {
+  _pendingSlot = slot;
+  const container = document.getElementById('build-cards');
+  container.innerHTML = '';
+
+  const grouped = {};
+  for (const [btype, info] of Object.entries(BUILDING_INFO)) {
+    const cat = info.category;
+    if (!grouped[cat]) grouped[cat] = [];
+    grouped[cat].push({btype, info});
+  }
+
+  for (const cat of CATEGORY_ORDER) {
+    if (!grouped[cat]) continue;
+    // Category header
+    const hdr = document.createElement('div');
+    hdr.className = 'col-span-full text-xs font-semibold uppercase tracking-widest text-gray-500 mt-2 mb-1';
+    hdr.textContent = cat;
+    container.appendChild(hdr);
+
+    for (const {btype, info} of grouped[cat]) {
+      const cost = BUILD_COSTS[btype] || {};
+      const costLines = Object.entries(cost)
+        .map(([res, amt]) => `<span class="inline-block bg-gray-700 rounded px-1.5 py-0.5 mr-1">${res} ${amt}</span>`)
+        .join('');
+
+      const card = document.createElement('div');
+      card.className =
+        'bg-gray-800 border border-gray-700 hover:border-blue-500 rounded-lg p-4 cursor-pointer ' +
+        'flex flex-col gap-2 transition-all';
+      card.innerHTML = `
+        <div class="flex items-center gap-2">
+          <span class="text-2xl">${info.icon}</span>
+          <span class="font-semibold text-sm">${btype}</span>
+        </div>
+        <p class="text-xs text-gray-400">${info.desc}</p>
+        <div class="text-xs text-green-400">📈 ${info.gain}</div>
+        <div class="text-xs mt-1">
+          <span class="text-gray-500">Cost: </span>${costLines || '<span class="text-gray-500">Free</span>'}
+        </div>
+        <button onclick="confirmBuild('${btype}')"
+                class="mt-auto bg-blue-700 hover:bg-blue-600 text-white text-xs px-3 py-1 rounded">
+          Build
+        </button>
+      `;
+      container.appendChild(card);
+    }
+  }
+
+  document.getElementById('build-modal').classList.remove('hidden');
+}
+
+function closeBuildModal() {
+  document.getElementById('build-modal').classList.add('hidden');
+  _pendingSlot = null;
+}
+
+async function confirmBuild(btype) {
+  if (_pendingSlot === null) return;
+  closeBuildModal();
+  const r = await fetch('/api/build', {
+    method: 'POST', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({
+      location_type: '{{ location_type }}',
+      location_id:   {{ location.id }},
+      slot_index:    _pendingSlot,
+      building_type: btype,
+    })
+  });
+  const d = await r.json();
+  if (d.ok) location.reload();
+  else alert(d.error);
+}
+
+/* ── Collect ── */
+async function collectAll() {
+  const r = await fetch('/api/collect', {
+    method: 'POST', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({location_type: '{{ location_type }}', location_id: {{ location.id }}})
+  });
+  const d = await r.json();
+  const msg = document.getElementById('collect-msg');
+  if (d.ok) {
+    const parts = Object.entries(d.collected).map(([k,v]) => `${k}: +${v}`);
+    msg.textContent = parts.length ? 'Collected — ' + parts.join(', ') : 'Nothing to collect yet.';
+  } else {
+    msg.textContent = d.error || 'Error';
+  }
+}
+
+/* ── Repair ── */
+async function repairBuilding(bid) {
+  const r = await fetch('/api/repair', {
+    method: 'POST', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({building_id: bid})
+  });
+  const d = await r.json();
+  if (d.ok) location.reload(); else alert(d.error);
+}
+
+/* ── Build completion countdown & auto-reload ── */
+function updateCountdowns() {
+  const now = Date.now();
+  let anyBuilding = false;
+  document.querySelectorAll('[data-complete]').forEach(el => {
+    const complete = new Date(el.dataset.complete).getTime();
+    const remaining = Math.ceil((complete - now) / 1000);
+    const label = el.querySelector('.countdown-label');
+    if (remaining <= 0) {
+      // Building done — reload page once
+      location.reload();
+    } else {
+      anyBuilding = true;
+      if (label) label.textContent = `⏳ ${remaining}s left`;
+    }
+  });
+}
+
+// Run immediately and every second
+updateCountdowns();
+setInterval(updateCountdowns, 1000);
+
+/* ── Close modal on backdrop click ── */
+document.getElementById('build-modal').addEventListener('click', e => {
+  if (e.target === document.getElementById('build-modal')) closeBuildModal();
+});
+</script>
+{% endblock %}

@@ -1,0 +1,171 @@
+{% extends "base.html" %}
+{% block title %}World Map — BattleCells{% endblock %}
+{% block content %}
+
+<div class="flex gap-4 items-start">
+
+  <!-- ── Left: map ── -->
+  <div class="flex-1 min-w-0">
+    <div class="flex flex-wrap items-center gap-3 mb-2">
+      <h1 class="text-xl font-bold">World Map
+        <span class="text-sm font-normal text-gray-400">(click any entity to interact)</span>
+      </h1>
+      <!-- Toggle labels -->
+      <label class="flex items-center gap-2 text-sm text-gray-300 cursor-pointer select-none ml-auto">
+        <input type="checkbox" id="toggle-labels" class="w-4 h-4 accent-blue-500" />
+        <span>Show names &amp; stars</span>
+      </label>
+    </div>
+
+    <div class="overflow-auto border border-gray-700 rounded bg-gray-950" style="max-height:72vh">
+      <div id="world-grid"
+           style="display:inline-grid;grid-template-columns:repeat({{ world_w }},26px);gap:1px;padding:4px;background:#030712;min-width:max-content">
+        <!-- filled by buildGrid() -->
+      </div>
+    </div>
+
+    <!-- Legend -->
+    <div class="flex flex-wrap gap-4 mt-2 text-xs text-gray-400">
+      <span class="flex items-center gap-1"><span class="inline-block w-3 h-3 rounded-sm bg-blue-500"></span>Your Castle</span>
+      <span class="flex items-center gap-1"><span class="inline-block w-3 h-3 rounded-sm" style="background:#1d4ed8"></span>Other Castle</span>
+      <span class="flex items-center gap-1"><span class="inline-block w-3 h-3 rounded-sm" style="background:#7c3aed"></span>NPC Castle</span>
+      <span class="flex items-center gap-1"><span class="inline-block w-3 h-3 rounded-sm bg-green-500"></span>Your Fort</span>
+      <span class="flex items-center gap-1"><span class="inline-block w-3 h-3 rounded-sm bg-red-500"></span>Enemy Fort</span>
+      <span class="flex items-center gap-1"><span class="inline-block w-3 h-3 rounded-sm bg-orange-500"></span>Monster Fort</span>
+      <span class="flex items-center gap-1"><span class="inline-block w-3 h-3 rounded-sm bg-purple-500"></span>Monster Camp</span>
+    </div>
+  </div>
+
+  <!-- ── Right: sidebar ── -->
+  <div class="w-72 flex-shrink-0 flex flex-col gap-4">
+
+    <!-- Active missions (HTMX-polled HTML partial) -->
+    <div id="active-missions"
+         hx-get="{{ url_for('world.api_active_missions') }}"
+         hx-trigger="load, every 3s"
+         hx-swap="innerHTML"
+         class="bg-gray-800 border border-gray-700 rounded p-3">
+      <p class="text-gray-500 text-sm">Loading missions...</p>
+    </div>
+
+    <!-- Item popup -->
+    <div id="item-popup"></div>
+
+  </div>
+</div>
+
+<script>
+const WORLD_W   = {{ world_w }};
+const WORLD_H   = {{ world_h }};
+const PLAYER_ID = {{ session.get('player_id') | tojson }};
+
+const BG = {
+  empty:        '#030712',
+  castle_own:   '#2563eb',
+  castle_npc:   '#7c3aed',
+  castle_other: '#1e3a8a',
+  fort_own:     '#16a34a',
+  fort_npc:     '#b45309',   // amber — NPC-owned fort
+  fort_enemy:   '#dc2626',
+  fort_monster: '#ea580c',
+  camp:         '#9333ea',
+};
+
+const ICON = { castle: '\u{1F3F0}', fort: '\u{1F3EF}', monster_camp: '\u{1F47E}' };
+
+let entityMap = {};
+let showLabels = false;
+
+document.getElementById('toggle-labels').addEventListener('change', e => {
+  showLabels = e.target.checked;
+  rebuildGrid();
+});
+
+function stars(n) { return n ? '\u2605'.repeat(Math.min(n, 4)) : ''; }
+
+function buildGrid(items) {
+  entityMap = {};
+  for (const item of items) entityMap[`${item.grid_x},${item.grid_y}`] = item;
+  rebuildGrid();
+}
+
+function rebuildGrid() {
+  const grid = document.getElementById('world-grid');
+  const parts = [];
+
+  for (let y = 0; y < WORLD_H; y++) {
+    for (let x = 0; x < WORLD_W; x++) {
+      const item = entityMap[`${x},${y}`];
+      if (!item) {
+        parts.push(`<div style="width:26px;height:26px;background:${BG.empty}"></div>`);
+        continue;
+      }
+
+      let bg, label, starStr = '';
+
+      if (item.type === 'castle') {
+        if (item.owner_id === PLAYER_ID) {
+          bg = BG.castle_own; label = 'Your Castle';
+        } else if (item.is_npc) {
+          bg = BG.castle_npc; label = item.owner_name || 'NPC';
+        } else {
+          bg = BG.castle_other; label = item.owner_name || '?';
+        }
+      } else if (item.type === 'fort') {
+        if (item.owner_id === PLAYER_ID) {
+          bg = BG.fort_own; label = 'Your Fort';
+        } else if (item.is_npc) {
+          bg = BG.fort_npc; label = item.owner_name || 'NPC Fort';
+          starStr = item.star_level ? stars(item.star_level) : '';
+        } else if (item.owner_id) {
+          bg = BG.fort_enemy; label = item.owner_name || 'Enemy Fort';
+        } else {
+          bg = BG.fort_monster; label = 'Monster Fort';
+          starStr = item.star_level ? stars(item.star_level) : '';
+        }
+      } else {
+        bg = BG.camp; label = 'Monster Camp';
+        starStr = item.star_level ? stars(item.star_level) : '';
+      }
+
+      const icon = ICON[item.type] || '';
+      const tooltipFull = label + (starStr ? ' ' + starStr : '');
+
+      // Label overlay text (shown when toggle is on)
+      const labelHtml = showLabels
+        ? `<div style="position:absolute;bottom:100%;left:50%;transform:translateX(-50%);` +
+          `white-space:nowrap;font-size:9px;background:rgba(0,0,0,.85);color:#e5e7eb;` +
+          `padding:1px 4px;border-radius:3px;pointer-events:none;z-index:10;">` +
+          `${label}${starStr ? ' ' + starStr : ''}</div>`
+        : '';
+
+      parts.push(
+        `<div data-type="${item.type}" data-id="${item.id}"` +
+        ` style="width:26px;height:26px;background:${bg};font-size:14px;line-height:26px;` +
+        `text-align:center;cursor:pointer;border-radius:2px;position:relative;"` +
+        ` title="${tooltipFull}">${icon}${labelHtml}</div>`
+      );
+    }
+  }
+  grid.innerHTML = parts.join('');
+
+  // Single delegated click listener
+  grid.onclick = e => {
+    const cell = e.target.closest('[data-type]');
+    if (!cell) return;
+    htmx.ajax('GET', `/world/item/${cell.dataset.type}/${cell.dataset.id}`,
+              {target: '#item-popup', swap: 'innerHTML'});
+  };
+}
+
+async function loadMap() {
+  const res = await fetch('/api/world/map');
+  const data = await res.json();
+  buildGrid(data.items || []);
+}
+
+loadMap();
+setInterval(loadMap, 10000);
+</script>
+
+{% endblock %}

@@ -1,0 +1,16 @@
+{
+  "name": "Monster Clash",
+  "description": "4 Trolls (slow melee tanks) vs 4 Wraiths (fast ranged glass cannons). Wraiths will kite the Trolls across the field.",
+  "army_a": [
+    { "unit_id": "A_TR1", "team": "A", "type": "Troll", "row": 0, "col": 0 },
+    { "unit_id": "A_TR2", "team": "A", "type": "Troll", "row": 1, "col": 0 },
+    { "unit_id": "A_TR3", "team": "A", "type": "Troll", "row": 2, "col": 1 },
+    { "unit_id": "A_TR4", "team": "A", "type": "Troll", "row": 3, "col": 1 }
+  ],
+  "army_b": [
+    { "unit_id": "B_WR1", "team": "B", "type": "Wraith", "row": 0, "col": 5 },
+    { "unit_id": "B_WR2", "team": "B", "type": "Wraith", "row": 1, "col": 5 },
+    { "unit_id": "B_WR3", "team": "B", "type": "Wraith", "row": 2, "col": 6 },
+    { "unit_id": "B_WR4", "team": "B", "type": "Wraith", "row": 3, "col": 6 }
+  ]
+}

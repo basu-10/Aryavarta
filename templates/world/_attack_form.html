@@ -1,0 +1,61 @@
+<!-- world/_attack_form.html — modal body content for attackPanel() -->
+<div class="space-y-3 text-sm">
+
+  <!-- Origin dropdown -->
+  <div>
+    <label class="block text-gray-400 mb-1">Attack from</label>
+    <template x-if="origins.length === 0">
+      <p class="text-yellow-400 text-xs">No castle or forts available.</p>
+    </template>
+    <template x-if="origins.length > 0">
+      <select x-model="selectedOriginKey"
+              class="bg-gray-700 border border-gray-600 rounded px-2 py-1 text-white w-full">
+        <template x-for="o in origins" :key="o.type + ':' + o.id">
+          <option :value="o.type + ':' + o.id" x-text="o.label"></option>
+        </template>
+      </select>
+    </template>
+  </div>
+
+  <!-- Preset dropdown -->
+  <div>
+    <label class="block text-gray-400 mb-1">Formation preset</label>
+    <template x-if="presets.length === 0">
+      <p class="text-yellow-400 text-xs">No presets found. Create one in the
+        <a href="/setup" class="underline text-blue-400">Simulate</a> page first.
+      </p>
+    </template>
+    <template x-if="presets.length > 0">
+      <select x-model="selectedPreset" @change="loadPreset()"
+              class="bg-gray-700 border border-gray-600 rounded px-2 py-1 text-white w-full">
+        <option value="">— Select preset —</option>
+        <template x-for="p in presets" :key="p">
+          <option :value="p" x-text="p"></option>
+        </template>
+      </select>
+    </template>
+  </div>
+
+  <!-- Formation preview -->
+  <div x-show="presetFormation.length > 0">
+    <p class="text-gray-400 mb-1">Formation:</p>
+    <template x-for="entry in presetFormation" :key="entry.unit_type">
+      <div class="text-gray-200 text-xs" x-text="entry.unit_type + ' × ' + entry.quantity"></div>
+    </template>
+  </div>
+
+  <div class="text-yellow-400 text-xs min-h-4" x-text="status"></div>
+
+  <div class="flex gap-2">
+    <button @click="showAttack = false"
+            class="flex-1 bg-gray-600 hover:bg-gray-500 text-white px-3 py-1 rounded">
+      Cancel
+    </button>
+    <button @click="sendAttack()"
+            :disabled="!selectedPreset || origins.length === 0"
+            class="flex-1 bg-red-700 hover:bg-red-600 disabled:opacity-40 disabled:cursor-not-allowed text-white px-3 py-1 rounded">
+      Confirm Attack
+    </button>
+  </div>
+
+</div>

@@ -9,16 +9,16 @@ from tests.conftest import make_unit
 def _barbs_vs_archers():
     """4 barbarians (A) vs 4 archers (B) — default preset."""
     army_a = [
-        make_unit("A_B1", "A", "Barbarian", 0, 0, attack_behavior="Closest"),
-        make_unit("A_B2", "A", "Barbarian", 1, 0, attack_behavior="Closest"),
-        make_unit("A_B3", "A", "Barbarian", 2, 1, attack_behavior="LowestHP"),
-        make_unit("A_B4", "A", "Barbarian", 3, 1, attack_behavior="LowestHP"),
+        make_unit("A_B1", "A", "Barbarian", 0, 0),
+        make_unit("A_B2", "A", "Barbarian", 1, 0),
+        make_unit("A_B3", "A", "Barbarian", 2, 1),
+        make_unit("A_B4", "A", "Barbarian", 3, 1),
     ]
     army_b = [
-        make_unit("B_AR1", "B", "Archer", 0, 4, move_behavior="Hold", attack_behavior="Closest"),
-        make_unit("B_AR2", "B", "Archer", 1, 4, move_behavior="Hold", attack_behavior="LowestHP"),
-        make_unit("B_AR3", "B", "Archer", 2, 3, move_behavior="Hold", attack_behavior="LowestHP"),
-        make_unit("B_AR4", "B", "Archer", 3, 3, move_behavior="Hold", attack_behavior="Closest"),
+        make_unit("B_AR1", "B", "Archer", 0, 8),
+        make_unit("B_AR2", "B", "Archer", 1, 8),
+        make_unit("B_AR3", "B", "Archer", 2, 7),
+        make_unit("B_AR4", "B", "Archer", 3, 7),
     ]
     return army_a, army_b
 
@@ -96,21 +96,14 @@ class TestBattleIntegration:
 
 class TestBattleEdgeCases:
 
-    def test_archers_hold_beat_advancing_barbarians(self):
+    def test_archers_vs_barbarians(self):
         """
-        4 holding archers (range 3, dmg 2) at the far right should outrange
-        and kill advancing barbarians before melee begins (or at least win).
-        This validates range advantage.
+        4 archers (range 2, dmg 2) at the far right vs advancing barbarians.
+        Result is not guaranteed but should finish in reasonable time.
         """
         a = [make_unit(f"A_B{i}", "A", "Barbarian", i, 0) for i in range(4)]
-        b = [
-            make_unit(f"B_AR{i}", "B", "Archer", i, 4, move_behavior="Hold")
-            for i in range(4)
-        ]
+        b = [make_unit(f"B_AR{i}", "B", "Archer", i, 8) for i in range(4)]
         result = Battle(a, b).run()
-        # Archers deal 2 dmg/tick each, barbarians have 10 HP, speed 2
-        # Barbarians take ~3 ticks to reach range-3 zone, archers fire each tick
-        # Result is not guaranteed but should finish in reasonable time
         assert result.total_ticks < config_max()
 
     def test_draw_declared_at_max_ticks(self):
