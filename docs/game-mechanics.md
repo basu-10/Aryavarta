@@ -22,19 +22,31 @@
 - `owner_id = NULL` while monster-occupied; becomes the player's ID after capture.
 - Capturing destroys all buildings at the fort (all `is_destroyed = 1`). The attacker starts from scratch except for the Command Centre that a new `create_fort` inserts.
 - Losing a fort resets it the same way; the old owner loses all buildings there.
+- The map keeps at most **15 unowned monster forts** and **10 active monster camps** at a time.
 
 ### Star levels (fort and monster camp difficulty)
 
-Star level is determined by total defender unit count at seed time:
+Wild fort and camp star level is rolled at spawn time using the same table for both entity types:
 
-| Defenders | Stars |
+| Stars | Spawn chance | Defender total |
 |---|---|
-| 1 – 4 | ★ |
-| 5 – 8 | ★★ |
-| 9 – 12 | ★★★ |
-| 13+ | ★★★★ |
+| ★ | 25% | 2–3 monsters |
+| ★★ | 25% | 4–5 monsters |
+| ★★★ | 20% | 6–8 monsters |
+| ★★★★ | 15% | 9–11 monsters |
+| ★★★★★ | 10% | 12–14 monsters |
+| ★★★★★★ | 5% | 15–16 monsters |
 
-Thresholds live in `config.STAR_THRESHOLDS = [4, 8, 12]`.
+The rolled star level is stored on the fort/camp row in `star_level`. The spawned unit mix is random across the monster roster, but the total unit count always stays inside that star band's range.
+
+### Spawn and respawn rules
+
+- Spawn occurs in two places: once on app startup, and again every time the world map API (`GET /api/world/map`) is requested.
+- Spawn is a top-up, not a periodic wave timer. The server only creates enough wild entities to reach the configured caps.
+- A defeated monster camp is deactivated. When the next top-up runs, a replacement camp appears in a new empty cell.
+- A monster fort does not relocate when a player wins it. The same fort stays on the same cell and becomes player-owned.
+- If a monster fort is claimed by a player, the next top-up can spawn a different monster fort somewhere else so the map returns to the unowned-fort cap.
+- If the attacker loses, nothing respawns or moves because the original fort/camp is still there.
 
 ---
 

@@ -25,7 +25,17 @@
 
         <!-- Art panel -->
         <div class="bg-gray-850 flex items-center justify-center h-32 border-b border-gray-800 bg-gray-800">
-          {% if t.image %}
+          {% if t.troop_type == 'Archer' %}
+            <img src="/assets/theme1/troops/human/animations/archer/idle.gif"
+                 data-anim-troop="Archer"
+                 alt="{{ t.troop_type }}"
+                 class="h-24 w-24 object-contain drop-shadow-lg" />
+          {% elif t.troop_type == 'Barbarian' %}
+            <img src="/assets/theme1/troops/human/animations/barbarian/idle.gif"
+                 data-anim-troop="Barbarian"
+                 alt="{{ t.troop_type }}"
+                 class="h-24 w-24 object-contain drop-shadow-lg" />
+          {% elif t.image %}
             <img src="{{ t.image }}"
                  alt="{{ t.troop_type }}"
                  class="h-24 w-24 object-contain drop-shadow-lg" />
@@ -63,5 +73,42 @@
   </section>
   {% endfor %}
 
+  {% if not troops %}
+  <div class="rounded-lg border border-gray-800 bg-gray-900 px-4 py-3 text-sm text-gray-400">
+    No troop data available yet. Seed reference troop data or check configuration.
+  </div>
+  {% endif %}
+
 </div>
+
+<script>
+const TROOP_WIKI_ANIMATIONS = {
+  Archer: [
+    '/assets/theme1/troops/human/animations/archer/idle.gif',
+    '/assets/theme1/troops/human/animations/archer/walk.gif',
+    '/assets/theme1/troops/human/animations/archer/attack.gif',
+    '/assets/theme1/troops/human/animations/archer/hurt.gif',
+    '/assets/theme1/troops/human/animations/archer/death.gif',
+  ],
+  Barbarian: [
+    '/assets/theme1/troops/human/animations/barbarian/idle.gif',
+    '/assets/theme1/troops/human/animations/barbarian/walk.gif',
+    '/assets/theme1/troops/human/animations/barbarian/attack.gif',
+    '/assets/theme1/troops/human/animations/barbarian/hurt.gif',
+    '/assets/theme1/troops/human/animations/barbarian/death.gif',
+  ],
+};
+
+document.querySelectorAll('[data-anim-troop]').forEach((img) => {
+  const troop = img.dataset.animTroop;
+  const seq = TROOP_WIKI_ANIMATIONS[troop];
+  if (!seq || seq.length === 0) return;
+
+  let i = 0;
+  setInterval(() => {
+    i = (i + 1) % seq.length;
+    img.src = seq[i];
+  }, 1200);
+});
+</script>
 {% endblock %}

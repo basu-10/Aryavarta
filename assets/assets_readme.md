@@ -12,6 +12,9 @@ assets/
 			human/
 				full/
 				map-icons/
+					animations/
+						archer/
+						barbarian/
 			monster/
 				full/
 				map-icons/
@@ -35,6 +38,7 @@ assets/
 3. World map location markers/icons (fort, camp, castle) go in `map/locations/...`.
 4. Terrain visuals (grass, bushes, trees, pond) go in `map/terrain/...`.
 5. Non-entity UI visuals (grid, decoration, frames) go in `ui/...`.
+6. Animated troop actions go in `troops/<faction>/animations/<troop>/<action>.gif`.
 
 ### Grid assets
 

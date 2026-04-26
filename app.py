@@ -11,7 +11,7 @@ import os
 import secrets
 from pathlib import Path
 
-from flask import Flask, send_from_directory
+from flask import Flask, send_from_directory, session
 
 from blueprints.battle_bp import battle_bp
 from blueprints.auth_bp import auth_bp
@@ -56,6 +56,15 @@ def create_app(output_dir: str | None = None) -> Flask:
     @app.route("/assets/<path:filename>")
     def serve_asset(filename: str):
         return send_from_directory(assets_dir, filename)
+
+    @app.context_processor
+    def inject_nav_flags():
+        player_id = session.get("player_id")
+        if not player_id:
+            return {"nav_is_admin": False}
+        from db import models as m
+        player = m.get_player_by_id(player_id)
+        return {"nav_is_admin": bool(player and player.get("role") == "admin")}
 
     # Seed monster forts and camps on startup (tops up to configured maximums)
     with app.app_context():

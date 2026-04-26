@@ -16,7 +16,19 @@
 
     <!-- Art -->
     <div class="sm:w-52 shrink-0 bg-gray-800 flex items-center justify-center p-6 border-b sm:border-b-0 sm:border-r border-gray-700">
-      {% if image %}
+      {% if troop_name == 'Archer' %}
+        <img id="troop-hero-anim"
+             data-troop="Archer"
+             src="/assets/theme1/troops/human/animations/archer/idle.gif"
+             alt="{{ troop_name }}"
+             class="h-36 w-36 object-contain drop-shadow-xl" />
+      {% elif troop_name == 'Barbarian' %}
+        <img id="troop-hero-anim"
+             data-troop="Barbarian"
+             src="/assets/theme1/troops/human/animations/barbarian/idle.gif"
+             alt="{{ troop_name }}"
+             class="h-36 w-36 object-contain drop-shadow-xl" />
+      {% elif image %}
         <img src="{{ image }}"
              alt="{{ troop_name }}"
              class="h-36 w-36 object-contain drop-shadow-xl" />
@@ -160,4 +172,35 @@
   </div>
 
 </div>
+
+<script>
+const TROOP_DETAIL_ANIMATIONS = {
+  Archer: [
+    '/assets/theme1/troops/human/animations/archer/idle.gif',
+    '/assets/theme1/troops/human/animations/archer/walk.gif',
+    '/assets/theme1/troops/human/animations/archer/attack.gif',
+    '/assets/theme1/troops/human/animations/archer/hurt.gif',
+    '/assets/theme1/troops/human/animations/archer/death.gif',
+  ],
+  Barbarian: [
+    '/assets/theme1/troops/human/animations/barbarian/idle.gif',
+    '/assets/theme1/troops/human/animations/barbarian/walk.gif',
+    '/assets/theme1/troops/human/animations/barbarian/attack.gif',
+    '/assets/theme1/troops/human/animations/barbarian/hurt.gif',
+    '/assets/theme1/troops/human/animations/barbarian/death.gif',
+  ],
+};
+
+const troopHero = document.getElementById('troop-hero-anim');
+if (troopHero) {
+  const seq = TROOP_DETAIL_ANIMATIONS[troopHero.dataset.troop] || [];
+  if (seq.length > 0) {
+    let i = 0;
+    setInterval(() => {
+      i = (i + 1) % seq.length;
+      troopHero.src = seq[i];
+    }, 1200);
+  }
+}
+</script>
 {% endblock %}

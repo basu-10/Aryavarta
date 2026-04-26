@@ -7,8 +7,8 @@ from __future__ import annotations
 import random
 
 from flask import (
-    Blueprint, jsonify, render_template,
-    request,
+    Blueprint, flash, jsonify, redirect, render_template,
+    request, session, url_for,
 )
 from werkzeug.security import generate_password_hash
 
@@ -16,6 +16,7 @@ from blueprints.auth_bp import admin_required
 from db import models as m
 from db.models import find_empty_cell
 from db.world_seeder import seed_world
+from utils.admin_test_harness import list_available_presets, run_admin_formation_tests
 import config
 
 admin_bp = Blueprint("admin", __name__, url_prefix="/admin")
@@ -37,6 +38,60 @@ def dashboard():
         available_themes=config.AVAILABLE_THEMES,
         active_theme=config.ACTIVE_THEME,
     )
+
+
+@admin_bp.route("/test-run", methods=["GET"])
+@admin_required
+def test_run_page():
+    return render_template("admin/test_run.html", presets=list_available_presets())
+
+
+@admin_bp.route("/test-run", methods=["POST"])
+@admin_required
+def run_test_harness():
+    player_id = session.get("player_id")
+    if not player_id:
+        return redirect(url_for("auth.login"))
+
+    preset_names = request.form.getlist("preset_names")
+    target_types = set(request.form.getlist("target_types"))
+    star_level_raw = request.form.get("star_level", "1").strip()
+    max_targets_raw = request.form.get("max_targets", "").strip()
+
+    try:
+        star_level = int(star_level_raw)
+    except ValueError:
+        star_level = 1
+
+    max_targets = None
+    if max_targets_raw:
+        try:
+            max_targets = int(max_targets_raw)
+        except ValueError:
+            max_targets = None
+
+    try:
+        summary = run_admin_formation_tests(
+            admin_player_id=player_id,
+            preset_names=preset_names,
+            star_level=star_level,
+            target_types=target_types,
+            max_targets=max_targets,
+        )
+    except ValueError as exc:
+        flash(str(exc), "error")
+        return redirect(url_for("admin.test_run_page"))
+
+    resolved = summary.get("resolved_battles", 0)
+    failures = summary.get("failures", [])
+    flash(
+        f"Test run complete: {resolved} battle(s) resolved for admin history.",
+        "success" if resolved > 0 else "error",
+    )
+    if failures:
+        flash(f"{len(failures)} run(s) failed. First error: {failures[0]}", "error")
+
+    return redirect(url_for("auth.battles"))
 
 
 # ── Theme management ─────────────────────────────────────────────────── #

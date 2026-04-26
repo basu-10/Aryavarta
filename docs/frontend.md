@@ -25,7 +25,7 @@ Utility-first CSS loaded from CDN. No PostCSS/PurgeCSS step needed for a project
 
 ## World map
 
-The world map is rendered as a CSS grid (`#world-grid`) of clickable cells. The browser fetches a JSON snapshot from `GET /api/world/map`, then rebuilds the grid DOM with per-cell colours/icons.
+The world map is rendered as a CSS grid (`#world-grid`) of clickable cells. The browser fetches a JSON snapshot from `GET /api/world/map`, then rebuilds the grid DOM with per-cell colours and SVG location markers.
 
 ### Asset organization reference
 
@@ -48,12 +48,27 @@ See `assets/assets_readme.md` for exact folder rules.
 | Monster camp | Purple |
 | Empty | Light grey |
 
+### World map asset wiring
+
+- Base terrain tile per world cell: `/assets/theme1/map/terrain/grass.svg`.
+- Entity markers: `/assets/theme1/map/locations/castle.svg`, `/assets/theme1/map/locations/fort.svg`, `/assets/theme1/map/locations/monster-camp.svg`.
+
 ### Interaction
 Clicking a cell fires an HTMX request to `GET /world/item/<type>/<id>`, which returns an HTML partial injected into the popup panel. The popup contains an attack button that mounts the Alpine `attackPanel()` component.
 
 When attacking from the popup, the selected preset name is sent to `POST /api/attack` as `preset_name`. The server loads that preset file and derives Team A formation from `army_a`, so the selected preset is the authoritative source for units sent.
 
 The map JSON is refreshed every 10 seconds via a `setInterval` in `templates/world/map.html`.
+
+### Map zoom
+
+The world map now supports client-side zoom controls in the map header:
+- `+` and `-` buttons,
+- a range slider,
+- a reset button that returns to `100%`,
+- optional `Ctrl + mouse wheel` zoom while hovering the map.
+
+Zoom updates world-cell size and marker size without changing server APIs.
 
 ---
 
@@ -71,6 +86,11 @@ The map JSON is refreshed every 10 seconds via a `setInterval` in `templates/wor
 ## Castle and fort management UI
 
 The location page (`/castle` and `/fort/<id>`) uses a click-to-manage building panel.
+
+- Castle view renders building slots as a fixed 3x3 grass grid.
+- Buildings are overlaid on top of each grass tile and remain click-to-manage.
+- Empty unlocked tiles expose the Build action; locked tiles are shown as locked when slot count is below 9.
+- Fort view keeps the existing slot card layout.
 
 - Clicking `Command Centre` opens a troop details table (unit count + core stats).
 - Clicking `Garrison (Barracks)` or `Stable` opens troop management:
@@ -104,6 +124,38 @@ The castle page includes an `Owned Forts` card grid with per-fort summary detail
 - uncollected resource total (red/green highlight),
 - training queue count (red/green highlight).
 
+### Fort/castle asset wiring
+
+- Building overlays use SVGs from `/assets/theme1/buildings/...`.
+- Castle slot backgrounds use `/assets/theme1/map/terrain/grass.svg`.
+- Troop rows use map icons from `/assets/theme1/troops/<faction>/map-icons/...`.
+- The Command Centre troop table overlays `/assets/theme1/ui/command-centre/grid.svg`.
+
+---
+
+## Battle simulation and replay asset wiring
+
+- Setup page (`/setup`):
+   - Unit cells and Add Troop modal use troop map-icons for both human and monster factions.
+   - Grid area overlays `/assets/theme1/ui/battlefield/grid.svg`.
+- Replay page (`/results/<id>`):
+   - Battlefield cells render troop map-icons instead of initials when icon mapping exists.
+   - Replay grid overlays `/assets/theme1/ui/battlefield/grid.svg`.
+
+### Troop GIF animations
+
+- Animated action GIFs are stored under `assets/theme1/troops/human/animations/<troop>/`.
+- Current animated troops: `archer`, `barbarian`.
+- Action files used: `idle.gif`, `walk.gif`, `attack.gif`, `hurt.gif`, `death.gif`.
+- Setup page (`/setup`) uses `idle` animations for in-cell previews and troop-picker cards.
+- Replay page (`/results/<id>`) switches animation per unit state:
+   - `attack` when unit action is attack,
+   - `walk` when unit action is move,
+   - `hurt` when HP decreases between ticks,
+   - `death` when unit status is dead,
+   - `idle` otherwise.
+- Troopedia (`/troopedia`) card grid and troop detail hero cycle all five actions in sequence for animated troops.
+
 ---
 
 ## Client-side mission resolution
@@ -116,6 +168,15 @@ The browser is responsible for triggering battle resolution when a mission's tra
 4. The server re-checks `arrive_time ≤ now` before processing; it rejects early calls.
 
 This eliminates the need for background workers. The server is always the authority; the client merely knows when to ask.
+
+---
+
+## Battles history page (`/battles`)
+
+- The profile page has been removed and replaced by a dedicated battles history page.
+- `/battles` shows recent resolved missions for the logged-in player in a table (arrival time, target, outcome, replay link).
+- Replay links continue to open the existing per-battle viewer at `/results/<battle_id>`.
+- Navbar `Battles` now points directly to `/battles`.
 
 ---
 
@@ -143,10 +204,15 @@ When a player clicks any grid cell (Team A or Team B zone), a modal opens for tr
 
 Cells can now contain **multiple troops** of the same team. The UI adapts based on cell occupancy:
 
-- **Single unit**: Grid shows troop initial + abbreviated unit ID (e.g., "B B1" for Barbarian 1).
+- **Single unit**: Grid shows troop visual directly on the battlefield image.
 - **Multiple units**: Grid shows a **yellow badge** with the count (e.g., "3 units").
 - **Current Troops section**: Displays all troops in the cell with individual "Remove" buttons for each.
 - **Add Troop to Cell section**: Always available to stack more troops onto the same cell.
+
+The battlefield grid is now rendered as a transparent click-overlay on top of the battlefield image:
+- placement cells use no colored borders,
+- empty deployable cells show a `+` marker,
+- controls (load preset, preset name, save preset, run battle) are placed directly below the battlefield.
 
 ### Data flow
 
@@ -164,8 +230,13 @@ Cells can now contain **multiple troops** of the same team. The UI adapts based 
    - Removes only that unit from the array.
    - Cleans up empty arrays when a cell becomes vacant.
    - Rebuilds armies.
-6. Clicking a unit in the army summary calls `focusUnit(u)`, which opens the modal for that cell showing all troops.
-7. On load/preset load, the array structure is initialized: `unitMap[key] = [unit1, unit2, ...]`
+6. On load/preset load, the array structure is initialized: `unitMap[key] = [unit1, unit2, ...]`.
+
+### Army totals panel
+
+The dual per-unit list has been replaced with total counters only:
+- Team A total units,
+- Team B total units.
 
 ### Custom troops
 

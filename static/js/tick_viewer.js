@@ -114,6 +114,96 @@ function tickViewer() {
       return map[type] || type[0];
     },
 
+    troopAssets(type) {
+      const map = {
+        Archer: {
+          icon: '/assets/theme1/troops/human/map-icons/archer.svg',
+          animations: {
+            idle: '/assets/theme1/troops/human/animations/archer/idle.gif',
+            walk: '/assets/theme1/troops/human/animations/archer/walk.gif',
+            attack: '/assets/theme1/troops/human/animations/archer/attack.gif',
+            hurt: '/assets/theme1/troops/human/animations/archer/hurt.gif',
+            death: '/assets/theme1/troops/human/animations/archer/death.gif',
+          },
+        },
+        Barbarian: {
+          icon: '/assets/theme1/troops/human/map-icons/archer.svg',
+          animations: {
+            idle: '/assets/theme1/troops/human/animations/barbarian/idle.gif',
+            walk: '/assets/theme1/troops/human/animations/barbarian/walk.gif',
+            attack: '/assets/theme1/troops/human/animations/barbarian/attack.gif',
+            hurt: '/assets/theme1/troops/human/animations/barbarian/hurt.gif',
+            death: '/assets/theme1/troops/human/animations/barbarian/death.gif',
+          },
+        },
+        Longbowman: { icon: '/assets/theme1/troops/human/map-icons/longbowman.svg' },
+        Hussar: { icon: '/assets/theme1/troops/human/map-icons/hussar.svg' },
+        Troll: { icon: '/assets/theme1/troops/monster/map-icons/troll.svg' },
+        Wraith: { icon: '/assets/theme1/troops/monster/map-icons/wraith.svg' },
+      };
+      return map[type] || null;
+    },
+
+    troopIcon(type) {
+      const asset = this.troopAssets(type);
+      return asset ? (asset.icon || '') : '';
+    },
+
+    troopVisual(type, action = 'idle') {
+      const asset = this.troopAssets(type);
+      if (!asset) return '';
+      if (asset.animations && asset.animations[action]) return asset.animations[action];
+      return asset.icon || '';
+    },
+
+    prevSnap() {
+      if (this.currentTick <= 0) return null;
+      return this.ticks[this.currentTick - 1] || null;
+    },
+
+    prevUnitById(unitId) {
+      const prev = this.prevSnap();
+      if (!prev || !prev.units) return null;
+      return prev.units.find((u) => u.unit_id === unitId) || null;
+    },
+
+    findCurrentUnit(r, c, cell) {
+      const alive = this.currentUnits.find(
+        (u) => u.row === r && u.col === c && u.type === cell.type && u.status !== 'dead'
+      );
+      if (alive) return alive;
+      return this.currentUnits.find(
+        (u) => u.row === r && u.col === c && u.type === cell.type
+      ) || null;
+    },
+
+    cellAction(r, c, cell) {
+      const unit = this.findCurrentUnit(r, c, cell);
+
+      if (unit && unit.status === 'dead') return 'death';
+      if (unit && unit.action === 'attack') return 'attack';
+      if (unit && unit.action === 'move') return 'walk';
+
+      if (unit) {
+        const prevUnit = this.prevUnitById(unit.unit_id);
+        if (prevUnit && Number(prevUnit.hp) > Number(unit.hp)) return 'hurt';
+      }
+
+      const prev = this.prevSnap();
+      const prevCell = prev && prev.cells ? (prev.cells[`${r},${c}`] || null) : null;
+      if (prevCell && prevCell.type === cell.type && Number(prevCell.hp) > Number(cell.hp)) {
+        return 'hurt';
+      }
+
+      return 'idle';
+    },
+
+    troopVisualForCell(cell, r, c) {
+      if (!cell) return '';
+      const action = this.cellAction(r, c, cell);
+      return this.troopVisual(cell.type, action);
+    },
+
     hpBar(cell) {
       if (!cell) return '';
       return `${cell.hp}/${cell.max_hp} HP`;

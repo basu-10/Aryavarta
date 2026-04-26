@@ -90,7 +90,7 @@
     <!-- Battle Grid (spans 2/3 on md+) -->
     <div class="md:col-span-2 space-y-2">
       <h2 class="text-sm font-semibold text-gray-400 uppercase tracking-wider">Battlefield</h2>
-      <div class="bg-gray-900 border border-gray-800 rounded-lg p-4">
+      <div class="bg-gray-900 border border-gray-800 rounded-lg p-4" style="background-image:url('/assets/theme1/ui/battlefield/grid.svg');background-size:cover;background-position:center;">
 
         <!-- Column headers -->
         <div class="flex mb-2 ml-6">
@@ -113,7 +113,12 @@
               >
                 <template x-if="getCell(r - 1, c - 1)">
                   <div>
-                    <div class="text-sm font-bold leading-none" x-text="unitInitial(getCell(r - 1, c - 1).type)"></div>
+                    <template x-if="troopIcon(getCell(r - 1, c - 1).type)">
+                      <img :src="troopVisualForCell(getCell(r - 1, c - 1), r - 1, c - 1)" :alt="getCell(r - 1, c - 1).type" class="troop-icon-cell" />
+                    </template>
+                    <template x-if="!troopIcon(getCell(r - 1, c - 1).type)">
+                      <div class="troop-fallback-cell" x-text="unitInitial(getCell(r - 1, c - 1).type)"></div>
+                    </template>
                     <div class="text-xs leading-none mt-0.5" x-text="hpBar(getCell(r - 1, c - 1))"></div>
                   </div>
                 </template>

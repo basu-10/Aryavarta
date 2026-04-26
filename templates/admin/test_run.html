@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+{% block title %}Admin Test Run - BattleCells{% endblock %}
+{% block content %}
+<div class="space-y-6">
+  <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
+    <div>
+      <h1 class="text-2xl font-bold">Admin Test Harness</h1>
+      <p class="text-sm text-gray-400 mt-1">
+        Run bulk formation tests against world NPC/monster targets. Results are saved to normal battle history.
+      </p>
+    </div>
+    <a href="{{ url_for('admin.dashboard') }}" class="text-sm px-4 py-2 rounded bg-gray-800 hover:bg-gray-700 transition-colors">
+      Back to Admin Dashboard
+    </a>
+  </div>
+
+  <form method="post" action="{{ url_for('admin.run_test_harness') }}" class="bg-gray-900 border border-gray-800 rounded-lg p-5 space-y-5">
+    <section class="space-y-2">
+      <h2 class="text-sm font-semibold uppercase tracking-wide text-gray-400">Multi Presets Selection</h2>
+      <p class="text-xs text-gray-500">Select one or more presets. Every selected preset will be run against each matching target.</p>
+      {% if presets %}
+      <select name="preset_names" multiple size="10" class="w-full bg-gray-950 border border-gray-700 rounded px-3 py-2 text-sm">
+        {% for name in presets %}
+        <option value="{{ name }}">{{ name }}</option>
+        {% endfor %}
+      </select>
+      <p class="text-xs text-gray-500">Tip: Use Ctrl/Cmd + click to select multiple presets.</p>
+      {% else %}
+      <p class="text-sm text-yellow-400">No presets found. Create presets first from the Simulate page.</p>
+      {% endif %}
+    </section>
+
+    <section class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div>
+        <label for="star_level" class="block text-sm text-gray-300 mb-2">Star level (1-6)</label>
+        <select id="star_level" name="star_level" class="w-full bg-gray-950 border border-gray-700 rounded px-3 py-2 text-sm" required>
+          {% for lvl in range(1, 7) %}
+          <option value="{{ lvl }}" {% if lvl == 1 %}selected{% endif %}>{{ lvl }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div>
+        <label for="max_targets" class="block text-sm text-gray-300 mb-2">Max targets to include (optional)</label>
+        <input id="max_targets" name="max_targets" type="number" min="1" placeholder="Leave empty for all matches"
+               class="w-full bg-gray-950 border border-gray-700 rounded px-3 py-2 text-sm" />
+      </div>
+    </section>
+
+    <section class="space-y-2">
+      <h2 class="text-sm font-semibold uppercase tracking-wide text-gray-400">Type Filters</h2>
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <label class="flex items-center gap-2 text-sm text-gray-300 bg-gray-950 border border-gray-800 rounded px-3 py-2">
+          <input type="checkbox" name="target_types" value="monster_camp" checked class="accent-red-500" />
+          Monster Camp
+        </label>
+        <label class="flex items-center gap-2 text-sm text-gray-300 bg-gray-950 border border-gray-800 rounded px-3 py-2">
+          <input type="checkbox" name="target_types" value="monster_fort" checked class="accent-red-500" />
+          Monster Fort
+        </label>
+        <label class="flex items-center gap-2 text-sm text-gray-300 bg-gray-950 border border-gray-800 rounded px-3 py-2">
+          <input type="checkbox" name="target_types" value="npc_fort" checked class="accent-red-500" />
+          NPC Fort
+        </label>
+      </div>
+    </section>
+
+    <div class="pt-2">
+      <button type="submit" class="bg-red-700 hover:bg-red-600 text-white px-5 py-2 rounded text-sm font-semibold transition-colors">
+        Run Test Batch
+      </button>
+    </div>
+  </form>
+</div>
+{% endblock %}

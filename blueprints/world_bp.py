@@ -395,15 +395,20 @@ def _build_attacker_units(formation: list[dict]) -> list[Unit]:
             if (row, col) in occupied:
                 continue
             occupied.add((row, col))
+            try:
+                qty = max(1, int(entry.get("quantity", 1)))
+            except (TypeError, ValueError):
+                qty = 1
             stats = all_stats[utype]
             units.append(Unit(
                 unit_id=f"A_{utype[0]}{len(units)+1}",
                 team="A",
                 unit_type=utype,
                 row=row, col=col,
-                hp=stats["hp"], max_hp=stats["hp"],
-                damage=stats["damage"], defense=stats["defense"],
+                hp=stats["hp"] * qty, max_hp=stats["hp"] * qty,
+                damage=stats["damage"] * qty, defense=stats["defense"],
                 range=stats["range"], speed=stats["speed"],
+                quantity=qty,
             ))
         return units
 

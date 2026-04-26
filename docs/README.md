@@ -10,4 +10,4 @@ Each file covers one concern area and explains *why* choices were made, not just
 | [game-mechanics.md](game-mechanics.md) | Combat, travel, capture, resources |
 | [units-and-buildings.md](units-and-buildings.md) | All unit types, building types, production rates |
 | [frontend.md](frontend.md) | HTMX polling strategy, Alpine.js, world map canvas |
-| [admin-and-auth.md](admin-and-auth.md) | Session auth, roles, admin bootstrap |
+| [admin-and-auth.md](admin-and-auth.md) | Session auth, roles, admin bootstrap, and admin test harness |

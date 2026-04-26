@@ -2,15 +2,18 @@
 
 ## Session-based auth
 
-Flask's built-in signed cookie session is used. On login/register, three values are stored:
+Flask's built-in signed cookie session is used. On login/register, two values are stored:
 
-```
+```text
 session["player_id"]  — integer PK
 session["username"]   — display name
-session["role"]       — "player" | "admin" | "banned"
 ```
 
-The `login_required` decorator in `auth_bp.py` checks for `session["player_id"]`. The `admin_required` decorator additionally checks `session["role"] == "admin"`.
+The `login_required` decorator in `auth_bp.py` checks for `session["player_id"]`. The `admin_required` decorator additionally checks the logged-in player's role from the database.
+
+Admin role checks are sourced from the database on each request (`player.role == 'admin'`), so role changes are effective immediately.
+
+The navbar receives a `nav_is_admin` flag from an app-level context processor and only shows `Admin Dashboard` + `Test Run` links for logged-in admins.
 
 ### Secret key
 
@@ -23,7 +26,7 @@ The `login_required` decorator in `auth_bp.py` checks for `session["player_id"]`
 | Role | Access |
 |---|---|
 | `player` | All normal game routes |
-| `admin` | All normal routes + `/admin/*` |
+| `admin` | All normal routes + `/admin/*` (dashboard + test harness) |
 | `banned` | Login rejected at the `login_required` check |
 
 ---
@@ -54,3 +57,27 @@ Alternatively, the admin dashboard's `/admin/promote/<id>` route can be used by 
 - Spawn additional forts or monster camps onto the world map.
 - Deactivate a monster camp manually.
 - Disband a clan (clears all member clan_ids then deletes the clan row).
+
+---
+
+## Admin test harness
+
+Admin-only bulk testing is available in two ways:
+
+- Web page: `GET /admin/test-run`
+- Form submit: `POST /admin/test-run`
+- Script: `python run_admin_test_harness.py`
+
+Both paths call the shared module `utils/admin_test_harness.py`.
+
+Capabilities:
+
+- Select multiple formation presets in one run.
+- Filter targets by one star level (`1..6`).
+- Filter target categories: `monster_camp`, `monster_fort`, `npc_fort`.
+- Resolve each attack through the normal mission flow and append results to the admin account's regular battle history (`/battles`).
+
+Safety notes (development only):
+
+- Harness runs can auto-fill missing troops and even auto-grant an origin fort to the admin so runs do not block on setup.
+- Script mode does not require web login/password; it directly resolves against the specified admin username.

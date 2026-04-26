@@ -258,7 +258,7 @@ Accessible only to admin-role accounts. Covers:
 | Fort | `/fort/<id>` | Manage a specific owned fort |
 | Battle Report | `/results/<battle_id>` | Post-battle result viewer (existing page) |
 | Clan | `/clan` | Clan overview + chat |
-| Profile | `/profile` | Account stats, fort list, troop summary |
+| Battles History | `/battles` | Account battle history and replay links |
 | Admin | `/admin` | Admin dashboard (role-gated) |
 
 ---

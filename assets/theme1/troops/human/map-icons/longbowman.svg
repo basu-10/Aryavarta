@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256" role="img"
+    aria-label="Longbowman">
+    <circle cx="120" cy="70" r="18" fill="#e7c39f" />
+    <rect x="108" y="88" width="24" height="20" rx="4" fill="#3f5f87" />
+
+    <path d="M96 108h48l16 58h-80z" fill="#2f4a6a" />
+    <rect x="102" y="166" width="20" height="44" rx="5" fill="#3a2a23" />
+    <rect x="132" y="166" width="20" height="44" rx="5" fill="#3a2a23" />
+
+    <path d="M174 72c20 34 20 78 0 112" stroke="#6b4728" stroke-width="6" fill="none" stroke-linecap="round" />
+    <path d="M174 72c-7 7-7 14 0 21m0 0c-7 7-7 14 0 21m0 0c-7 7-7 14 0 21" stroke="#5a3b22" stroke-width="2"
+        fill="none" />
+
+    <line x1="92" y1="120" x2="184" y2="96" stroke="#b8bfc9" stroke-width="3" />
+    <polygon points="186,95 196,98 187,103" fill="#b8bfc9" />
+    <polygon points="92,120 84,116 84,124" fill="#925f37" />
+
+    <rect x="74" y="118" width="24" height="10" rx="3" fill="#e7c39f" />
+</svg>

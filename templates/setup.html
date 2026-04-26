@@ -9,52 +9,18 @@
 >
 
   <!-- Header -->
-  <div class="flex items-center justify-between">
-    <div>
-      <h1 class="text-2xl font-bold">Battle Simulator</h1>
-      <p class="text-gray-400 text-sm mt-1">
-        Place units of BOTH teams on the grid — Team A (blue) on the left, Team B (red) on the right.
-        Click any cell to add or manage multiple troops. Use the "Add Troop to Cell" section to stack units on the same tile.
-      </p>
-    </div>
-
-    <!-- Load Preset dropdown -->
-    <div class="relative">
-      <button
-        @click="togglePresetList()"
-        class="text-sm px-4 py-2 rounded bg-gray-700 hover:bg-gray-600 transition-colors flex items-center gap-2"
-      >
-        Load Preset
-        <svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3 transition-transform" :class="showPresetList ? 'rotate-180' : ''" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
-      </button>
-
-      <!-- Dropdown panel -->
-      <div
-        x-show="showPresetList"
-        x-transition
-        @click.outside="showPresetList = false"
-        class="absolute top-full right-0 mt-1 bg-gray-800 border border-gray-700 rounded-lg shadow-xl z-50 min-w-48 py-1"
-      >
-        <template x-if="presetsLoading">
-          <p class="text-sm text-gray-500 px-4 py-3">Loading…</p>
-        </template>
-        <template x-if="!presetsLoading && presetList.length === 0">
-          <p class="text-sm text-gray-500 px-4 py-3 italic">No saved presets yet</p>
-        </template>
-        <template x-for="p in presetList" :key="p">
-          <button
-            @click="loadPreset(p)"
-            class="w-full text-left px-4 py-2 text-sm hover:bg-gray-700 transition-colors"
-            x-text="p"
-          ></button>
-        </template>
-      </div>
-    </div>
+  <div>
+    <h1 class="text-2xl font-bold">Battle Simulator</h1>
+    <p class="text-gray-400 text-sm mt-1">
+      Place units for both teams directly on the battlefield image.
+      Click a cell to add or manage stacked troops.
+    </p>
   </div>
 
   <!-- ── GRID ─────────────────────────────────────────────────────────── -->
   <div class="overflow-x-auto">
     <div class="inline-block">
+      <div class="rounded-lg border border-gray-800 p-2 bg-black/30" style="background-image:url('/assets/theme1/ui/battlefield/grid.svg');background-size:cover;background-position:center;">
       <!-- Column labels -->
       <div class="flex mb-1 ml-8">
         <template x-for="c in {{ grid_cols }}" :key="c">
@@ -73,7 +39,7 @@
             <div
               @click="toggleCell(r - 1, c - 1)"
               :class="cellClass(r - 1, c - 1)"
-              class="w-24 h-16 border rounded cursor-pointer flex flex-col items-center justify-center text-sm font-semibold transition-all select-none relative"
+              class="w-24 h-16 rounded cursor-pointer flex flex-col items-center justify-center text-sm font-semibold transition-all select-none relative"
             >
               <!-- No-man's land indicator -->
               <template x-if="isNeutral(c - 1)">
@@ -82,13 +48,18 @@
 
               <!-- Empty team cell -->
               <template x-if="!isNeutral(c - 1) && getUnitCount(r - 1, c - 1) === 0">
-                <span class="text-gray-600 text-xs">+</span>
+                <span class="text-white/85 text-lg leading-none">+</span>
               </template>
 
               <!-- Single unit placed -->
               <template x-if="getUnitCount(r - 1, c - 1) === 1">
                 <div class="text-center leading-tight">
-                  <div x-text="unitInitial(getUnits(r - 1, c - 1)[0].type)" class="text-lg font-bold"></div>
+                  <template x-if="troopIcon(getUnits(r - 1, c - 1)[0].type)">
+                    <img :src="troopVisual(getUnits(r - 1, c - 1)[0].type, 'idle')" :alt="getUnits(r - 1, c - 1)[0].type" class="troop-icon-cell" />
+                  </template>
+                  <template x-if="!troopIcon(getUnits(r - 1, c - 1)[0].type)">
+                    <div x-text="unitInitial(getUnits(r - 1, c - 1)[0].type)" class="troop-fallback-cell"></div>
+                  </template>
                   <div x-text="getUnits(r - 1, c - 1)[0].type[0] + ' ' + getUnits(r - 1, c - 1)[0].unit_id.split('_')[1]" class="text-xs opacity-75"></div>
                 </div>
               </template>
@@ -106,11 +77,75 @@
       </template>
 
       <!-- Legend -->
-      <div class="flex gap-4 mt-2 ml-8 text-xs text-gray-400">
-        <div class="flex items-center gap-1"><div class="w-4 h-4 rounded bg-blue-900 border border-blue-600"></div> Team A zone</div>
-        <div class="flex items-center gap-1"><div class="w-4 h-4 rounded bg-red-900 border border-red-600"></div> Team B zone</div>
-        <div class="flex items-center gap-1"><div class="w-4 h-4 rounded bg-gray-800 border border-gray-700"></div> No-man's land</div>
+      <div class="flex gap-4 mt-2 ml-8 text-xs text-gray-400 flex-wrap">
+        <div>Left deployment: Team A</div>
+        <div>Right deployment: Team B</div>
+        <div>Center lane: no placement</div>
       </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── CONTROLS BELOW BATTLEFIELD ─────────────────────────────────── -->
+  <div class="bg-gray-900/70 border border-gray-800 rounded-lg p-4">
+    <div class="flex items-center gap-3 flex-wrap">
+      <div class="relative">
+        <button
+          @click="togglePresetList()"
+          class="text-sm px-4 py-2 rounded bg-gray-700 hover:bg-gray-600 transition-colors flex items-center gap-2"
+        >
+          Load Preset
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3 transition-transform" :class="showPresetList ? 'rotate-180' : ''" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+        </button>
+
+        <div
+          x-show="showPresetList"
+          x-transition
+          @click.outside="showPresetList = false"
+          class="absolute top-full left-0 mt-1 bg-gray-800 border border-gray-700 rounded-lg shadow-xl z-50 min-w-48 py-1"
+        >
+          <template x-if="presetsLoading">
+            <p class="text-sm text-gray-500 px-4 py-3">Loading...</p>
+          </template>
+          <template x-if="!presetsLoading && presetList.length === 0">
+            <p class="text-sm text-gray-500 px-4 py-3 italic">No saved presets yet</p>
+          </template>
+          <template x-for="p in presetList" :key="p">
+            <button
+              @click="loadPreset(p)"
+              class="w-full text-left px-4 py-2 text-sm hover:bg-gray-700 transition-colors"
+              x-text="p"
+            ></button>
+          </template>
+        </div>
+      </div>
+
+      <input
+        type="text"
+        x-model="presetNameInput"
+        placeholder="Preset name..."
+        class="bg-gray-800 border border-gray-600 rounded px-3 py-2 text-sm w-56 focus:outline-none focus:border-indigo-500"
+      />
+      <button
+        @click="savePreset()"
+        :disabled="!presetNameInput.trim()"
+        class="px-4 py-2 rounded bg-indigo-700 hover:bg-indigo-600 disabled:opacity-40 disabled:cursor-not-allowed text-sm font-medium transition-colors"
+      >Save Preset</button>
+      <button
+        @click="submit()"
+        :disabled="submitting"
+        class="px-5 py-2 rounded bg-green-600 hover:bg-green-500 disabled:opacity-50 disabled:cursor-not-allowed text-sm font-semibold transition-colors"
+      >
+        <span x-show="!submitting">Run Battle</span>
+        <span x-show="submitting">Simulating...</span>
+      </button>
+
+      <span
+        x-show="presetSaveMsg"
+        x-text="presetSaveMsg"
+        :class="presetSaveError ? 'text-red-400' : 'text-green-400'"
+        class="text-sm"
+      ></span>
     </div>
   </div>
 
@@ -134,8 +169,11 @@
               <h3 class="text-sm font-semibold text-gray-300 mb-3">Current Troops (<span x-text="modalCell.units.length"></span>)</h3>
               <template x-for="troop in modalCell.units" :key="troop.unit_id">
                 <div class="flex items-center justify-between bg-gray-700 rounded px-3 py-2">
-                  <div>
-                    <div class="font-semibold text-sm" x-text="troop.unit_id + ' — ' + troop.type"></div>
+                  <div class="min-w-0">
+                    <div class="font-semibold text-sm flex items-center gap-2">
+                      <img x-show="troopIcon(troop.type)" :src="troopVisual(troop.type, 'idle')" :alt="troop.type" class="troop-icon-inline" />
+                      <span x-text="troop.unit_id + ' — ' + troop.type"></span>
+                    </div>
                     <div class="text-xs text-gray-500 mt-1">
                       <span x-text="'HP: ' + UNIT_STATS[troop.type].hp"></span>
                       <span class="mx-2">DMG: <span x-text="UNIT_STATS[troop.type].damage"></span></span>
@@ -168,7 +206,10 @@
                             @click="selectTroop(troop)"
                             class="bg-gray-800 border border-gray-700 rounded-lg p-3 cursor-pointer hover:border-gray-500 transition-all"
                           >
-                            <div class="font-semibold text-sm" x-text="troop"></div>
+                            <div class="flex items-center gap-2">
+                              <img x-show="troopIcon(troop)" :src="troopVisual(troop, 'idle')" :alt="troop" class="troop-icon-choice" />
+                              <div class="font-semibold text-sm" x-text="troop"></div>
+                            </div>
                             <div class="text-xs text-gray-500 mt-2 grid grid-cols-2 gap-1">
                               <span x-text="'HP: ' + UNIT_STATS[troop].hp"></span>
                               <span x-text="'DMG: ' + UNIT_STATS[troop].damage"></span>
@@ -191,7 +232,10 @@
                             @click="selectTroop(troop)"
                             class="bg-gray-800 border border-gray-700 rounded-lg p-3 cursor-pointer hover:border-gray-500 transition-all"
                           >
-                            <div class="font-semibold text-sm" x-text="troop"></div>
+                            <div class="flex items-center gap-2">
+                              <img x-show="troopIcon(troop)" :src="troopVisual(troop, 'idle')" :alt="troop" class="troop-icon-choice" />
+                              <div class="font-semibold text-sm" x-text="troop"></div>
+                            </div>
                             <div class="text-xs text-gray-500 mt-2 grid grid-cols-2 gap-1">
                               <span x-text="'HP: ' + UNIT_STATS[troop].hp"></span>
                               <span x-text="'DMG: ' + UNIT_STATS[troop].damage"></span>
@@ -226,62 +270,14 @@
   </template>
 
   <!-- ── ARMY SUMMARY ──────────────────────────────────────────────────── -->
-  <div class="grid grid-cols-2 gap-4">
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
     <template x-for="[label, key, colorClass] in [['Team A (Blue)', 'army_a', 'text-blue-400'], ['Team B (Red)', 'army_b', 'text-red-400']]" :key="key">
-      <div class="bg-gray-900 border border-gray-800 rounded-lg p-4">
-        <h3 class="text-sm font-semibold mb-2" :class="colorClass" x-text="label + ' — ' + armies[key].length + ' units'"></h3>
-        <ul class="space-y-1">
-          <template x-for="u in armies[key]" :key="u.unit_id">
-            <li
-              @click="focusUnit(u)"
-              class="text-xs text-gray-300 rounded px-2 py-1 cursor-pointer hover:bg-gray-800 transition-colors space-y-0.5"
-            >
-              <div class="flex justify-between">
-                <span class="font-semibold" x-text="u.unit_id + ' — ' + u.type"></span>
-                <span class="text-gray-500" x-text="'(' + u.row + ',' + u.col + ')'"></span>
-              </div>
-              <div class="flex gap-3 text-gray-500">
-                <span x-text="u.type"></span>
-              </div>
-            </li>
-          </template>
-        </ul>
-        <p x-show="armies[key].length === 0" class="text-xs text-gray-600 italic">No units placed</p>
+      <div class="bg-gray-900 border border-gray-800 rounded-lg p-5">
+        <h3 class="text-sm font-semibold mb-1" :class="colorClass" x-text="label"></h3>
+        <div class="text-4xl font-bold text-white" x-text="armies[key].length"></div>
+        <p class="text-xs text-gray-500 mt-1">Total units deployed</p>
       </div>
     </template>
-  </div>
-
-  <!-- ── SAVE PRESET ──────────────────────────────────────────────────── -->
-  <div class="flex items-center gap-3 flex-wrap">
-    <input
-      type="text"
-      x-model="presetNameInput"
-      placeholder="Preset name…"
-      class="bg-gray-800 border border-gray-600 rounded px-3 py-2 text-sm w-56 focus:outline-none focus:border-indigo-500"
-    />
-    <button
-      @click="savePreset()"
-      :disabled="!presetNameInput.trim()"
-      class="px-4 py-2 rounded bg-indigo-700 hover:bg-indigo-600 disabled:opacity-40 disabled:cursor-not-allowed text-sm font-medium transition-colors"
-    >Save Preset</button>
-    <span
-      x-show="presetSaveMsg"
-      x-text="presetSaveMsg"
-      :class="presetSaveError ? 'text-red-400' : 'text-green-400'"
-      class="text-sm"
-    ></span>
-  </div>
-
-  <!-- ── SUBMIT ────────────────────────────────────────────────────────── -->
-  <div class="flex justify-end">
-    <button
-      @click="submit()"
-      :disabled="submitting"
-      class="px-6 py-3 rounded-lg bg-green-600 hover:bg-green-500 disabled:opacity-50 disabled:cursor-not-allowed font-semibold transition-colors"
-    >
-      <span x-show="!submitting">⚔ Run Battle</span>
-      <span x-show="submitting">Simulating…</span>
-    </button>
   </div>
 
 </div>
@@ -296,6 +292,32 @@
   const UNIT_STATS = {{ unit_stats | tojson }};
   const UNIT_CLASSIFICATION = {{ unit_classification | tojson }};
   const DEFAULT_PRESET = {{ preset | default('null') | tojson if preset is defined else 'null' }};
+  const TROOP_ASSETS = {
+    Archer: {
+      icon: '/assets/theme1/troops/human/map-icons/archer.svg',
+      animations: {
+        idle: '/assets/theme1/troops/human/animations/archer/idle.gif',
+        walk: '/assets/theme1/troops/human/animations/archer/walk.gif',
+        attack: '/assets/theme1/troops/human/animations/archer/attack.gif',
+        hurt: '/assets/theme1/troops/human/animations/archer/hurt.gif',
+        death: '/assets/theme1/troops/human/animations/archer/death.gif',
+      },
+    },
+    Barbarian: {
+      icon: '/assets/theme1/troops/human/map-icons/archer.svg',
+      animations: {
+        idle: '/assets/theme1/troops/human/animations/barbarian/idle.gif',
+        walk: '/assets/theme1/troops/human/animations/barbarian/walk.gif',
+        attack: '/assets/theme1/troops/human/animations/barbarian/attack.gif',
+        hurt: '/assets/theme1/troops/human/animations/barbarian/hurt.gif',
+        death: '/assets/theme1/troops/human/animations/barbarian/death.gif',
+      },
+    },
+    Longbowman: { icon: '/assets/theme1/troops/human/map-icons/longbowman.svg' },
+    Hussar: { icon: '/assets/theme1/troops/human/map-icons/hussar.svg' },
+    Troll: { icon: '/assets/theme1/troops/monster/map-icons/troll.svg' },
+    Wraith: { icon: '/assets/theme1/troops/monster/map-icons/wraith.svg' },
+  };
 
   function armyBuilder() {
     return {
@@ -361,20 +383,12 @@
         const units = this.getUnits(r, c);
 
         if (this.isNeutral(c)) {
-          return 'bg-gray-800 border-gray-700 cursor-not-allowed opacity-40';
+          return 'cursor-not-allowed opacity-35';
         }
         if (units.length > 0) {
-          const base = units[0].team === 'A'
-            ? 'bg-blue-900 border-blue-600'
-            : 'bg-red-900 border-red-600';
-          return base + ' hover:scale-105';
+          return 'bg-black/25 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.08)] hover:bg-black/35';
         }
-        // Empty
-        const zone = this.teamOfCol(c);
-        const emptyBase = zone === 'A'
-          ? 'bg-blue-950 border-blue-900 hover:bg-blue-900 hover:border-blue-700'
-          : 'bg-red-950 border-red-900 hover:bg-red-900 hover:border-red-700';
-        return emptyBase;
+        return 'bg-transparent hover:bg-white/10';
       },
 
       typeAbbrev(type) {
@@ -386,6 +400,17 @@
 
       unitInitial(type) {
         return { Barbarian: 'B', Archer: '🏹' }[type] || type[0].toUpperCase();
+      },
+
+      troopIcon(type) {
+        return (TROOP_ASSETS[type] && TROOP_ASSETS[type].icon) || '';
+      },
+
+      troopVisual(type, action = 'idle') {
+        const asset = TROOP_ASSETS[type];
+        if (!asset) return '';
+        if (asset.animations && asset.animations[action]) return asset.animations[action];
+        return asset.icon || '';
       },
 
       toggleCell(r, c) {

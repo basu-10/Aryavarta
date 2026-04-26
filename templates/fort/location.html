@@ -22,19 +22,92 @@
   <span id="collect-msg" class="text-xs text-gray-400"></span>
 </div>
 
-<h2 class="text-lg font-semibold mb-3">Buildings ({{ location.slot_count }} slots)</h2>
-<div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-8">
-  {% set occupied = {} %}
-  {% for b in buildings %}
-    {% set _ = occupied.update({b.slot_index: b}) %}
-  {% endfor %}
+{% set occupied = {} %}
+{% for b in buildings %}
+  {% set _ = occupied.update({b.slot_index: b}) %}
+{% endfor %}
+{% set building_icon_map = {
+  'Farm': '/assets/theme1/buildings/resource/farm.svg',
+  'Lumber Mill': '/assets/theme1/buildings/resource/lumber-mill.svg',
+  'Merchant': '/assets/theme1/buildings/resource/merchant.svg',
+  'Mine': '/assets/theme1/buildings/resource/mine.svg',
+  'Garrison': '/assets/theme1/buildings/military/garrison.svg',
+  'Stable': '/assets/theme1/buildings/military/stable.svg',
+  'Cannon': '/assets/theme1/buildings/defense/cannon.svg',
+  'Archer Tower': '/assets/theme1/buildings/defense/archer-tower.svg',
+  'Command Centre': '/assets/theme1/buildings/default/command-centre.svg',
+} %}
 
+<h2 class="text-lg font-semibold mb-3">Buildings ({{ location.slot_count }} slots)</h2>
+{% if location_type == 'castle' %}
+<div class="max-w-4xl mb-8">
+  <div class="grid grid-cols-3 gap-3">
+    {% for slot in range(1, 10) %}
+      {% set is_open_slot = slot <= location.slot_count %}
+      {% if slot in occupied %}
+        {% set b = occupied[slot] %}
+        {% set building_icon = building_icon_map.get(b.type) %}
+        <div onclick="openBuildingPanel({{ b.id }})"
+             class="relative min-h-[150px] sm:min-h-[170px] rounded-xl border {% if b.is_destroyed %}border-red-700{% elif b.build_complete_at %}border-yellow-700{% else %}border-emerald-700/60 hover:border-blue-400 cursor-pointer{% endif %} overflow-hidden transition-colors"
+             style="background-image: linear-gradient(to bottom, rgba(15,23,42,0.12), rgba(15,23,42,0.6)), url('/assets/theme1/map/terrain/grass.svg'); background-size: cover; background-position: center;">
+          <div class="absolute inset-0 bg-gradient-to-t from-slate-950/75 via-slate-900/25 to-transparent"></div>
+          <div class="absolute bottom-0 left-0 right-0 p-2 sm:p-3">
+            <div class="flex items-center gap-2 mb-1">
+              {% if building_icon %}
+              <img src="{{ building_icon }}" alt="{{ b.type }}" class="w-5 h-5 object-contain drop-shadow" />
+              {% endif %}
+              <div class="font-semibold text-xs sm:text-sm leading-tight">{{ b.type }}</div>
+            </div>
+            <div class="text-[11px] text-gray-200">Level {{ b.level }}</div>
+            {% if b.is_destroyed %}
+              <span class="text-red-300 text-[11px] block">Destroyed</span>
+              <button onclick="event.stopPropagation(); repairBuilding({{ b.id }})"
+                      class="mt-2 text-xs bg-yellow-700 hover:bg-yellow-600 text-white px-2 py-1 rounded w-full">
+                Repair
+              </button>
+            {% elif b.build_complete_at %}
+              <span class="text-yellow-300 text-[11px] block">Building...</span>
+              <div class="text-[11px] text-yellow-100/80 mt-1" data-complete="{{ b.build_complete_at }}">
+                <span class="countdown-label">calculating...</span>
+              </div>
+            {% else %}
+              <span class="text-emerald-300 text-[11px] block">Active</span>
+              <span class="text-[10px] text-gray-300/90 block">click to manage</span>
+            {% endif %}
+          </div>
+        </div>
+      {% else %}
+        <div class="relative min-h-[150px] sm:min-h-[170px] rounded-xl border {% if is_open_slot %}border-dashed border-emerald-700/60{% else %}border-slate-700/70{% endif %} overflow-hidden"
+             style="background-image: linear-gradient(to bottom, rgba(15,23,42,0.1), rgba(15,23,42,0.58)), url('/assets/theme1/map/terrain/grass.svg'); background-size: cover; background-position: center;">
+          <div class="absolute inset-0 bg-slate-950/35"></div>
+          <div class="absolute inset-0 flex flex-col items-center justify-center gap-2 p-2">
+            {% if is_open_slot %}
+              <span class="text-[11px] text-gray-200">Empty plot {{ slot }}</span>
+              <button onclick="openBuildModal({{ slot }})"
+                      class="text-xs bg-blue-700 hover:bg-blue-600 text-white px-3 py-1 rounded">Build</button>
+            {% else %}
+              <span class="text-[11px] text-gray-400">Locked plot {{ slot }}</span>
+            {% endif %}
+          </div>
+        </div>
+      {% endif %}
+    {% endfor %}
+  </div>
+</div>
+{% else %}
+<div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-8">
   {% for slot in all_slots %}
     {% if slot in occupied %}
       {% set b = occupied[slot] %}
+      {% set building_icon = building_icon_map.get(b.type) %}
       <div onclick="openBuildingPanel({{ b.id }})"
            class="bg-gray-800 border {% if b.is_destroyed %}border-red-700{% elif b.build_complete_at %}border-yellow-700{% else %}border-gray-600 hover:border-blue-400 cursor-pointer{% endif %} rounded-lg p-3 relative transition-colors">
-        <div class="font-semibold text-sm">{{ b.type }}</div>
+        <div class="flex items-center gap-2 mb-1">
+          {% if building_icon %}
+          <img src="{{ building_icon }}" alt="{{ b.type }}" class="w-5 h-5 object-contain" />
+          {% endif %}
+          <div class="font-semibold text-sm">{{ b.type }}</div>
+        </div>
         <div class="text-xs text-gray-400 mb-2">Level {{ b.level }}</div>
         {% if b.is_destroyed %}
           <span class="text-red-400 text-xs block">Destroyed</span>
@@ -61,12 +134,25 @@
     {% endif %}
   {% endfor %}
 </div>
+{% endif %}
 
 <h2 class="text-lg font-semibold mb-3">Troops stationed here</h2>
 {% if troops %}
 <ul class="space-y-1 text-sm mb-6">
+  {% set troop_icon_map = {
+    'Archer': '/assets/theme1/troops/human/map-icons/archer.svg',
+    'Longbowman': '/assets/theme1/troops/human/map-icons/longbowman.svg',
+    'Hussar': '/assets/theme1/troops/human/map-icons/hussar.svg',
+    'Barbarian': '/assets/theme1/troops/human/animations/barbarian/idle.gif',
+    'Troll': '/assets/theme1/troops/monster/map-icons/troll.svg',
+    'Wraith': '/assets/theme1/troops/monster/map-icons/wraith.svg',
+  } %}
   {% for t in troops %}
-  <li class="bg-gray-800 rounded-lg px-4 py-2 flex gap-4">
+  <li class="bg-gray-800 rounded-lg px-4 py-2 flex items-center gap-3">
+    {% set troop_icon = troop_icon_map.get(t.unit_type) %}
+    {% if troop_icon %}
+    <img src="{{ troop_icon }}" alt="{{ t.unit_type }}" class="troop-icon-inline" />
+    {% endif %}
     <span class="font-mono">{{ t.unit_type }}</span>
     <span class="text-gray-400">×{{ t.quantity }}</span>
   </li>
@@ -129,6 +215,7 @@
 const BUILD_COSTS = {{ build_costs | tojson }};
 const LOC_TYPE = '{{ location_type }}';
 const LOC_ID = {{ location.id }};
+const COMMAND_CENTRE_GRID = '/assets/theme1/ui/command-centre/grid.svg';
 
 let pendingSlot = null;
 let currentBuildingId = null;
@@ -136,6 +223,44 @@ let panelTimer = null;
 let didReload = false;
 
 const RES_ICONS = { food: '🍖', timber: '🪵', gold: '💰', metal: '⚙️' };
+const TROOP_ASSETS = {
+  Archer: {
+    icon: '/assets/theme1/troops/human/map-icons/archer.svg',
+    animations: {
+      idle: '/assets/theme1/troops/human/animations/archer/idle.gif',
+      walk: '/assets/theme1/troops/human/animations/archer/walk.gif',
+      attack: '/assets/theme1/troops/human/animations/archer/attack.gif',
+      hurt: '/assets/theme1/troops/human/animations/archer/hurt.gif',
+      death: '/assets/theme1/troops/human/animations/archer/death.gif',
+    },
+  },
+  Barbarian: {
+    icon: '/assets/theme1/troops/human/map-icons/archer.svg',
+    animations: {
+      idle: '/assets/theme1/troops/human/animations/barbarian/idle.gif',
+      walk: '/assets/theme1/troops/human/animations/barbarian/walk.gif',
+      attack: '/assets/theme1/troops/human/animations/barbarian/attack.gif',
+      hurt: '/assets/theme1/troops/human/animations/barbarian/hurt.gif',
+      death: '/assets/theme1/troops/human/animations/barbarian/death.gif',
+    },
+  },
+  Longbowman: { icon: '/assets/theme1/troops/human/map-icons/longbowman.svg' },
+  Hussar: { icon: '/assets/theme1/troops/human/map-icons/hussar.svg' },
+  Troll: { icon: '/assets/theme1/troops/monster/map-icons/troll.svg' },
+  Wraith: { icon: '/assets/theme1/troops/monster/map-icons/wraith.svg' },
+};
+
+function troopIconPath(name) {
+  const asset = TROOP_ASSETS[name];
+  return asset ? (asset.icon || '') : '';
+}
+
+function troopVisualPath(name, action = 'idle') {
+  const asset = TROOP_ASSETS[name];
+  if (!asset) return '';
+  if (asset.animations && asset.animations[action]) return asset.animations[action];
+  return asset.icon || '';
+}
 const CATEGORY_ORDER = ['Resources', 'Military', 'Defense'];
 const BUILDING_INFO = {
   'Farm': { icon: '🌾', category: 'Resources', desc: 'Generates Food over time.', gain: 'Food / sec' },
@@ -340,12 +465,14 @@ function renderPanel(data) {
     } else {
       const rows = troops.map((t) => {
         const s = t.stats || {};
-        return `<tr class="border-t border-gray-700"><td class="py-2 px-3 text-left">${t.unit_type} ×${t.quantity}</td><td class="py-2 px-3 text-center">${s.hp ?? '-'}</td><td class="py-2 px-3 text-center">${s.damage ?? '-'}</td><td class="py-2 px-3 text-center">${s.defense ?? '-'}</td><td class="py-2 px-3 text-center">${s.range ?? '-'}</td><td class="py-2 px-3 text-center">${s.speed ?? '-'}</td></tr>`;
+        const icon = troopIconPath(t.unit_type);
+        const iconHtml = icon ? `<img src="${icon}" alt="${t.unit_type}" class="troop-icon-inline" />` : '';
+        return `<tr class="border-t border-gray-700"><td class="py-2 px-3 text-left"><div class="flex items-center gap-2">${iconHtml}<span>${t.unit_type} ×${t.quantity}</span></div></td><td class="py-2 px-3 text-center">${s.hp ?? '-'}</td><td class="py-2 px-3 text-center">${s.damage ?? '-'}</td><td class="py-2 px-3 text-center">${s.defense ?? '-'}</td><td class="py-2 px-3 text-center">${s.range ?? '-'}</td><td class="py-2 px-3 text-center">${s.speed ?? '-'}</td></tr>`;
       }).join('');
       html += `
         <section>
           <h4 class="text-sm font-semibold text-gray-300 mb-2">Troop Details</h4>
-          <div class="overflow-x-auto">
+          <div class="overflow-x-auto rounded border border-gray-700" style="background-image:url(${COMMAND_CENTRE_GRID});background-size:cover;background-position:center;">
             <table class="w-full text-xs">
               <thead><tr class="text-gray-500 uppercase"><th class="pb-2 px-3 text-left">Unit</th><th class="pb-2 px-3">HP</th><th class="pb-2 px-3">DMG</th><th class="pb-2 px-3">DEF</th><th class="pb-2 px-3">RNG</th><th class="pb-2 px-3">SPD</th></tr></thead>
               <tbody>${rows}</tbody>
@@ -358,12 +485,13 @@ function renderPanel(data) {
 
   if (data.army) {
     const unit = data.army.unit_type;
+    const unitVisual = troopVisualPath(unit, 'idle');
     const queue = data.queue || [];
     const nowTraining = queue.length ? queue[0] : null;
     const stack = (data.all_troops || []).find((t) => t.unit_type === unit);
     html += `
       <section>
-        <h4 class="text-sm font-semibold text-gray-300 mb-2">Troop Management (${unit})</h4>
+        <h4 class="text-sm font-semibold text-gray-300 mb-2 flex items-center gap-2">${unitVisual ? `<img src="${unitVisual}" alt="${unit}" class="troop-icon-inline" />` : ''}<span>Troop Management (${unit})</span></h4>
         <div class="text-xs text-gray-400 mb-2">Available: <b class="text-white">${data.troop_count || 0}</b> | Queue: <b class="text-yellow-300">${queue.length}</b></div>
         ${nowTraining ? `<div class="bg-gray-800 rounded-lg px-4 py-2 text-xs text-gray-300 mb-2">Training now: ${unit} — <span data-train-complete="${nowTraining.complete_at}" class="font-mono">...</span> left</div>` : ''}
         <div class="flex flex-wrap items-center gap-2 mb-3">

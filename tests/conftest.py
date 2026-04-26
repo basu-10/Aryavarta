@@ -58,3 +58,10 @@ def archer_b():
 @pytest.fixture
 def small_grid():
     return Grid(rows=4, cols=5)
+
+
+@pytest.fixture(autouse=True)
+def fixed_random_seed():
+    import random
+
+    random.seed(0)

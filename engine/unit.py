@@ -26,6 +26,7 @@ class Unit:
     range: int            # Chebyshev range
     speed: float          # movement credit per tick: 1.0 = 1x, 0.5 = 0.5x
     ammo: Optional[int] = None  # Used by defence units; None means unlimited/not applicable
+    quantity: int = 1           # Number of stacked troops this unit represents
     alive: bool = True
     # Ephemeral per-tick fields (not serialised to CSV/JSON directly)
     _intent: str = field(default="hold", repr=False, compare=False)

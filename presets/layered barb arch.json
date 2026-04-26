@@ -2,67 +2,200 @@
   "name": "layered barb arch",
   "army_a": [
     {
-      "unit_id": "A_B1",
+      "col": 3,
+      "row": 0,
+      "team": "A",
+      "type": "Barbarian",
+      "unit_id": "A_B1"
+    },
+    {
+      "unit_id": "A_B17",
       "team": "A",
       "type": "Barbarian",
       "row": 0,
       "col": 3
     },
     {
-      "unit_id": "A_B2",
+      "unit_id": "A_B18",
+      "team": "A",
+      "type": "Barbarian",
+      "row": 0,
+      "col": 3
+    },
+    {
+      "unit_id": "A_B19",
+      "team": "A",
+      "type": "Barbarian",
+      "row": 0,
+      "col": 3
+    },
+    {
+      "col": 3,
+      "row": 1,
+      "team": "A",
+      "type": "Barbarian",
+      "unit_id": "A_B2"
+    },
+    {
+      "unit_id": "A_B20",
       "team": "A",
       "type": "Barbarian",
       "row": 1,
       "col": 3
     },
     {
-      "unit_id": "A_B3",
+      "unit_id": "A_B21",
       "team": "A",
       "type": "Barbarian",
-      "row": 2,
-      "col": 3
-    },
-    {
-      "unit_id": "A_B4",
-      "team": "A",
-      "type": "Barbarian",
-      "row": 3,
-      "col": 3
-    },
-    {
-      "unit_id": "A_AR5",
-      "team": "A",
-      "type": "Archer",
-      "row": 0,
-      "col": 2
-    },
-    {
-      "unit_id": "A_AR6",
-      "team": "A",
-      "type": "Archer",
       "row": 1,
-      "col": 2
+      "col": 3
     },
     {
-      "unit_id": "A_AR7",
-      "team": "A",
-      "type": "Archer",
-      "row": 2,
-      "col": 2
-    },
-    {
-      "unit_id": "A_AR8",
-      "team": "A",
-      "type": "Archer",
-      "row": 3,
-      "col": 2
-    },
-    {
-      "unit_id": "A_B9",
+      "unit_id": "A_B22",
       "team": "A",
       "type": "Barbarian",
+      "row": 1,
+      "col": 3
+    },
+    {
+      "col": 3,
+      "row": 2,
+      "team": "A",
+      "type": "Barbarian",
+      "unit_id": "A_B3"
+    },
+    {
+      "unit_id": "A_B23",
+      "team": "A",
+      "type": "Barbarian",
+      "row": 2,
+      "col": 3
+    },
+    {
+      "unit_id": "A_B24",
+      "team": "A",
+      "type": "Barbarian",
+      "row": 2,
+      "col": 3
+    },
+    {
+      "unit_id": "A_B25",
+      "team": "A",
+      "type": "Barbarian",
+      "row": 2,
+      "col": 3
+    },
+    {
+      "col": 3,
+      "row": 3,
+      "team": "A",
+      "type": "Barbarian",
+      "unit_id": "A_B4"
+    },
+    {
+      "unit_id": "A_B26",
+      "team": "A",
+      "type": "Barbarian",
+      "row": 3,
+      "col": 3
+    },
+    {
+      "unit_id": "A_B27",
+      "team": "A",
+      "type": "Barbarian",
+      "row": 3,
+      "col": 3
+    },
+    {
+      "unit_id": "A_B28",
+      "team": "A",
+      "type": "Barbarian",
+      "row": 3,
+      "col": 3
+    },
+    {
+      "col": 2,
       "row": 0,
-      "col": 1
+      "team": "A",
+      "type": "Archer",
+      "unit_id": "A_AR5"
+    },
+    {
+      "col": 2,
+      "row": 1,
+      "team": "A",
+      "type": "Archer",
+      "unit_id": "A_AR6"
+    },
+    {
+      "col": 2,
+      "row": 2,
+      "team": "A",
+      "type": "Archer",
+      "unit_id": "A_AR7"
+    },
+    {
+      "col": 2,
+      "row": 3,
+      "team": "A",
+      "type": "Archer",
+      "unit_id": "A_AR8"
+    },
+    {
+      "col": 1,
+      "row": 0,
+      "team": "A",
+      "type": "Barbarian",
+      "unit_id": "A_B9"
+    },
+    {
+      "col": 1,
+      "row": 1,
+      "team": "A",
+      "type": "Barbarian",
+      "unit_id": "A_B10"
+    },
+    {
+      "col": 1,
+      "row": 2,
+      "team": "A",
+      "type": "Barbarian",
+      "unit_id": "A_B11"
+    },
+    {
+      "col": 1,
+      "row": 3,
+      "team": "A",
+      "type": "Barbarian",
+      "unit_id": "A_B12"
+    },
+    {
+      "col": 0,
+      "row": 0,
+      "team": "A",
+      "type": "Archer",
+      "unit_id": "A_AR13"
+    },
+    {
+      "col": 0,
+      "row": 1,
+      "team": "A",
+      "type": "Archer",
+      "unit_id": "A_AR15"
+    },
+    {
+      "col": 0,
+      "row": 2,
+      "team": "A",
+      "type": "Archer",
+      "unit_id": "A_AR15"
+    },
+    {
+      "col": 0,
+      "row": 3,
+      "team": "A",
+      "type": "Archer",
+      "unit_id": "A_AR16"
     }
   ],
   "army_b": []

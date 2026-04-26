@@ -1,5 +1,5 @@
 """
-blueprints/auth_bp.py — Registration, login, logout, profile.
+blueprints/auth_bp.py — Registration, login, logout, battle history.
 """
 
 from __future__ import annotations
@@ -105,17 +105,23 @@ def logout():
     return redirect(url_for("auth.login"))
 
 
+@auth_bp.route("/battles")
+@login_required
+def battles():
+    player = m.get_player_by_id(session["player_id"])
+    missions = m.get_recent_resolved_missions(session["player_id"], limit=50)
+    wins = sum(1 for mis in missions if mis.get("winner") == "attacker")
+    losses = sum(1 for mis in missions if mis.get("winner") == "defender")
+    return render_template(
+        "auth/battles.html",
+        player=player,
+        missions=missions,
+        wins=wins,
+        losses=losses,
+    )
+
+
 @auth_bp.route("/profile")
 @login_required
-def profile():
-    player = m.get_player_by_id(session["player_id"])
-    forts  = m.get_forts_by_owner(session["player_id"])
-    castle = m.get_castle_by_player(session["player_id"])
-    troops = m.get_troops_by_owner(session["player_id"])
-    missions = m.get_recent_resolved_missions(session["player_id"])
-    clan   = m.get_clan(player["clan_id"]) if player.get("clan_id") else None
-    return render_template(
-        "auth/profile.html",
-        player=player, forts=forts, castle=castle,
-        troops=troops, missions=missions, clan=clan,
-    )
+def profile_legacy_redirect():
+    return redirect(url_for("auth.battles"))

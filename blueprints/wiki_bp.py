@@ -4,8 +4,11 @@ blueprints/wiki_bp.py — Troopedia: game wiki pages for every troop type.
 
 from __future__ import annotations
 
+import math
+
 from flask import Blueprint, render_template, abort
 from db import get_db
+import config
 
 wiki_bp = Blueprint("wiki", __name__, url_prefix="/troopedia")
 
@@ -15,8 +18,9 @@ def _slug(name: str) -> str:
 
 
 def _troop_image_path(name: str) -> str | None:
-    """Return the URL path for a troop's full-art SVG, or None."""
+    """Return the URL path for a troop art asset, or None."""
     _IMAGE_MAP: dict[str, str] = {
+        "Barbarian":   "/assets/theme1/troops/human/animations/barbarian/idle.gif",
         "Archer":      "/assets/theme1/troops/human/full/archer.svg",
         "Hussar":      "/assets/theme1/troops/human/full/hussar.svg",
         "Longbowman":  "/assets/theme1/troops/human/full/longbowman.svg",
@@ -46,17 +50,111 @@ def _category_color(category: str) -> str:
     }.get(category, "text-gray-400")
 
 
+def _fallback_category(troop_name: str) -> str:
+    if troop_name in {"Cannon", "Archer Tower"}:
+        return "siege_defence"
+
+    cls = config.UNIT_CLASSIFICATION.get(troop_name, {})
+    faction = cls.get("faction")
+    role = cls.get("type")
+
+    if faction == "monster":
+        return "monster"
+    if troop_name == "Hussar":
+        return "cavalry"
+    if role == "ranged":
+        return "ranged"
+    return "infantry"
+
+
+def _fallback_lore_notes(troop_name: str) -> tuple[str | None, str | None]:
+    lore_map: dict[str, str] = {
+        "Barbarian": "Fierce melee warrior. Advances every tick and overwhelms defences with sheer numbers.",
+        "Archer": "Disciplined ranged unit. Hangs back to rain arrows while others advance.",
+        "Troll": "Massive brute found guarding monster camps. High HP and natural armour.",
+        "Wraith": "Spectral assassin. Blurs across the battlefield to deliver devastating ranged strikes.",
+        "Longbowman": "Trained bowman from the Garrison. Steady, long-range support for assault waves.",
+        "Hussar": "Fast cavalry from the Stable. Charges at twice normal speed, punching through lines.",
+        "Cannon": "Heavy defensive emplacement. Stationary but deals massive damage at great range.",
+        "Archer Tower": "Fortified arrow platform. Defends locations with sustained ranged fire.",
+    }
+    notes_map: dict[str, str | None] = {
+        "Troll": "Monster unit. Naturally spawns in forts and monster camps.",
+        "Wraith": "Monster unit. Naturally spawns in forts and monster camps.",
+        "Longbowman": "Produced by the Garrison building.",
+        "Hussar": "Produced by the Stable building.",
+        "Cannon": "Spawned into battle from the Cannon building. Stationary (speed 0).",
+        "Archer Tower": "Spawned into battle from the Archer Tower building. Stationary (speed 0).",
+    }
+    return lore_map.get(troop_name), notes_map.get(troop_name)
+
+
+def _training_time_base_seconds(troop_name: str) -> int:
+    for _, v in config.ARMY_BUILDINGS.items():
+        if v.get("unit_type") == troop_name:
+            return int(v.get("training_seconds", 60))
+    return 60
+
+
+def _fallback_levels(troop_name: str, max_levels: int = 10) -> list[dict]:
+    base = config.UNIT_STATS.get(troop_name)
+    if not base:
+        return []
+
+    base_cost = config.TROOP_TRAIN_COST.get(troop_name, {})
+    gold = float(base_cost.get("gold", 0))
+    food = float(base_cost.get("food", 0))
+    timber = float(base_cost.get("timber", 0))
+    metal = float(base_cost.get("metal", 0))
+    base_time = _training_time_base_seconds(troop_name)
+    lore, notes = _fallback_lore_notes(troop_name)
+
+    levels: list[dict] = []
+    for lvl in range(1, max_levels + 1):
+        levels.append({
+            "troop_type": troop_name,
+            "category": _fallback_category(troop_name),
+            "level": lvl,
+            "hp": round(float(base["hp"]) * (1.15 ** (lvl - 1))),
+            "damage": round(float(base["damage"]) * (1.10 ** (lvl - 1))),
+            "defense": int(base["defense"]) + math.floor((lvl - 1) * 0.5),
+            "range": int(base["range"]),
+            "speed": float(base["speed"]),
+            "attack_speed": 1.0,
+            "gold_cost": round(gold * (1.50 ** (lvl - 1))),
+            "food_cost": round(food * (1.50 ** (lvl - 1))),
+            "timber_cost": round(timber * (1.50 ** (lvl - 1))),
+            "metal_cost": round(metal * (1.50 ** (lvl - 1))),
+            "training_time_seconds": round(base_time * (1.25 ** (lvl - 1))),
+            "lore": lore if lvl == 1 else None,
+            "notes": notes if lvl == 1 else None,
+        })
+
+    return levels
+
+
+def _fallback_level_one_rows() -> list[dict]:
+    rows: list[dict] = []
+    for troop_name in config.UNIT_TYPES:
+        levels = _fallback_levels(troop_name, max_levels=1)
+        if levels:
+            rows.append(levels[0])
+    return rows
+
+
 @wiki_bp.route("/")
 def troopedia_index():
     db = get_db()
     # One row per troop — level-1 stats only
-    rows = db.execute(
+    rows = [dict(r) for r in db.execute(
         "SELECT * FROM ref_troop_level WHERE level = 1 ORDER BY category, troop_type"
-    ).fetchall()
+    ).fetchall()]
+
+    if not rows:
+        rows = _fallback_level_one_rows()
 
     troops = []
     for r in rows:
-        r = dict(r)
         r["slug"] = _slug(r["troop_type"])
         r["image"] = _troop_image_path(r["troop_type"])
         r["category_label"] = _category_label(r["category"])
@@ -75,9 +173,11 @@ def troopedia_index():
 def troop_detail(slug: str):
     db = get_db()
     # Resolve slug back to troop_type
-    all_types = db.execute(
+    all_types = [dict(r) for r in db.execute(
         "SELECT DISTINCT troop_type FROM ref_troop_level"
-    ).fetchall()
+    ).fetchall()]
+    if not all_types:
+        all_types = [{"troop_type": name} for name in config.UNIT_TYPES]
 
     troop_name = None
     for row in all_types:
@@ -92,6 +192,8 @@ def troop_detail(slug: str):
         "SELECT * FROM ref_troop_level WHERE troop_type = ? ORDER BY level",
         (troop_name,)
     ).fetchall()]
+    if not levels:
+        levels = _fallback_levels(troop_name)
 
     if not levels:
         abort(404)

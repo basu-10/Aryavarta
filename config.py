@@ -101,8 +101,30 @@ MAX_MONSTER_CAMPS   = 10  # standalone monster camps on the map
 # Fort slot distribution weights [4, 5, 6, 7, 8, 9, 10 slots]
 FORT_SLOT_WEIGHTS = [20, 20, 20, 15, 10, 10, 5]
 
-# Star level thresholds (defender unit counts → 1–4 stars)
-STAR_THRESHOLDS = [4, 8, 12]   # ≤4 → ★, ≤8 → ★★, ≤12 → ★★★, else ★★★★
+# Monster fort/camp spawn table
+MONSTER_STAR_SPAWN_WEIGHTS: dict[int, int] = {
+    1: 25,
+    2: 25,
+    3: 20,
+    4: 15,
+    5: 10,
+    6: 5,
+}
+
+MONSTER_STAR_UNIT_RANGES: dict[int, tuple[int, int]] = {
+    1: (2, 3),
+    2: (4, 5),
+    3: (6, 8),
+    4: (9, 11),
+    5: (12, 14),
+    6: (15, 16),
+}
+
+# Generic star thresholds derived from the world spawn table.
+STAR_THRESHOLDS = [
+    max_units
+    for _, max_units in list(MONSTER_STAR_UNIT_RANGES.values())[:-1]
+]
 
 # ── Building system ────────────────────────────────────────────────── #
 BUILDING_PRODUCTION_RATE: dict[str, dict] = {
