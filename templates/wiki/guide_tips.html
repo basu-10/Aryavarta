@@ -1,0 +1,208 @@
+{% extends "base.html" %}
+{% block title %}Tips & Strategies — BattleCells Guide{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl space-y-8">
+
+  <!-- Breadcrumb -->
+  <nav class="text-xs text-gray-500 flex items-center gap-2">
+    <a href="{{ url_for('wiki.wiki_index') }}" class="hover:text-indigo-400">Wiki</a>
+    <span>›</span>
+    <a href="{{ url_for('wiki.guides_index') }}" class="hover:text-indigo-400">Guides</a>
+    <span>›</span>
+    <span class="text-gray-400">Tips</span>
+  </nav>
+
+  <!-- Header -->
+  <div>
+    <h1 class="text-4xl font-bold">💡 Tips & Strategies</h1>
+    <p class="text-gray-400 text-lg mt-3">
+      General advice to accelerate growth and maximize your enjoyment.
+    </p>
+  </div>
+
+  <!-- Early Game (First Hour) -->
+  <section class="space-y-4">
+    <h2 class="text-2xl font-bold text-indigo-300">Early Game (First Hour)</h2>
+    <ul class="space-y-2 text-gray-300">
+      <li class="flex gap-2"><span class="text-indigo-400">→</span> <span><strong>Prioritize production buildings.</strong> 4–5 farms/mills are your foundation.</span></li>
+      <li class="flex gap-2"><span class="text-indigo-400">→</span> <span><strong>Upgrade over expanding.</strong> A level-2 farm is better than 2 level-1 farms initially.</span></li>
+      <li class="flex gap-2"><span class="text-indigo-400">→</span> <span><strong>Train 10 Longbowmen ASAP.</strong> Your first army for scouting 1-star targets.</span></li>
+      <li class="flex gap-2"><span class="text-indigo-400">→</span> <span><strong>Collect frequently.</strong> Every 2–3 minutes keeps resources flowing.</span></li>
+      <li class="flex gap-2"><span class="text-indigo-400">→</span> <span><strong>Don't waste troops on risky attacks.</strong> Play it safe until you have momentum.</span></li>
+    </ul>
+  </section>
+
+  <!-- Mid Game (1–6 Hours) -->
+  <section class="space-y-4 border-t border-gray-700 pt-6">
+    <h2 class="text-2xl font-bold text-indigo-300">Mid Game (1–6 Hours)</h2>
+    <ul class="space-y-2 text-gray-300">
+      <li class="flex gap-2"><span class="text-indigo-400">→</span> <span><strong>Capture your first orange fort.</strong> Look for a 1–2 star nearby.</span></li>
+      <li class="flex gap-2"><span class="text-indigo-400">→</span> <span><strong>Build a second army at the new fort.</strong> Garrison + Stable for rapid troop production.</span></li>
+      <li class="flex gap-2"><span class="text-indigo-400">→</span> <span><strong>Expand to 2–3 star camps.</strong> You're getting stronger; take on harder targets.</span></li>
+      <li class="flex gap-2"><span class="text-indigo-400">→</span> <span><strong>Join or create a clan.</strong> Coordination multiplies your power.</span></li>
+      <li class="flex gap-2"><span class="text-indigo-400">→</span> <span><strong>Start watching for player forts (red).</strong> Scout but don't attack yet.</span></li>
+    </ul>
+  </section>
+
+  <!-- Late Game (6+ Hours) -->
+  <section class="space-y-4 border-t border-gray-700 pt-6">
+    <h2 class="text-2xl font-bold text-indigo-300">Late Game (6+ Hours)</h2>
+    <ul class="space-y-2 text-gray-300">
+      <li class="flex gap-2"><span class="text-indigo-400">→</span> <span><strong>Own 5–10 forts.</strong> Spread your economy across the map.</span></li>
+      <li class="flex gap-2"><span class="text-indigo-400">→</span> <span><strong>Fortify key territory.</strong> Add defense buildings and garrison troops to prevent capture.</span></li>
+      <li class="flex gap-2"><span class="text-indigo-400">→</span> <span><strong>Attack 4–6 star targets.</strong> These offer 500+ loot per victory.</span></li>
+      <li class="flex gap-2"><span class="text-indigo-400">→</span> <span><strong>Raid other players.</strong> Coordinate clan attacks on enemy red forts.</span></li>
+      <li class="flex gap-2"><span class="text-indigo-400">→</span> <span><strong>Defend your clan.</strong> Help members defend against rivals.</span></li>
+    </ul>
+  </section>
+
+  <!-- Resource Management -->
+  <section class="space-y-4 border-t border-gray-700 pt-6">
+    <h2 class="text-2xl font-bold text-indigo-300">Resource Management</h2>
+    
+    <div class="space-y-3">
+      <div class="bg-gray-900 border border-gray-800 rounded-lg p-4">
+        <h4 class="font-bold text-indigo-400">⚙️ The Bottleneck</h4>
+        <p class="text-gray-400 text-sm">
+          One resource always limits you. If building a Garrison costs 100 Timber + 100 Gold + 50 Metal, 
+          and you only have 80 Timber, you're blocked. Identify your bottleneck and focus on it.
+        </p>
+      </div>
+
+      <div class="bg-gray-900 border border-gray-800 rounded-lg p-4">
+        <h4 class="font-bold text-indigo-400">💾 Hoarding vs. Spending</h4>
+        <p class="text-gray-400 text-sm">
+          Don't hoard 10,000 resources. That's a wasted opportunity. Keep 2–3k on hand and spend the rest 
+          on troops, buildings, or upgrades. Active players grow faster than passive savers.
+        </p>
+      </div>
+
+      <div class="bg-gray-900 border border-gray-800 rounded-lg p-4">
+        <h4 class="font-bold text-indigo-400">🏠 Collect Before Logging Off</h4>
+        <p class="text-gray-400 text-sm">
+          If you won't play for 30 minutes, collect resources first. Resources keep generating while 
+          you're offline (if you collected right before leaving), but you won't see the gains until you log back in.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Army Composition Tips -->
+  <section class="space-y-4 border-t border-gray-700 pt-6">
+    <h2 class="text-2xl font-bold text-indigo-300">Army Composition Tips</h2>
+    <div class="bg-gray-900 border border-gray-800 rounded-lg p-4 space-y-3 text-sm">
+      <p class="text-gray-300">
+        <strong>Save presets.</strong> Create 3–5 named formations (e.g., "Scout 5", "2-Star Killer", "Balanced 30"). 
+        Reuse them to avoid manual selection each attack.
+      </p>
+      <p class="text-gray-300">
+        <strong>Test in simulator.</strong> Before risking troops, run a battle simulation. 
+        It takes 10 seconds and saves losses.
+      </p>
+      <p class="text-gray-300">
+        <strong>Adapt to targets.</strong> Scout the target first (see garrison composition), 
+        then choose the best formation. Trolls? Ranged. Wraiths? Cavalry.
+      </p>
+      <p class="text-gray-300">
+        <strong>Mix units for resilience.</strong> Pure Longbowmen are easy to counter. Mix in Hussars for flexibility.
+      </p>
+    </div>
+  </section>
+
+  <!-- Map Exploration -->
+  <section class="space-y-4 border-t border-gray-700 pt-6">
+    <h2 class="text-2xl font-bold text-indigo-300">Map Exploration</h2>
+    <ul class="space-y-2 text-gray-300">
+      <li class="flex gap-2"><span class="text-indigo-400">→</span> <span><strong>Scout before attacking.</strong> Click entities to see garrisons and difficulty. Free info.</span></li>
+      <li class="flex gap-2"><span class="text-indigo-400">→</span> <span><strong>Look for clusters.</strong> Multiple 1-2 star targets nearby = grinding paradise.</span></li>
+      <li class="flex gap-2"><span class="text-indigo-400">→</span> <span><strong>Expand strategically.</strong> Don't scatter forts randomly. Build chains for supply lines.</span></li>
+      <li class="flex gap-2"><span class="text-indigo-400">→</span> <span><strong>Mark dangerous areas.</strong> Red fort clusters = enemy territory. Avoid until ready.</span></li>
+      <li class="flex gap-2"><span class="text-indigo-400">→</span> <span><strong>Use zoom strategically.</strong> Zoom out for big-picture planning; zoom in to identify single targets.</span></li>
+    </ul>
+  </section>
+
+  <!-- Avoid Common Mistakes -->
+  <section class="space-y-4 border-t border-gray-700 pt-6">
+    <h2 class="text-2xl font-bold text-indigo-300">❌ Avoid These Mistakes</h2>
+    
+    <div class="space-y-3">
+      <div class="bg-red-900/20 border border-red-800 rounded-lg p-4">
+        <h4 class="font-bold text-red-400">1. Over-committing troops</h4>
+        <p class="text-gray-400 text-sm">Don't send your entire army on one attack. If you lose, you're defenseless.</p>
+      </div>
+
+      <div class="bg-red-900/20 border border-red-800 rounded-lg p-4">
+        <h4 class="font-bold text-red-400">2. Ignoring defense</h4>
+        <p class="text-gray-400 text-sm">If you capture a valuable fort, defend it. Otherwise, rivals will capture it from you.</p>
+      </div>
+
+      <div class="bg-red-900/20 border border-red-800 rounded-lg p-4">
+        <h4 class="font-bold text-red-400">3. Attacking without simulation</h4>
+        <p class="text-gray-400 text-sm">A quick test prevents 90% of losses. Always simulate first.</p>
+      </div>
+
+      <div class="bg-red-900/20 border border-red-800 rounded-lg p-4">
+        <h4 class="font-bold text-red-400">4. Neglecting economy early</h4>
+        <p class="text-gray-400 text-sm">A weak economy limits your army size. Build production buildings before military.</p>
+      </div>
+
+      <div class="bg-red-900/20 border border-red-800 rounded-lg p-4">
+        <h4 class="font-bold text-red-400">5. Playing solo</h4>
+        <p class="text-gray-400 text-sm">Joining a clan multiplies your effectiveness. Don't go it alone.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Playstyle Variations -->
+  <section class="space-y-4 border-t border-gray-700 pt-6">
+    <h2 class="text-2xl font-bold text-indigo-300">Different Playstyles</h2>
+    
+    <div class="space-y-3">
+      <div class="bg-indigo-900/20 border border-indigo-800 rounded-lg p-4">
+        <h4 class="font-bold text-indigo-300">🔥 Aggressive Expander</h4>
+        <p class="text-gray-400 text-sm">Prioritize capturing forts. Own 10+ territories. Defend lightly. Risky but potentially dominant.</p>
+      </div>
+
+      <div class="bg-indigo-900/20 border border-indigo-800 rounded-lg p-4">
+        <h4 class="font-bold text-indigo-300">🛡️ Defensive Fortress</h4>
+        <p class="text-gray-400 text-sm">Own 3–5 key forts with heavy defense. Focus on protecting territory. Less risky, steady growth.</p>
+      </div>
+
+      <div class="bg-indigo-900/20 border border-indigo-800 rounded-lg p-4">
+        <h4 class="font-bold text-indigo-300">🐢 Steady Turtle</h4>
+        <p class="text-gray-400 text-sm">Build massive economy at castle. Minimum risk. Grind camps repeatedly. Slow but stable.</p>
+      </div>
+
+      <div class="bg-indigo-900/20 border border-indigo-800 rounded-lg p-4">
+        <h4 class="font-bold text-indigo-300">🎯 Specialist Raider</h4>
+        <p class="text-gray-400 text-sm">Optimize specific formations. Hunt targets matching your strength. Hit-and-run tactics.</p>
+      </div>
+    </div>
+
+    <p class="text-gray-300 mt-4">
+      <strong>Pick a playstyle that matches your schedule and personality.</strong> 
+      Casual players: Turtle. Competitive: Expander. Defenders: Fortress. All are viable.
+    </p>
+  </section>
+
+  <!-- Final Thoughts -->
+  <section class="bg-indigo-900/30 border border-indigo-800 rounded-lg p-6 space-y-4 border-t border-gray-700 pt-6">
+    <h3 class="font-bold text-lg">Final Thoughts</h3>
+    <p class="text-gray-300">
+      BattleCells rewards patience, strategy, and teamwork. Your first victory won't feel like much, 
+      but it's the start of an empire. Keep learning, adapt your tactics, and have fun with your clan.
+    </p>
+    <p class="text-gray-300 mt-4">
+      Welcome to BattleCells, commander. Go forth and conquer!
+    </p>
+  </section>
+
+  <!-- Navigation -->
+  <div class="flex justify-between pt-6 border-t border-gray-800">
+    <a href="{{ url_for('wiki.guide', guide='clans') }}" class="text-indigo-400 hover:text-indigo-300">← Clans</a>
+    <a href="{{ url_for('wiki.guides_index') }}" class="text-indigo-400 hover:text-indigo-300">Back to Guides</a>
+  </div>
+
+</div>
+{% endblock %}

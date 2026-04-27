@@ -1,0 +1,266 @@
+{% extends "base.html" %}
+{% block title %}First Steps — BattleCells Guide{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl space-y-8">
+
+  <!-- Breadcrumb -->
+  <nav class="text-xs text-gray-500 flex items-center gap-2">
+    <a href="{{ url_for('wiki.wiki_index') }}" class="hover:text-indigo-400">Wiki</a>
+    <span>›</span>
+    <a href="{{ url_for('wiki.guides_index') }}" class="hover:text-indigo-400">Guides</a>
+    <span>›</span>
+    <span class="text-gray-400">First Steps</span>
+  </nav>
+
+  <!-- Header -->
+  <div>
+    <h1 class="text-4xl font-bold">🚀 Your First Hour in BattleCells</h1>
+    <p class="text-gray-400 text-lg mt-3">
+      A step-by-step guide to get you from zero to your first successful attack.
+    </p>
+  </div>
+
+  <!-- Step 1: Understand Your Starting Position -->
+  <section class="space-y-4">
+    <h2 class="text-2xl font-bold text-indigo-300">Step 1: Understand Your Starting Position</h2>
+    <div class="bg-gray-900 border border-gray-800 rounded-lg p-6 space-y-3">
+      <p class="text-gray-300">
+        When you log in, you're at your <strong>castle</strong> (blue dot on the map). You start with:
+      </p>
+      <ul class="space-y-2 text-gray-300 ml-4">
+        <li class="flex gap-2"><span class="text-amber-400">🌾</span> 200 Food</li>
+        <li class="flex gap-2"><span class="text-amber-600">🪵</span> 200 Timber</li>
+        <li class="flex gap-2"><span class="text-yellow-400">💛</span> 100 Gold</li>
+        <li class="flex gap-2"><span class="text-slate-300">⚙️</span> 100 Metal</li>
+      </ul>
+      <p class="text-gray-300 mt-4">
+        Your castle can hold up to 9 buildings in slots (arranged in a 3×3 grid). One slot is occupied 
+        by the <strong>Command Centre</strong>, which is automatic and required.
+      </p>
+    </div>
+  </section>
+
+  <!-- Step 2: Build Your First Farm -->
+  <section class="space-y-4">
+    <h2 class="text-2xl font-bold text-indigo-300">Step 2: Build Your First Farm</h2>
+    <div class="space-y-3">
+      <p class="text-gray-300">
+        To grow your resources, you need production buildings. Let's start with a <strong>Farm</strong>.
+      </p>
+      <div class="bg-gray-900 border border-gray-800 rounded-lg p-6 space-y-3">
+        <div class="flex gap-4">
+          <div class="flex-shrink-0">
+            <img src="/assets/theme1/buildings/resource/farm.svg" alt="Farm" class="h-12 w-12" />
+          </div>
+          <div>
+            <h3 class="font-bold">Farm (Resource Building)</h3>
+            <div class="text-sm text-gray-400 space-y-1 mt-2">
+              <p><strong>Cost:</strong> 50 Timber, 50 Gold</p>
+              <p><strong>Build time:</strong> 30 seconds</p>
+              <p><strong>Production:</strong> 0.05 Food/second (level 1)</p>
+              <p><strong>Max level:</strong> 10</p>
+            </div>
+          </div>
+        </div>
+      </div>
+      <p class="text-gray-300">
+        <strong>How to build:</strong> Navigate to your castle (tab shows "Castle"). Click on an empty 
+        slot and select "Farm". Confirm the build. The farm will take 30 seconds to complete.
+      </p>
+      <div class="bg-blue-900/20 border border-blue-800 rounded p-4 text-sm text-blue-200">
+        💡 <strong>Tip:</strong> Build time is wasted waiting. For your first farm, it's fine to wait. 
+        But keep in mind that you can queue multiple buildings or build multiple buildings at once 
+        (if you have enough resources).
+      </div>
+    </div>
+  </section>
+
+  <!-- Step 3: Add More Production Buildings -->
+  <section class="space-y-4">
+    <h2 class="text-2xl font-bold text-indigo-300">Step 3: Build More Production</h2>
+    <p class="text-gray-300">
+      Once your farm is built, build one of each:
+    </p>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div class="bg-gray-900 border border-gray-800 rounded-lg p-4 space-y-2">
+        <h4 class="font-bold text-amber-600 flex gap-2 items-center">
+          <img src="/assets/theme1/buildings/resource/lumber_mill.svg" alt="Lumber" class="h-6 w-6" />
+          Lumber Mill
+        </h4>
+        <p class="text-gray-400 text-sm"><strong>Cost:</strong> 50 Food, 50 Gold</p>
+        <p class="text-gray-400 text-sm"><strong>Produces:</strong> Timber (0.05/s)</p>
+      </div>
+      <div class="bg-gray-900 border border-gray-800 rounded-lg p-4 space-y-2">
+        <h4 class="font-bold text-yellow-600 flex gap-2 items-center">
+          <img src="/assets/theme1/buildings/resource/merchant.svg" alt="Merchant" class="h-6 w-6" />
+          Merchant
+        </h4>
+        <p class="text-gray-400 text-sm"><strong>Cost:</strong> 50 Food, 50 Timber</p>
+        <p class="text-gray-400 text-sm"><strong>Produces:</strong> Gold (0.05/s)</p>
+      </div>
+      <div class="bg-gray-900 border border-gray-800 rounded-lg p-4 space-y-2">
+        <h4 class="font-bold text-slate-400 flex gap-2 items-center">
+          <img src="/assets/theme1/buildings/resource/mine.svg" alt="Mine" class="h-6 w-6" />
+          Mine
+        </h4>
+        <p class="text-gray-400 text-sm"><strong>Cost:</strong> 50 Food, 50 Timber</p>
+        <p class="text-gray-400 text-sm"><strong>Produces:</strong> Metal (0.05/s)</p>
+      </div>
+      <div class="bg-gray-900 border border-gray-800 rounded-lg p-4 space-y-2">
+        <h4 class="font-bold text-orange-600 flex gap-2 items-center">
+          <img src="/assets/theme1/buildings/resource/farm.svg" alt="Farm 2" class="h-6 w-6" />
+          Farm 2
+        </h4>
+        <p class="text-gray-400 text-sm"><strong>Cost:</strong> 50 Timber, 50 Gold</p>
+        <p class="text-gray-400 text-sm"><strong>Produces:</strong> Food (0.05/s)</p>
+      </div>
+    </div>
+    <p class="text-gray-300 mt-4">
+      This gives you a balanced economy. Now collect your first batch of resources. 
+      Go to your castle and click the <strong>Collect</strong> button in the resources panel to harvest accumulated production.
+    </p>
+  </section>
+
+  <!-- Step 4: Train Your First Troops -->
+  <section class="space-y-4">
+    <h2 class="text-2xl font-bold text-indigo-300">Step 4: Train Your First Troops</h2>
+    <p class="text-gray-300">
+      Now you have resources flowing in. Let's train some soldiers. You need military buildings:
+    </p>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div class="bg-gray-900 border border-gray-800 rounded-lg p-4 space-y-2">
+        <h4 class="font-bold text-orange-400 flex gap-2 items-center">
+          <img src="/assets/theme1/buildings/military/garrison.svg" alt="Garrison" class="h-6 w-6" />
+          Garrison (Barracks)
+        </h4>
+        <p class="text-gray-400 text-sm"><strong>Cost:</strong> 100 Timber, 100 Gold, 50 Metal</p>
+        <p class="text-gray-400 text-sm"><strong>Produces:</strong> Longbowman (60s each)</p>
+        <p class="text-gray-400 text-sm"><strong>Training Cost:</strong> 25 Food, 10 Gold</p>
+      </div>
+      <div class="bg-gray-900 border border-gray-800 rounded-lg p-4 space-y-2">
+        <h4 class="font-bold text-yellow-400 flex gap-2 items-center">
+          <img src="/assets/theme1/buildings/military/stable.svg" alt="Stable" class="h-6 w-6" />
+          Stable
+        </h4>
+        <p class="text-gray-400 text-sm"><strong>Cost:</strong> 100 Food, 100 Timber, 50 Metal</p>
+        <p class="text-gray-400 text-sm"><strong>Produces:</strong> Hussar (90s each)</p>
+        <p class="text-gray-400 text-sm"><strong>Training Cost:</strong> 30 Food, 15 Gold</p>
+      </div>
+    </div>
+    <p class="text-gray-300 mt-4">
+      <strong>How to train:</strong> Build a Garrison or Stable at your castle. Once built, 
+      click on it to see the training queue. Select "Queue Longbowman" or "Queue Hussar". 
+      The unit will start training immediately and complete in 60–90 seconds.
+    </p>
+    <div class="bg-blue-900/20 border border-blue-800 rounded p-4 text-sm text-blue-200">
+      💡 <strong>Tip:</strong> Start with 5–10 Longbowmen (ranged). They're cheaper and good for learning.
+    </div>
+  </section>
+
+  <!-- Step 5: Find Your First Target -->
+  <section class="space-y-4">
+    <h2 class="text-2xl font-bold text-indigo-300">Step 5: Find Your First Target</h2>
+    <p class="text-gray-300">
+      With troops ready, let's find something to attack. Navigate to the <strong>World Map</strong> 
+      (from the main menu). You'll see:
+    </p>
+    <div class="bg-gray-900 border border-gray-800 rounded-lg p-4 space-y-2 text-sm">
+      <div class="flex gap-2"><span class="text-blue-400 font-bold">●</span> <span>Blue:</span> <span class="text-gray-400">Your castle</span></div>
+      <div class="flex gap-2"><span class="text-green-400 font-bold">●</span> <span>Green:</span> <span class="text-gray-400">Your captured forts</span></div>
+      <div class="flex gap-2"><span class="text-red-400 font-bold">●</span> <span>Red:</span> <span class="text-gray-400">Enemy player forts</span></div>
+      <div class="flex gap-2"><span class="text-orange-400 font-bold">●</span> <span>Orange:</span> <span class="text-gray-400">Unowned monster forts (great for beginners!)</span></div>
+      <div class="flex gap-2"><span class="text-purple-400 font-bold">●</span> <span>Purple:</span> <span class="text-gray-400">Monster camps</span></div>
+    </div>
+    <p class="text-gray-300 mt-4">
+      <strong>Look for a 1-star (★) orange monster fort or purple monster camp close to your castle.</strong> 
+      Distance affects travel time, so pick something nearby.
+    </p>
+  </section>
+
+  <!-- Step 6: Attack & Battle -->
+  <section class="space-y-4">
+    <h2 class="text-2xl font-bold text-indigo-300">Step 6: Your First Attack</h2>
+    <p class="text-gray-300">
+      Click on a monster camp or fort to see a popup with its stats:
+    </p>
+    <div class="bg-gray-900 border border-gray-800 rounded-lg p-4 text-sm space-y-2">
+      <p><strong>Difficulty:</strong> ★ (1 star)</p>
+      <p><strong>Defenders:</strong> 2–3 Trolls (typical for 1-star)</p>
+      <p><strong>Travel distance:</strong> Example: 5 cells away = ~5 seconds travel</p>
+      <p><strong>Rewards:</strong> Gold and Metal (for camps), or claimed fort (for forts)</p>
+    </div>
+    <p class="text-gray-300 mt-4">
+      Click the <strong>Attack</strong> button. Select your prepared troops (e.g., 5 Longbowmen). 
+      The app will show you a battle preview — if you're confident, launch the attack.
+    </p>
+    <div class="bg-green-900/20 border border-green-800 rounded p-4 text-sm text-green-200">
+      ✓ <strong>Success!</strong> After the travel time expires (you'll see a countdown), 
+      your browser will auto-resolve the battle and show you the results.
+    </div>
+  </section>
+
+  <!-- Monster Difficulty Guide -->
+  <section class="space-y-4">
+    <h2 class="text-2xl font-bold text-indigo-300">Monster Difficulty Reference</h2>
+    <p class="text-gray-300">
+      Monster entities spawn with random difficulty levels (stars). Higher stars = more defenders + harder units:
+    </p>
+    <div class="bg-gray-900 border border-gray-800 rounded-lg p-4">
+      <table class="w-full text-sm">
+        <thead>
+          <tr class="border-b border-gray-700">
+            <th class="text-left py-2">Stars</th>
+            <th class="text-left py-2">Defender Count</th>
+            <th class="text-left py-2">Recommendation</th>
+          </tr>
+        </thead>
+        <tbody class="space-y-1">
+          <tr class="border-b border-gray-700/50">
+            <td class="py-2">★</td>
+            <td class="py-2">2–3</td>
+            <td class="text-gray-400">Easy. ~5 troops to win.</td>
+          </tr>
+          <tr class="border-b border-gray-700/50">
+            <td class="py-2">★★</td>
+            <td class="py-2">4–5</td>
+            <td class="text-gray-400">Moderate. ~10–15 troops.</td>
+          </tr>
+          <tr class="border-b border-gray-700/50">
+            <td class="py-2">★★★</td>
+            <td class="py-2">6–8</td>
+            <td class="text-gray-400">Challenging. ~20 troops or upgrades.</td>
+          </tr>
+          <tr>
+            <td class="py-2">★★★★+</td>
+            <td class="py-2">9+</td>
+            <td class="text-gray-400">Hard. Come back when stronger.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- What's Next -->
+  <section class="bg-indigo-900/30 border border-indigo-800 rounded-lg p-6 space-y-4">
+    <h3 class="font-bold text-lg">What's Next?</h3>
+    <ul class="space-y-2 text-gray-300">
+      <li>✓ Repeat: Build more troops, attack more camps/forts, grow your economy</li>
+      <li>✓ Upgrade your production buildings to level 2+ to accelerate growth</li>
+      <li>✓ Capture a fort to expand your territory and build a second army there</li>
+      <li>✓ Form or join a clan to coordinate with other players</li>
+    </ul>
+    <p class="text-sm text-gray-400 mt-4">
+      Ready to dive deeper? Check out <a href="{{ url_for('wiki.guide', guide='resources') }}" class="text-indigo-400 hover:text-indigo-300">Resources & Economy</a> 
+      or <a href="{{ url_for('wiki.guide', guide='combat-basics') }}" class="text-indigo-400 hover:text-indigo-300">Combat Basics</a>.
+    </p>
+  </section>
+
+  <!-- Navigation -->
+  <div class="flex justify-between pt-6 border-t border-gray-800">
+    <a href="{{ url_for('wiki.guide', guide='welcome') }}" class="text-indigo-400 hover:text-indigo-300">← Welcome</a>
+    <a href="{{ url_for('wiki.guide', guide='resources') }}" class="text-indigo-400 hover:text-indigo-300">Resources & Economy →</a>
+  </div>
+
+</div>
+{% endblock %}

@@ -9,6 +9,15 @@ session["player_id"]  — integer PK
 session["username"]   — display name
 ```
 
+In addition to the Flask session cookie, login/register now issues a `bc_remember` cookie.
+The raw token is never stored in plaintext: its SHA-256 hash is persisted in `auth_remember_token`.
+
+If a request arrives without `session["player_id"]` but with a valid non-revoked remember token,
+the app restores the session automatically before route handlers run. This allows a user to log in once
+and then refresh other open tabs to continue without re-entering credentials in each tab.
+
+Logout revokes the remember token in the database and clears the cookie.
+
 The `login_required` decorator in `auth_bp.py` checks for `session["player_id"]`. The `admin_required` decorator additionally checks the logged-in player's role from the database.
 
 Admin role checks are sourced from the database on each request (`player.role == 'admin'`), so role changes are effective immediately.
@@ -18,6 +27,15 @@ The navbar receives a `nav_is_admin` flag from an app-level context processor an
 ### Secret key
 
 `app.secret_key` is read from the `SECRET_KEY` environment variable. If not set, `secrets.token_hex(32)` generates a random key at startup. In development this is fine; in production, set `SECRET_KEY` as a persistent environment variable so sessions survive server restarts.
+
+With remember tokens enabled, a random key rotation no longer forces manual re-entry of credentials on every open tab. A simple refresh can restore the session from the remember token.
+
+---
+
+## Default entry route
+
+The root route `/` now serves a public landing page for guests.
+If the user is already authenticated, opening `/` redirects to `/world`.
 
 ---
 

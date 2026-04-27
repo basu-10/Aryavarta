@@ -61,10 +61,13 @@ def create_app(output_dir: str | None = None) -> Flask:
     def inject_nav_flags():
         player_id = session.get("player_id")
         if not player_id:
-            return {"nav_is_admin": False}
+            return {"nav_is_admin": False, "nav_clan_id": None}
         from db import models as m
         player = m.get_player_by_id(player_id)
-        return {"nav_is_admin": bool(player and player.get("role") == "admin")}
+        return {
+            "nav_is_admin": bool(player and player.get("role") == "admin"),
+            "nav_clan_id": player.get("clan_id") if player else None,
+        }
 
     # Seed monster forts and camps on startup (tops up to configured maximums)
     with app.app_context():

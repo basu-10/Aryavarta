@@ -1,0 +1,224 @@
+{% extends "base.html" %}
+{% block title %}Clans — BattleCells Guide{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl space-y-8">
+
+  <!-- Breadcrumb -->
+  <nav class="text-xs text-gray-500 flex items-center gap-2">
+    <a href="{{ url_for('wiki.wiki_index') }}" class="hover:text-indigo-400">Wiki</a>
+    <span>›</span>
+    <a href="{{ url_for('wiki.guides_index') }}" class="hover:text-indigo-400">Guides</a>
+    <span>›</span>
+    <span class="text-gray-400">Clans</span>
+  </nav>
+
+  <!-- Header -->
+  <div>
+    <h1 class="text-4xl font-bold">👥 Clans</h1>
+    <p class="text-gray-400 text-lg mt-3">
+      Form alliances, coordinate attacks, and dominate the world together.
+    </p>
+  </div>
+
+  <!-- What Are Clans -->
+  <section class="space-y-4">
+    <h2 class="text-2xl font-bold text-indigo-300">What Are Clans?</h2>
+    <p class="text-gray-300">
+      Clans are player-created groups for teamwork and social gameplay. Members share a clan chat, 
+      coordinate attacks, and can recruit together. Clans enable large-scale warfare impossible solo.
+    </p>
+    <div class="bg-gray-900 border border-gray-800 rounded-lg p-4 space-y-2 text-sm mt-3">
+      <p class="text-gray-300"><strong>Clan chat:</strong> Private messaging visible to all clan members.</p>
+      <p class="text-gray-300"><strong>Roles:</strong> Leader, Co-leader, Elder, Member (hierarchical permissions).</p>
+      <p class="text-gray-300"><strong>Recruitment:</strong> Direct DM invites; or public applications and voting.</p>
+      <p class="text-gray-300"><strong>Max members:</strong> No hard limit; grows as more players join.</p>
+    </div>
+  </section>
+
+  <!-- Creating a Clan -->
+  <section class="space-y-4 border-t border-gray-700 pt-6">
+    <h2 class="text-2xl font-bold text-indigo-300">Creating a Clan</h2>
+    <p class="text-gray-300">
+      To create a clan, you need:
+    </p>
+    <div class="bg-gray-900 border border-gray-800 rounded-lg p-4 space-y-2 text-sm mt-3">
+      <p class="text-gray-300">
+        <strong>Cost:</strong> 1000 Food, 1000 Timber, 1000 Gold, 1000 Metal
+        <br/>(A steep investment, so plan ahead!)
+      </p>
+      <p class="text-gray-300">
+        <strong>Founder benefit:</strong> You become the clan <strong>Leader</strong> automatically.
+        <br/>This gives you full control: recruiting, roles, management.
+      </p>
+    </div>
+    <p class="text-gray-300 mt-4">
+      <strong>How to create:</strong> Go to the Clan tab (/clan). Click "Create Clan". Enter a name and click confirm.
+    </p>
+  </section>
+
+  <!-- Joining a Clan -->
+  <section class="space-y-4 border-t border-gray-700 pt-6">
+    <h2 class="text-2xl font-bold text-indigo-300">Joining a Clan</h2>
+    <p class="text-gray-300">
+      Three ways to join a clan:
+    </p>
+
+    <div class="space-y-3 mt-3">
+      <div class="bg-gray-900 border border-gray-800 rounded-lg p-4">
+        <h4 class="font-bold text-indigo-400">1️⃣ Public Applications</h4>
+        <p class="text-gray-400 text-sm">
+          View all clans in the clan list (/clan). Click "Apply" on a clan card. 
+          Your application is pending until an Elder or above accepts it.
+        </p>
+      </div>
+
+      <div class="bg-gray-900 border border-gray-800 rounded-lg p-4">
+        <h4 class="font-bold text-indigo-400">2️⃣ Recruitment DM</h4>
+        <p class="text-gray-400 text-sm">
+          A clan Elder or above can send you a recruitment DM from the world map. 
+          Click "Accept" to join instantly (no approval needed).
+        </p>
+      </div>
+
+      <div class="bg-gray-900 border border-gray-800 rounded-lg p-4">
+        <h4 class="font-bold text-indigo-400">3️⃣ Public Clan Pages</h4>
+        <p class="text-gray-400 text-sm">
+          Visit a public clan page (/clan/&lt;id&gt;). Click "Apply" if not a member yet. 
+          Same as method 1, but you can see the clan description and member list first.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Roles & Hierarchy -->
+  <section class="space-y-4 border-t border-gray-700 pt-6">
+    <h2 class="text-2xl font-bold text-indigo-300">Roles & Hierarchy</h2>
+    <p class="text-gray-300">
+      Clans use a 4-tier hierarchy. Higher roles have more permissions:
+    </p>
+
+    <div class="bg-gray-900 border border-gray-800 rounded-lg p-4 overflow-x-auto mt-3">
+      <table class="w-full text-sm">
+        <thead>
+          <tr class="border-b border-gray-700">
+            <th class="text-left py-2">Role</th>
+            <th class="text-left py-2">Permissions</th>
+            <th class="text-left py-2">Can Manage</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr class="border-b border-gray-700/50">
+            <td class="py-2 font-bold text-amber-400">👑 Leader</td>
+            <td class="text-gray-400 text-sm">Full control</td>
+            <td class="text-gray-400 text-sm">Co-leaders, Elders, Members; transfer leadership; disband clan</td>
+          </tr>
+          <tr class="border-b border-gray-700/50">
+            <td class="py-2 font-bold text-yellow-400">🔱 Co-leader</td>
+            <td class="text-gray-400 text-sm">Near full</td>
+            <td class="text-gray-400 text-sm">Elders, Members; accept/reject applications; send recruits</td>
+          </tr>
+          <tr class="border-b border-gray-700/50">
+            <td class="py-2 font-bold text-purple-400">📜 Elder</td>
+            <td class="text-gray-400 text-sm">Moderation</td>
+            <td class="text-gray-400 text-sm">Accept/reject applications; send recruitment DMs</td>
+          </tr>
+          <tr>
+            <td class="py-2 font-bold text-gray-400">👤 Member</td>
+            <td class="text-gray-400 text-sm">Chat only</td>
+            <td class="text-gray-400 text-sm">Talk in clan chat; can leave</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p class="text-gray-300 mt-4">
+      <strong>All new joiners start as Members.</strong> Leaders promote based on trust and activity.
+    </p>
+  </section>
+
+  <!-- Clan Features -->
+  <section class="space-y-4 border-t border-gray-700 pt-6">
+    <h2 class="text-2xl font-bold text-indigo-300">Clan Features</h2>
+
+    <div class="space-y-3">
+      <div class="bg-gray-900 border border-gray-800 rounded-lg p-4">
+        <h4 class="font-bold text-indigo-400">💬 Clan Chat</h4>
+        <p class="text-gray-400 text-sm">
+          Real-time messaging with all members. Synced via 3-second polling. 
+          Perfect for coordinating attacks or just hanging out.
+        </p>
+      </div>
+
+      <div class="bg-gray-900 border border-gray-800 rounded-lg p-4">
+        <h4 class="font-bold text-indigo-400">📋 Members Tab</h4>
+        <p class="text-gray-400 text-sm">
+          View all members with their roles. Leaders can promote/demote or kick members.
+        </p>
+      </div>
+
+      <div class="bg-gray-900 border border-gray-800 rounded-lg p-4">
+        <h4 class="font-bold text-indigo-400">📝 Applications Tab</h4>
+        <p class="text-gray-400 text-sm">
+          (Elders+) View pending join requests. Accept or reject with one click.
+        </p>
+      </div>
+
+      <div class="bg-gray-900 border border-gray-800 rounded-lg p-4">
+        <h4 class="font-bold text-indigo-400">📜 Clan Info</h4>
+        <p class="text-gray-400 text-sm">
+          Clan description (editable by Leader/Co-leader). Shows founding date and member count.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Leaving & Disbanding -->
+  <section class="space-y-4 border-t border-gray-700 pt-6">
+    <h2 class="text-2xl font-bold text-indigo-300">Leaving & Disbanding</h2>
+    
+    <div class="space-y-3">
+      <div class="bg-gray-900 border border-gray-800 rounded-lg p-4">
+        <h4 class="font-bold text-indigo-400">Leaving a Clan</h4>
+        <p class="text-gray-400 text-sm">
+          Any non-Leader can leave instantly by clicking "Leave" in the clan header.
+          <br/>If you're the Leader and others remain, you must transfer leadership first.
+        </p>
+      </div>
+
+      <div class="bg-gray-900 border border-gray-800 rounded-lg p-4">
+        <h4 class="font-bold text-indigo-400">Disbanding a Clan</h4>
+        <p class="text-gray-400 text-sm">
+          If the Leader is the last member, leaving automatically disbands the clan. 
+          All clan data (chat, messages, applications) is deleted.
+        </p>
+      </div>
+
+      <div class="bg-orange-900/20 border border-orange-800 rounded p-4 text-sm text-orange-200 mt-3">
+        ⚠️ <strong>Careful!</strong> Disbanding is permanent. You lose all clan history.
+      </div>
+    </div>
+  </section>
+
+  <!-- Clan Strategy -->
+  <section class="bg-indigo-900/30 border border-indigo-800 rounded-lg p-6 space-y-4 border-t border-gray-700 pt-6">
+    <h3 class="font-bold text-lg">Clan Strategy Tips</h3>
+    <ul class="space-y-2 text-gray-300 text-sm">
+      <li>✓ <strong>Join early.</strong> Coordinate with clanmates to conquer territory faster.</li>
+      <li>✓ <strong>Communicate constantly.</strong> Use clan chat to share targets, warnings, and strategies.</li>
+      <li>✓ <strong>Coordinate attacks.</strong> Hit the same enemy fort with multiple armies for guaranteed capture.</li>
+      <li>✓ <strong>Defend each other.</strong> Help members recapture lost forts.</li>
+      <li>✓ <strong>Recruit strategically.</strong> Balance new players with veterans.</li>
+      <li>✓ <strong>Share resources.</strong> Wealthier members can gift or support newer players.</li>
+      <li>✓ <strong>Trust your leadership.</strong> A strong Leader makes or breaks a clan.</li>
+    </ul>
+  </section>
+
+  <!-- Navigation -->
+  <div class="flex justify-between pt-6 border-t border-gray-800">
+    <a href="{{ url_for('wiki.guide', guide='advanced-combat') }}" class="text-indigo-400 hover:text-indigo-300">← Advanced Combat</a>
+    <a href="{{ url_for('wiki.guide', guide='tips') }}" class="text-indigo-400 hover:text-indigo-300">Tips & Strategies →</a>
+  </div>
+
+</div>
+{% endblock %}

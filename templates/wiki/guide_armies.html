@@ -1,0 +1,187 @@
+{% extends "base.html" %}
+{% block title %}Armies & Training — BattleCells Guide{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl space-y-8">
+
+  <!-- Breadcrumb -->
+  <nav class="text-xs text-gray-500 flex items-center gap-2">
+    <a href="{{ url_for('wiki.wiki_index') }}" class="hover:text-indigo-400">Wiki</a>
+    <span>›</span>
+    <a href="{{ url_for('wiki.guides_index') }}" class="hover:text-indigo-400">Guides</a>
+    <span>›</span>
+    <span class="text-gray-400">Armies</span>
+  </nav>
+
+  <!-- Header -->
+  <div>
+    <h1 class="text-4xl font-bold">⚔ Armies & Training</h1>
+    <p class="text-gray-400 text-lg mt-3">
+      How to train, manage, and deploy your forces effectively.
+    </p>
+  </div>
+
+  <!-- How Training Works -->
+  <section class="space-y-4">
+    <h2 class="text-2xl font-bold text-indigo-300">How Training Works</h2>
+    <p class="text-gray-300">
+      Military buildings produce soldiers using a queue system. Each building trains one unit at a time 
+      (sequentially), but you can queue multiple units.
+    </p>
+    <div class="bg-gray-900 border border-gray-800 rounded-lg p-4 space-y-3">
+      <div class="flex gap-3">
+        <div class="text-2xl">1️⃣</div>
+        <div>
+          <h4 class="font-bold">Select a building</h4>
+          <p class="text-gray-400 text-sm">Click on a Garrison (Barracks) or Stable at your castle or fort.</p>
+        </div>
+      </div>
+      <div class="flex gap-3">
+        <div class="text-2xl">2️⃣</div>
+        <div>
+          <h4 class="font-bold">Queue units</h4>
+          <p class="text-gray-400 text-sm">Click "Queue Longbowman" or "Queue Hussar". Resources are deducted immediately.</p>
+        </div>
+      </div>
+      <div class="flex gap-3">
+        <div class="text-2xl">3️⃣</div>
+        <div>
+          <h4 class="font-bold">Wait for completion</h4>
+          <p class="text-gray-400 text-sm">A timer shows how long until the unit is ready (60s for Longbowman, 90s for Hussar at level 1).</p>
+        </div>
+      </div>
+      <div class="flex gap-3">
+        <div class="text-2xl">4️⃣</div>
+        <div>
+          <h4 class="font-bold">Automatic deployment</h4>
+          <p class="text-gray-400 text-sm">Completed units are automatically idle at that location, ready to be dispatched.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Unit Types -->
+  <section class="space-y-4 border-t border-gray-700 pt-6">
+    <h2 class="text-2xl font-bold text-indigo-300">Unit Types</h2>
+    <p class="text-gray-300">Two human unit types are trainable; monsters spawn naturally:</p>
+    
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div class="bg-gray-900 border border-orange-800 rounded-lg p-4 space-y-2">
+        <h3 class="font-bold text-orange-400">🏹 Longbowman</h3>
+        <p class="text-gray-400 text-sm"><strong>Source:</strong> Garrison (Barracks)</p>
+        <p class="text-gray-400 text-sm"><strong>Training time:</strong> 60s (level 1)</p>
+        <p class="text-gray-400 text-sm"><strong>Cost:</strong> 25 Food, 10 Gold</p>
+        <p class="text-gray-400 text-sm"><strong>Type:</strong> Ranged. Decent damage, medium speed.</p>
+        <p class="text-gray-400 text-sm"><strong>Pros:</strong> Cheap, beginner-friendly.</p>
+        <p class="text-gray-400 text-sm"><strong>Cons:</strong> Lower damage per unit than Hussar.</p>
+      </div>
+      <div class="bg-gray-900 border border-yellow-800 rounded-lg p-4 space-y-2">
+        <h3 class="font-bold text-yellow-400">🐎 Hussar</h3>
+        <p class="text-gray-400 text-sm"><strong>Source:</strong> Stable</p>
+        <p class="text-gray-400 text-sm"><strong>Training time:</strong> 90s (level 1)</p>
+        <p class="text-gray-400 text-sm"><strong>Cost:</strong> 30 Food, 15 Gold</p>
+        <p class="text-gray-400 text-sm"><strong>Type:</strong> Cavalry. Fast, mobile.</p>
+        <p class="text-gray-400 text-sm"><strong>Pros:</strong> Double speed, good for hit-and-run.</p>
+        <p class="text-gray-400 text-sm"><strong>Cons:</strong> Slower training, higher cost.</p>
+      </div>
+    </div>
+
+    <p class="text-gray-300 mt-4">
+      <strong>Monsters:</strong> Trolls and Wraiths spawn naturally in forts and camps. 
+      Check the <a href="{{ url_for('wiki.troops_index') }}" class="text-indigo-400 hover:text-indigo-300">Troops Index</a> 
+      for full stats.
+    </p>
+  </section>
+
+  <!-- Army Composition -->
+  <section class="space-y-4 border-t border-gray-700 pt-6">
+    <h2 class="text-2xl font-bold text-indigo-300">Army Composition</h2>
+    <p class="text-gray-300">
+      You can dispatch mixed armies (Longbowmen + Hussars together). Different compositions suit different scenarios:
+    </p>
+    
+    <div class="space-y-3">
+      <div class="bg-gray-900 border border-gray-800 rounded-lg p-4">
+        <h4 class="font-bold text-indigo-400">🎯 Balanced Mix (Recommended for beginners)</h4>
+        <p class="text-gray-400 text-sm">Example: 8 Longbowmen + 4 Hussars</p>
+        <p class="text-gray-400 text-sm">Pros: Versatile. Handles most situations.</p>
+        <p class="text-gray-400 text-sm">Cons: Not optimized for anything specific.</p>
+      </div>
+      <div class="bg-gray-900 border border-gray-800 rounded-lg p-4">
+        <h4 class="font-bold text-indigo-400">⚡ Ranged Heavy</h4>
+        <p class="text-gray-400 text-sm">Example: 15 Longbowmen</p>
+        <p class="text-gray-400 text-sm">Pros: Sustained damage from range. Good for sieges.</p>
+        <p class="text-gray-400 text-sm">Cons: Vulnerable to fast units.</p>
+      </div>
+      <div class="bg-gray-900 border border-gray-800 rounded-lg p-4">
+        <h4 class="font-bold text-indigo-400">🐴 Fast Strike</h4>
+        <p class="text-gray-400 text-sm">Example: 10 Hussars</p>
+        <p class="text-gray-400 text-sm">Pros: Mobile, hit fast.</p>
+        <p class="text-gray-400 text-sm">Cons: Lower durability; risky.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Troop Management -->
+  <section class="space-y-4 border-t border-gray-700 pt-6">
+    <h2 class="text-2xl font-bold text-indigo-300">Troop Management</h2>
+    
+    <div class="space-y-3">
+      <div>
+        <h3 class="font-bold text-indigo-300">📊 Viewing Your Troops</h3>
+        <p class="text-gray-300">Go to your castle or fort and click "Troop Details" in the Command Centre. 
+        You'll see a count of all units at that location, grouped by type.</p>
+      </div>
+      
+      <div>
+        <h3 class="font-bold text-indigo-300">📤 Dispatching Armies</h3>
+        <p class="text-gray-300">On the world map, click a target and select the preset or manually choose units. 
+        Confirm the dispatch. Troops are immediately deducted from your location.</p>
+      </div>
+      
+      <div>
+        <h3 class="font-bold text-indigo-300">🗑️ Dismissing Troops</h3>
+        <p class="text-gray-300">In the troop details panel, you can dismiss troops to free up training slots. 
+        You'll get a 50% refund of their training cost.</p>
+      </div>
+
+      <div class="bg-blue-900/20 border border-blue-800 rounded p-4 text-sm text-blue-200">
+        💡 <strong>Dismissal tip:</strong> If you trained the wrong unit type or need resources urgently, 
+        dismiss troops. You lose 50% of the cost, but it's better than sitting on idle units.
+      </div>
+    </div>
+  </section>
+
+  <!-- Formations (Presets) -->
+  <section class="space-y-4 border-t border-gray-700 pt-6">
+    <h2 class="text-2xl font-bold text-indigo-300">Formations (Presets)</h2>
+    <p class="text-gray-300">
+      Instead of manually selecting units each time, you can save <strong>presets</strong> (named formations). 
+      When attacking, just pick a preset and dispatch instantly.
+    </p>
+    <p class="text-gray-300 mt-3">
+      <strong>To create a preset:</strong> Go to the battle simulator, set up your army, and save the formation. 
+      You can reuse it from the world map when attacking.
+    </p>
+  </section>
+
+  <!-- Pro Training Tips -->
+  <section class="bg-indigo-900/30 border border-indigo-800 rounded-lg p-6 space-y-3 border-t border-gray-700 pt-6">
+    <h3 class="font-bold text-lg">Pro Training Tips</h3>
+    <ul class="space-y-2 text-gray-300 text-sm">
+      <li>✓ <strong>Queue in bulk.</strong> Queue 10 Longbowmen at once; they'll train sequentially.</li>
+      <li>✓ <strong>Upgrade military buildings.</strong> Level-2 Garrison trains units in 30s (vs 60s). Game-changer.</li>
+      <li>✓ <strong>Train while building.</strong> While your farms are generating resources, queue troops.</li>
+      <li>✓ <strong>Multiple locations = parallel training.</strong> Train Longbowmen at castle, Hussars at a fort simultaneously.</li>
+      <li>✓ <strong>Don't over-train.</strong> Training costs resources. Only train what you can afford to dispatch.</li>
+    </ul>
+  </section>
+
+  <!-- Navigation -->
+  <div class="flex justify-between pt-6 border-t border-gray-800">
+    <a href="{{ url_for('wiki.guide', guide='buildings') }}" class="text-indigo-400 hover:text-indigo-300">← Buildings</a>
+    <a href="{{ url_for('wiki.guide', guide='world-map') }}" class="text-indigo-400 hover:text-indigo-300">World Map →</a>
+  </div>
+
+</div>
+{% endblock %}

@@ -3,7 +3,7 @@ battle_bp.py — Flask blueprint for BattleCells routes.
 
 Routes
 ------
-GET  /              → redirect to /setup
+GET  /              → landing page (or /world if already logged in)
 GET  /setup         → army builder form
 POST /run           → run simulation, return battle_id
 GET  /results/<id>  → tick stepper page
@@ -27,6 +27,7 @@ from flask import (
     render_template,
     request,
     send_file,
+    session,
     url_for,
 )
 
@@ -48,7 +49,9 @@ battle_bp = Blueprint("battle", __name__)
 
 @battle_bp.route("/")
 def index():
-    return redirect(url_for("battle.setup"))
+    if session.get("player_id"):
+        return redirect(url_for("world.world_map"))
+    return render_template("landing.html")
 
 
 @battle_bp.route("/setup")

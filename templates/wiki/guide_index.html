@@ -1,0 +1,194 @@
+{% extends "base.html" %}
+{% block title %}Game Guides — BattleCells Wiki{% endblock %}
+
+{% block content %}
+<div class="space-y-10">
+
+  <!-- Header -->
+  <div>
+    <h1 class="text-3xl font-bold tracking-tight">📚 Game Guides</h1>
+    <p class="text-gray-400 text-sm mt-2">
+      Learn how to play BattleCells, from your first farm to commanding armies and clans.
+    </p>
+  </div>
+
+  <!-- Navigation breadcrumb -->
+  <div class="text-xs text-gray-500 flex items-center gap-2">
+    <a href="{{ url_for('wiki.wiki_index') }}" class="hover:text-indigo-400">Wiki Home</a>
+    <span>›</span>
+    <span class="text-gray-400">Guides</span>
+  </div>
+
+  <!-- Section: Fundamentals -->
+  <div>
+    <h2 class="text-xl font-bold mb-4 text-indigo-300">Getting Started</h2>
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      
+      <!-- Introduction -->
+      <a href="{{ url_for('wiki.guide', guide='welcome') }}"
+         class="group bg-gray-900 border border-gray-800 rounded-lg overflow-hidden
+                hover:border-indigo-600 hover:bg-gray-800 transition-all duration-150 p-4 flex flex-col gap-2">
+        <h3 class="font-bold text-lg group-hover:text-indigo-300">🌍 Welcome to BattleCells</h3>
+        <p class="text-gray-400 text-sm leading-relaxed">
+          What is BattleCells? Understand the core gameplay loop and what you can achieve.
+        </p>
+      </a>
+
+      <!-- Getting Started -->
+      <a href="{{ url_for('wiki.guide', guide='getting-started') }}"
+         class="group bg-gray-900 border border-gray-800 rounded-lg overflow-hidden
+                hover:border-indigo-600 hover:bg-gray-800 transition-all duration-150 p-4 flex flex-col gap-2">
+        <h3 class="font-bold text-lg group-hover:text-indigo-300">🚀 First Steps</h3>
+        <p class="text-gray-400 text-sm leading-relaxed">
+          Build your first farm, collect resources, and train your first unit.
+        </p>
+      </a>
+
+    </div>
+  </div>
+
+  <!-- Section: Core Systems -->
+  <div>
+    <h2 class="text-xl font-bold mb-4 text-indigo-300">Core Systems</h2>
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+
+      <!-- Resources -->
+      <a href="{{ url_for('wiki.guide', guide='resources') }}"
+         class="group bg-gray-900 border border-gray-800 rounded-lg overflow-hidden
+                hover:border-indigo-600 hover:bg-gray-800 transition-all duration-150 p-4 flex flex-col gap-2">
+        <h3 class="font-bold text-lg group-hover:text-indigo-300">💰 Resources & Economy</h3>
+        <p class="text-gray-400 text-sm leading-relaxed">
+          How the four resources work, production buildings, and collection strategies.
+        </p>
+      </a>
+
+      <!-- Buildings -->
+      <a href="{{ url_for('wiki.guide', guide='buildings') }}"
+         class="group bg-gray-900 border border-gray-800 rounded-lg overflow-hidden
+                hover:border-indigo-600 hover:bg-gray-800 transition-all duration-150 p-4 flex flex-col gap-2">
+        <h3 class="font-bold text-lg group-hover:text-indigo-300">🏗 Buildings Overview</h3>
+        <p class="text-gray-400 text-sm leading-relaxed">
+          What each building does, building times, and upgrade strategies.
+        </p>
+      </a>
+
+      <!-- Armies -->
+      <a href="{{ url_for('wiki.guide', guide='armies') }}"
+         class="group bg-gray-900 border border-gray-800 rounded-lg overflow-hidden
+                hover:border-indigo-600 hover:bg-gray-800 transition-all duration-150 p-4 flex flex-col gap-2">
+        <h3 class="font-bold text-lg group-hover:text-indigo-300">⚔ Armies & Training</h3>
+        <p class="text-gray-400 text-sm leading-relaxed">
+          Training troops, unit types, composition strategies, and dismissal.
+        </p>
+      </a>
+
+      <!-- World Map -->
+      <a href="{{ url_for('wiki.guide', guide='world-map') }}"
+         class="group bg-gray-900 border border-gray-800 rounded-lg overflow-hidden
+                hover:border-indigo-600 hover:bg-gray-800 transition-all duration-150 p-4 flex flex-col gap-2">
+        <h3 class="font-bold text-lg group-hover:text-indigo-300">🗺 World Map</h3>
+        <p class="text-gray-400 text-sm leading-relaxed">
+          Navigation, finding targets, distance calculation, and entity types.
+        </p>
+      </a>
+
+    </div>
+  </div>
+
+  <!-- Section: Combat & Territory -->
+  <div>
+    <h2 class="text-xl font-bold mb-4 text-indigo-300">Combat & Territory</h2>
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+
+      <!-- Combat Basics -->
+      <a href="{{ url_for('wiki.guide', guide='combat-basics') }}"
+         class="group bg-gray-900 border border-gray-800 rounded-lg overflow-hidden
+                hover:border-indigo-600 hover:bg-gray-800 transition-all duration-150 p-4 flex flex-col gap-2">
+        <h3 class="font-bold text-lg group-hover:text-indigo-300">⚡ Combat Basics</h3>
+        <p class="text-gray-400 text-sm leading-relaxed">
+          How to attack, travel times, battle outcomes, and first-time strategy.
+        </p>
+      </a>
+
+      <!-- Monster Camps -->
+      <a href="{{ url_for('wiki.guide', guide='monster-camps') }}"
+         class="group bg-gray-900 border border-gray-800 rounded-lg overflow-hidden
+                hover:border-indigo-600 hover:bg-gray-800 transition-all duration-150 p-4 flex flex-col gap-2">
+        <h3 class="font-bold text-lg group-hover:text-indigo-300">👹 Monster Camps</h3>
+        <p class="text-gray-400 text-sm leading-relaxed">
+          Difficulty levels (stars), rewards, spawn mechanics, and strategies.
+        </p>
+      </a>
+
+      <!-- Forts & Capture -->
+      <a href="{{ url_for('wiki.guide', guide='forts') }}"
+         class="group bg-gray-900 border border-gray-800 rounded-lg overflow-hidden
+                hover:border-indigo-600 hover:bg-gray-800 transition-all duration-150 p-4 flex flex-col gap-2">
+        <h3 class="font-bold text-lg group-hover:text-indigo-300">🏰 Forts & Territory</h3>
+        <p class="text-gray-400 text-sm leading-relaxed">
+          Capturing forts, defense buildings, player forts, and ownership changes.
+        </p>
+      </a>
+
+      <!-- Advanced Combat -->
+      <a href="{{ url_for('wiki.guide', guide='advanced-combat') }}"
+         class="group bg-gray-900 border border-gray-800 rounded-lg overflow-hidden
+                hover:border-indigo-600 hover:bg-gray-800 transition-all duration-150 p-4 flex flex-col gap-2">
+        <h3 class="font-bold text-lg group-hover:text-indigo-300">🎯 Advanced Combat</h3>
+        <p class="text-gray-400 text-sm leading-relaxed">
+          Battle phases, formation strategy, loot calculations, and optimization.
+        </p>
+      </a>
+
+    </div>
+  </div>
+
+  <!-- Section: Social & Multiplayer -->
+  <div>
+    <h2 class="text-xl font-bold mb-4 text-indigo-300">Social & Multiplayer</h2>
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+
+      <!-- Clans -->
+      <a href="{{ url_for('wiki.guide', guide='clans') }}"
+         class="group bg-gray-900 border border-gray-800 rounded-lg overflow-hidden
+                hover:border-indigo-600 hover:bg-gray-800 transition-all duration-150 p-4 flex flex-col gap-2">
+        <h3 class="font-bold text-lg group-hover:text-indigo-300">👥 Clans</h3>
+        <p class="text-gray-400 text-sm leading-relaxed">
+          Creating and joining clans, roles, permissions, chat, and clan leadership.
+        </p>
+      </a>
+
+      <!-- Tips & Strategies -->
+      <a href="{{ url_for('wiki.guide', guide='tips') }}"
+         class="group bg-gray-900 border border-gray-800 rounded-lg overflow-hidden
+                hover:border-indigo-600 hover:bg-gray-800 transition-all duration-150 p-4 flex flex-col gap-2">
+        <h3 class="font-bold text-lg group-hover:text-indigo-300">💡 Tips & Strategies</h3>
+        <p class="text-gray-400 text-sm leading-relaxed">
+          Pro tips, resource management advice, and long-term strategy.
+        </p>
+      </a>
+
+    </div>
+  </div>
+
+  <!-- Quick Links to Reference -->
+  <div class="border border-gray-700 rounded-lg p-6 bg-gray-900/50">
+    <h3 class="font-bold mb-3">📖 Quick Reference</h3>
+    <div class="flex flex-wrap gap-3">
+      <a href="{{ url_for('wiki.troops_index') }}" 
+         class="text-sm text-indigo-400 hover:text-indigo-300 px-3 py-1 bg-gray-800 rounded hover:bg-gray-700 transition">
+        Troops Index
+      </a>
+      <a href="{{ url_for('wiki.buildings_index') }}" 
+         class="text-sm text-indigo-400 hover:text-indigo-300 px-3 py-1 bg-gray-800 rounded hover:bg-gray-700 transition">
+        Buildings Index
+      </a>
+      <a href="{{ url_for('wiki.wiki_index') }}" 
+         class="text-sm text-indigo-400 hover:text-indigo-300 px-3 py-1 bg-gray-800 rounded hover:bg-gray-700 transition">
+        Wiki Home
+      </a>
+    </div>
+  </div>
+
+</div>
+{% endblock %}

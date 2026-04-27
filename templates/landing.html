@@ -1,0 +1,113 @@
+{% extends "base.html" %}
+{% block title %}BattleCells - Conquer The Grid{% endblock %}
+{% block content %}
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Bebas+Neue&display=swap');
+
+  .landing-shell {
+    --ink: #0f172a;
+    --teal: #0f766e;
+    --sand: #fef3c7;
+    --rust: #b45309;
+    --mist: #cffafe;
+    font-family: 'Space Grotesk', sans-serif;
+    position: relative;
+    overflow: hidden;
+    border: 1px solid rgba(148, 163, 184, 0.25);
+    border-radius: 1rem;
+    background:
+      radial-gradient(circle at 12% 18%, rgba(34, 211, 238, 0.25), transparent 36%),
+      radial-gradient(circle at 85% 28%, rgba(245, 158, 11, 0.22), transparent 40%),
+      linear-gradient(145deg, #020617 0%, #111827 60%, #1f2937 100%);
+  }
+
+  .landing-shell::before {
+    content: "";
+    position: absolute;
+    inset: -80px;
+    background: repeating-linear-gradient(
+      120deg,
+      rgba(255, 255, 255, 0.04) 0,
+      rgba(255, 255, 255, 0.04) 2px,
+      transparent 2px,
+      transparent 18px
+    );
+    pointer-events: none;
+  }
+
+  .landing-title {
+    font-family: 'Bebas Neue', sans-serif;
+    letter-spacing: 0.08em;
+    line-height: 0.95;
+  }
+
+  .landing-cta {
+    transition: transform 0.22s ease, box-shadow 0.22s ease, background-color 0.22s ease;
+  }
+
+  .landing-cta:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 30px rgba(20, 184, 166, 0.25);
+  }
+
+  @media (max-width: 767px) {
+    .landing-title {
+      letter-spacing: 0.05em;
+    }
+  }
+</style>
+
+<section class="landing-shell p-6 md:p-10">
+  <div class="relative z-10 grid gap-8 md:grid-cols-2 md:gap-10 items-start">
+    <div>
+      <p class="text-xs md:text-sm uppercase tracking-[0.2em] text-cyan-200/90">Persistent multiplayer strategy</p>
+      <h1 class="landing-title text-5xl sm:text-6xl md:text-7xl text-amber-200 mt-3">BattleCells</h1>
+      <p class="mt-5 text-slate-200/90 max-w-xl text-sm sm:text-base leading-relaxed">
+        Build your castle economy, conquer forts, and launch precision assaults across a shared living map.
+        Every refresh updates the world. Every decision leaves a mark.
+      </p>
+
+      <div class="mt-7 flex flex-wrap gap-3">
+        {% if session.get('player_id') %}
+          <a href="{{ url_for('world.world_map') }}"
+             class="landing-cta inline-flex items-center justify-center px-5 py-2.5 rounded-md bg-teal-600 text-white font-semibold">
+            Enter World Map
+          </a>
+          <a href="{{ url_for('fort.castle_page') }}"
+             class="landing-cta inline-flex items-center justify-center px-5 py-2.5 rounded-md border border-slate-500/70 text-slate-100">
+            Manage Castle
+          </a>
+        {% else %}
+          <a href="{{ url_for('auth.login') }}"
+             class="landing-cta inline-flex items-center justify-center px-5 py-2.5 rounded-md bg-teal-600 text-white font-semibold">
+            Login And Continue
+          </a>
+          <a href="{{ url_for('auth.register') }}"
+             class="landing-cta inline-flex items-center justify-center px-5 py-2.5 rounded-md border border-slate-500/70 text-slate-100">
+            Create Account
+          </a>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="grid gap-3 sm:grid-cols-2 md:grid-cols-1 lg:grid-cols-2">
+      <article class="rounded-xl border border-cyan-200/20 bg-slate-900/60 backdrop-blur p-4">
+        <h2 class="text-cyan-100 font-semibold">Real Progression</h2>
+        <p class="text-slate-300/90 text-sm mt-1">Upgrade buildings, train troops, and scale production through compounding levels.</p>
+      </article>
+      <article class="rounded-xl border border-amber-200/20 bg-slate-900/60 backdrop-blur p-4">
+        <h2 class="text-amber-100 font-semibold">Living World</h2>
+        <p class="text-slate-300/90 text-sm mt-1">Contest monster camps, raid forts, and react to shifting ownership across the map.</p>
+      </article>
+      <article class="rounded-xl border border-emerald-200/20 bg-slate-900/60 backdrop-blur p-4">
+        <h2 class="text-emerald-100 font-semibold">Clan Operations</h2>
+        <p class="text-slate-300/90 text-sm mt-1">Coordinate with clanmates, recruit through DMs, and control territory as a team.</p>
+      </article>
+      <article class="rounded-xl border border-sky-200/20 bg-slate-900/60 backdrop-blur p-4">
+        <h2 class="text-sky-100 font-semibold">Battle Replay</h2>
+        <p class="text-slate-300/90 text-sm mt-1">Review resolved missions and inspect the tick-by-tick combat timeline.</p>
+      </article>
+    </div>
+  </div>
+</section>
+{% endblock %}

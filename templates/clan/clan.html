@@ -48,7 +48,7 @@
 
   <!-- Tabs -->
   <div class="flex gap-1 border-b border-gray-700 mb-4 flex-wrap">
-    {% for t, label in [('chat','💬 Chat'),('members','👥 Members'),('info','📋 Info'),('applications','📥 Applications'),('attacks','⚔ Attacks')] %}
+    {% for t, label in [('members','👥 Members'),('info','📋 Info'),('applications','📥 Applications'),('attacks','⚔ Attacks')] %}
       {% if t != 'applications' or can_apps %}
       <button @click="tab='{{ t }}'"
               :class="tab==='{{ t }}' ? 'border-b-2 border-blue-400 text-white' : 'text-gray-400 hover:text-white'"
@@ -62,23 +62,7 @@
     {% endfor %}
   </div>
 
-  <!-- ── TAB: CHAT ─────────────────────────────────────── -->
-  <div x-show="tab==='chat'">
-    <div id="chat-box"
-         class="bg-gray-900 border border-gray-700 rounded p-3 h-72 overflow-y-auto mb-3 space-y-1"
-         hx-get="/api/clan/{{ clan.id }}/chat"
-         hx-trigger="every 3s"
-         hx-swap="innerHTML">
-      {% include "clan/chat_messages.html" %}
-    </div>
-    <div class="flex gap-2" x-data="{ msg: '' }">
-      <input type="text" x-model="msg" placeholder="Message…" maxlength="500"
-             @keydown.enter="sendMsg({{ clan.id }}, $data)"
-             class="flex-1 bg-gray-800 border border-gray-700 rounded px-3 py-2 text-sm text-white focus:outline-none focus:border-blue-500" />
-      <button @click="sendMsg({{ clan.id }}, $data)"
-              class="bg-blue-600 hover:bg-blue-500 text-white text-sm px-4 rounded">Send</button>
-    </div>
-  </div>
+
 
   <!-- ── TAB: MEMBERS ───────────────────────────────────── -->
   <div x-show="tab==='members'">
@@ -169,20 +153,9 @@
 <script>
 function clanHub() {
   return {
-    tab: 'chat',
+    tab: 'members',
     editDesc: false,
   };
-}
-
-function sendMsg(clanId, compData) {
-  const msg = compData.msg.trim();
-  if (!msg) return;
-  fetch(`/api/clan/${clanId}/chat`, {
-    method: 'POST', headers: {'Content-Type':'application/json'},
-    body: JSON.stringify({message: msg})
-  }).then(r => r.json()).then(d => {
-    if (d.ok) compData.msg = '';
-  });
 }
 
 function setRole(clanId, playerId, role, sel) {

@@ -1,0 +1,188 @@
+{% extends "base.html" %}
+{% block title %}Monster Camps — BattleCells Guide{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl space-y-8">
+
+  <!-- Breadcrumb -->
+  <nav class="text-xs text-gray-500 flex items-center gap-2">
+    <a href="{{ url_for('wiki.wiki_index') }}" class="hover:text-indigo-400">Wiki</a>
+    <span>›</span>
+    <a href="{{ url_for('wiki.guides_index') }}" class="hover:text-indigo-400">Guides</a>
+    <span>›</span>
+    <span class="text-gray-400">Monster Camps</span>
+  </nav>
+
+  <!-- Header -->
+  <div>
+    <h1 class="text-4xl font-bold">👹 Monster Camps</h1>
+    <p class="text-gray-400 text-lg mt-3">
+      A reliable source of loot for growing your economy.
+    </p>
+  </div>
+
+  <!-- What Are Monster Camps -->
+  <section class="space-y-4">
+    <h2 class="text-2xl font-bold text-indigo-300">What Are Monster Camps?</h2>
+    <p class="text-gray-300">
+      Monster camps are <strong>temporary, non-territorial</strong> targets scattered across the map. 
+      They appear as <strong>purple dots</strong>. They contain small monster garrisons and offer 
+      <strong>Gold and Metal loot</strong> when defeated.
+    </p>
+    <div class="bg-gray-900 border border-gray-800 rounded-lg p-4 space-y-2 text-sm mt-3">
+      <p class="text-gray-300"><strong>Purpose:</strong> Practice combat. Generate early-game resources.</p>
+      <p class="text-gray-300"><strong>Respawn:</strong> After you defeat a camp, a new camp spawns elsewhere on the map.</p>
+      <p class="text-gray-300"><strong>Ownership:</strong> No one owns camps. Anyone can attack any camp.</p>
+      <p class="text-gray-300"><strong>Garrison:</strong> 2–16 monsters (depending on difficulty).</p>
+    </div>
+  </section>
+
+  <!-- Difficulty Levels (Stars) -->
+  <section class="space-y-4 border-t border-gray-700 pt-6">
+    <h2 class="text-2xl font-bold text-indigo-300">Difficulty Levels (Stars)</h2>
+    <p class="text-gray-300">
+      When a camp spawns, it gets a random difficulty level from ★ to ★★★★★. Higher stars = 
+      stronger garrison + better loot.
+    </p>
+    
+    <div class="bg-gray-900 border border-gray-800 rounded-lg p-4 overflow-x-auto">
+      <table class="w-full text-sm">
+        <thead>
+          <tr class="border-b border-gray-700">
+            <th class="text-left py-2">Difficulty</th>
+            <th class="text-left py-2">Garrison Size</th>
+            <th class="text-left py-2">Avg Loot</th>
+            <th class="text-left py-2">Recommended for</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr class="border-b border-gray-700/50">
+            <td class="py-2">★</td>
+            <td>2–3</td>
+            <td>~50 Gold/Metal</td>
+            <td>Complete beginners</td>
+          </tr>
+          <tr class="border-b border-gray-700/50">
+            <td class="py-2">★★</td>
+            <td>4–5</td>
+            <td>~100 Gold/Metal</td>
+            <td>Early game (5+ troops)</td>
+          </tr>
+          <tr class="border-b border-gray-700/50">
+            <td class="py-2">★★★</td>
+            <td>6–8</td>
+            <td>~200 Gold/Metal</td>
+            <td>Growing armies (15+ troops)</td>
+          </tr>
+          <tr class="border-b border-gray-700/50">
+            <td class="py-2">★★★★</td>
+            <td>9–11</td>
+            <td>~350 Gold/Metal</td>
+            <td>Mid-game (30+ troops or defense)</td>
+          </tr>
+          <tr class="border-b border-gray-700/50">
+            <td class="py-2">★★★★★</td>
+            <td>12–14</td>
+            <td>~500 Gold/Metal</td>
+            <td>Late game / groups</td>
+          </tr>
+          <tr>
+            <td class="py-2">★★★★★★</td>
+            <td>15–16</td>
+            <td>~750 Gold/Metal</td>
+            <td>Veteran players / clans</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p class="text-gray-300 mt-4">
+      <strong>Recommended strategy:</strong> As a beginner, tackle 1–2 star camps. As you grow, graduate 
+      to higher difficulties. This provides a natural difficulty curve.
+    </p>
+  </section>
+
+  <!-- Monster Types -->
+  <section class="space-y-4 border-t border-gray-700 pt-6">
+    <h2 class="text-2xl font-bold text-indigo-300">Monster Types</h2>
+    <p class="text-gray-300">
+      Camps contain random mixes of monsters. Common types you'll face:
+    </p>
+    
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mt-3">
+      <div class="bg-gray-900 border border-gray-800 rounded p-3">
+        <h4 class="font-bold">🗿 Troll</h4>
+        <p class="text-gray-400 text-sm">High HP, tanky. Slow but durable. Needs concentrated fire.</p>
+      </div>
+      <div class="bg-gray-900 border border-gray-800 rounded p-3">
+        <h4 class="font-bold">👻 Wraith</h4>
+        <p class="text-gray-400 text-sm">Fast, ranged damage. Watch for speed-based attacks.</p>
+      </div>
+    </div>
+
+    <p class="text-gray-300 mt-3">
+      Check the <a href="{{ url_for('wiki.troops_index') }}" class="text-indigo-400 hover:text-indigo-300">Troops Index</a> 
+      for detailed monster stats.
+    </p>
+  </section>
+
+  <!-- Spawn Mechanics -->
+  <section class="space-y-4 border-t border-gray-700 pt-6">
+    <h2 class="text-2xl font-bold text-indigo-300">Spawn Mechanics</h2>
+    <div class="bg-gray-900 border border-gray-800 rounded-lg p-4 space-y-3 text-sm text-gray-300">
+      <p>
+        <strong>Spawning:</strong> The map maintains ~10 active monster camps at all times. 
+        When you defeat a camp, a new one respawns elsewhere.
+      </p>
+      <p>
+        <strong>Difficulty distribution:</strong> When a new camp spawns, its difficulty is 
+        randomly rolled using the percentages shown in the table above.
+      </p>
+      <p>
+        <strong>Location:</strong> Camps spawn in random empty cells across the map.
+      </p>
+      <p>
+        <strong>When do they spawn?:</strong> When the server checks map occupancy 
+        (usually every time you refresh the map or periodically).
+      </p>
+    </div>
+  </section>
+
+  <!-- Loot & Rewards -->
+  <section class="space-y-4 border-t border-gray-700 pt-6">
+    <h2 class="text-2xl font-bold text-indigo-300">Loot & Rewards</h2>
+    <p class="text-gray-300">
+      Defeating a camp gives you <strong>Gold and Metal</strong> based on the difficulty:
+    </p>
+    <div class="bg-gray-900 border border-gray-800 rounded-lg p-4 mt-3">
+      <p class="text-gray-400 text-sm">
+        <strong>Approximate formula:</strong> Loot increases with star level. 
+        A 1-star camp: ~50 each. A 5-star camp: ~500+ each.
+      </p>
+      <p class="text-gray-400 text-sm mt-3">
+        Loot is added directly to your castle's resources. No pickup required.
+      </p>
+    </div>
+  </section>
+
+  <!-- Strategy Tips -->
+  <section class="bg-indigo-900/30 border border-indigo-800 rounded-lg p-6 space-y-3 border-t border-gray-700 pt-6">
+    <h3 class="font-bold text-lg">Monster Camp Strategy</h3>
+    <ul class="space-y-2 text-gray-300 text-sm">
+      <li>✓ <strong>Start small.</strong> Your first 5 camps should all be 1-star. Build confidence.</li>
+      <li>✓ <strong>Grind for resources.</strong> Running 1-2 star camps repeatedly is fast and safe.</li>
+      <li>✓ <strong>Save travel time.</strong> Nearby camps = quick trips = rapid resource accumulation.</li>
+      <li>✓ <strong>Upgrade armies between runs.</strong> Once you have resources, train more troops and tackle higher stars.</li>
+      <li>✓ <strong>Monitor spawn patterns.</strong> If you see a cluster of 2-star camps, focus that area.</li>
+      <li>✓ <strong>Use as economy filler.</strong> While building troops, hit camps to keep resources flowing.</li>
+    </ul>
+  </section>
+
+  <!-- Navigation -->
+  <div class="flex justify-between pt-6 border-t border-gray-800">
+    <a href="{{ url_for('wiki.guide', guide='combat-basics') }}" class="text-indigo-400 hover:text-indigo-300">← Combat Basics</a>
+    <a href="{{ url_for('wiki.guide', guide='forts') }}" class="text-indigo-400 hover:text-indigo-300">Forts →</a>
+  </div>
+
+</div>
+{% endblock %}

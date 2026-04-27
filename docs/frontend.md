@@ -27,6 +27,10 @@ Utility-first CSS loaded from CDN. No PostCSS/PurgeCSS step needed for a project
 
 The world map is rendered as a CSS grid (`#world-grid`) of clickable cells. The browser fetches a JSON snapshot from `GET /api/world/map`, then rebuilds the grid DOM with per-cell colours and SVG location markers.
 
+### Layout
+
+The map page overrides the default `main` container to `p-0` (no padding, no max-width), then sizes the outer flex column to `calc(100dvh - 52px)`. The map shell (`#world-map-shell`) takes all remaining height as a flex item, giving a true full-viewport experience on both desktop and mobile.
+
 ### Asset organization reference
 
 UI and map visuals are stored in `assets/theme1` using an entity-first structure:
@@ -60,15 +64,39 @@ When attacking from the popup, the selected preset name is sent to `POST /api/at
 
 The map JSON is refreshed every 10 seconds via a `setInterval` in `templates/world/map.html`.
 
-### Map zoom
+### Map zoom (inside the map)
 
-The world map now supports client-side zoom controls in the map header:
-- `+` and `-` buttons,
-- a range slider,
-- a reset button that returns to `100%`,
+Zoom controls are overlaid at the top-left corner of the map shell:
+- `−` and `+` buttons,
+- a reset button that displays the current level and resets to `100%`,
+- a range slider (hidden on narrow screens),
 - optional `Ctrl + mouse wheel` zoom while hovering the map.
 
-Zoom updates world-cell size and marker size without changing server APIs.
+Default zoom is **60 %** on mobile (< 640 px wide) and **100 %** on desktop.
+
+### Scroll helpers
+
+Four directional buttons (▲▼◀▶) are positioned at the edges of the map shell. Holding one triggers a `setInterval` that calls `scrollBy` at 130 px per 40 ms tick, allowing fast navigation. Releasing the pointer (or the button leaving the element) stops the interval.
+
+Scrollbars are 8 px wide/tall (2× the default) and styled to match the dark theme.
+
+---
+
+## Global floating chat panel
+
+A 💬 FAB (floating action button) fixed at `bottom-6 right-6` is rendered in `base.html` for every logged-in page. Clicking it toggles a `360 × 480 px` panel with three tabs:
+
+| Tab | Endpoint polled | Interval |
+|---|---|---|
+| 🌍 World | `/api/world/chat` | 5 s |
+| ✉ DM | `/api/dm/inbox` | 8 s |
+| ⚔ Clan | `/api/clan/<id>/chat` | 5 s (only shown when player has a clan) |
+
+The DM tab has two sub-views: the inbox list and a conversation view (with a ← Back button). Opening a conversation from any context (world chat name click, recruitment action, etc.) calls `openDmPanel()`, which is global.
+
+An unread-DM badge is polled every 10 s and appears on both the FAB and the DM tab label.
+
+The player context menu (🏰 Visit Castle, 📍 See on Map, ✉ Send Message, 📣 Send Recruitment) is also rendered globally in `base.html` and triggered by clicking a username in the World Chat pane. "See on Map" calls `scrollGridToCell()` if it is defined (map page only), otherwise navigates to `/world`.
 
 ---
 
@@ -76,7 +104,6 @@ Zoom updates world-cell size and marker size without changing server APIs.
 
 | Feature | Endpoint | Interval | Trigger |
 |---|---|---|---|
-| Clan chat | `/api/clan/<id>/chat` | 3 s | `hx-trigger="every 3s"` |
 | Clan applications | `/api/clan/<id>/applications` | 5 s | `hx-trigger="every 5s"` |
 | Resource bars | `/api/fort/<id>/resources`, `/api/castle/resources` | 5 s | `hx-trigger="every 5s"` |
 | Active missions countdown | `/api/battles/active` | 5 s | `hx-trigger="every 5s"` |

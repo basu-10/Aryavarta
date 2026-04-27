@@ -84,6 +84,8 @@ The existing deterministic 6-phase battle engine (`engine/`) is used unchanged.
 | Attacker wins vs monster camp | `deactivate_monster_camp`; gold + metal loot added to attacker |
 | Defender wins | Nothing changes; attacker troops already gone (deducted at dispatch) |
 
+**Survivor handling:** surviving attacker units are returned to the origin location after a win, matching the battle result display. If a player-owned fort successfully defends, any dead defending troops are removed from the fort garrison so the actual remaining garrison matches the battle result.
+
 ---
 
 ## Resource system

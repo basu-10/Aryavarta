@@ -132,6 +132,15 @@ CREATE TABLE IF NOT EXISTS dm_message (
     recruit_clan_id INTEGER REFERENCES clan(id) ON DELETE
     SET NULL
 );
+CREATE TABLE IF NOT EXISTS auth_remember_token (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    player_id INTEGER NOT NULL REFERENCES player(id) ON DELETE CASCADE,
+    token_hash TEXT NOT NULL UNIQUE,
+    created_at_ts INTEGER NOT NULL DEFAULT (strftime('%s', 'now')),
+    expires_at_ts INTEGER NOT NULL,
+    revoked_at_ts INTEGER
+);
+CREATE INDEX IF NOT EXISTS idx_auth_remember_token_player_id ON auth_remember_token (player_id);
 -- ── Training Queue ───────────────────────────────────────────────────── --
 -- One row per troop queued for training.  Ordered by complete_at; the entry
 -- with the earliest complete_at is the one currently being trained.

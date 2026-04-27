@@ -59,13 +59,395 @@
     {% endif %}
   {% endwith %}
 
-  <main class="flex-1 px-4 py-8 max-w-5xl mx-auto w-full">
+  <main class="flex-1 {% block main_class %}px-4 py-8 max-w-5xl mx-auto{% endblock %} w-full">
     {% block content %}{% endblock %}
   </main>
 
   <footer class="text-center text-xs text-gray-600 py-4">
     BattleCells — Multiplayer World
   </footer>
+
+  {% if session.get('player_id') %}
+  {# ── Floating Chat Button ─────────────────────────────────────────── #}
+  <button id="chat-fab"
+          onclick="toggleChatPanel()"
+          class="fixed bottom-6 right-6 z-40 w-14 h-14 rounded-full bg-blue-600 hover:bg-blue-500 active:bg-blue-700 shadow-2xl flex items-center justify-center text-2xl select-none relative"
+          aria-label="Chat">
+    💬
+    <span id="chat-fab-badge"
+          class="hidden absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold rounded-full px-1.5 leading-5 min-w-[18px] text-center">0</span>
+  </button>
+
+  {# ── Floating Chat Panel ──────────────────────────────────────────── #}
+  <div id="chat-panel"
+       class="fixed bottom-24 right-6 z-40 bg-gray-900 border border-gray-700 rounded-2xl shadow-2xl flex-col"
+       style="width:360px;max-width:calc(100vw - 24px);height:480px;max-height:calc(100dvh - 140px)">
+    {# Header #}
+    <div class="flex items-center justify-between px-4 py-3 border-b border-gray-700 rounded-t-2xl shrink-0">
+      <span class="font-semibold text-sm text-gray-200">💬 Chat</span>
+      <button onclick="toggleChatPanel()" class="text-gray-400 hover:text-white text-xl leading-none">&times;</button>
+    </div>
+
+    {# Tabs #}
+    <div class="flex border-b border-gray-700 shrink-0">
+      <button data-chat-tab="world" onclick="switchChatTab('world')"
+              class="flex-1 py-2 text-xs font-medium text-white border-b-2 border-blue-400 transition-colors">🌍 World</button>
+      <button data-chat-tab="dm" onclick="switchChatTab('dm')"
+              class="flex-1 py-2 text-xs font-medium text-gray-400 hover:text-white transition-colors">
+        ✉ DM
+        <span id="chat-dm-badge" class="hidden ml-1 bg-red-500 text-white text-[10px] font-bold rounded-full px-1.5 leading-4">0</span>
+      </button>
+      {% if nav_clan_id %}
+      <button data-chat-tab="clan" onclick="switchChatTab('clan')"
+              class="flex-1 py-2 text-xs font-medium text-gray-400 hover:text-white transition-colors">⚔ Clan</button>
+      {% endif %}
+    </div>
+
+    {# ── World Chat Pane ────────────────────────────────────────────── #}
+    <div id="chat-pane-world" class="flex flex-col flex-1 min-h-0">
+      <div id="world-chat-messages"
+           class="flex-1 overflow-y-auto px-3 py-2 space-y-1 text-xs"
+           hx-get="/api/world/chat"
+           hx-trigger="every 5s"
+           hx-swap="innerHTML">
+        <p class="text-gray-600 italic text-center">Loading…</p>
+      </div>
+      <div class="px-3 py-2 border-t border-gray-700 flex gap-2 shrink-0">
+        <input id="world-chat-input" type="text" maxlength="300"
+               placeholder="Say something to the world…"
+               class="flex-1 bg-gray-800 border border-gray-600 rounded px-2 py-1.5 text-xs text-gray-100 placeholder-gray-500 focus:outline-none focus:border-blue-500" />
+        <button onclick="sendWorldChat()" type="button"
+                class="bg-blue-600 hover:bg-blue-500 text-white text-xs px-3 py-1.5 rounded font-medium">Send</button>
+      </div>
+    </div>
+
+    {# ── DM Pane ────────────────────────────────────────────────────── #}
+    <div id="chat-pane-dm" class="hidden flex-col flex-1 min-h-0">
+      {# Inbox sub-view #}
+      <div id="dm-subview-inbox" class="flex flex-col flex-1 min-h-0">
+        <div id="dm-inbox-list"
+             class="flex-1 overflow-y-auto py-1"
+             hx-get="/api/dm/inbox"
+             hx-trigger="every 8s"
+             hx-swap="innerHTML">
+        </div>
+      </div>
+      {# Conversation sub-view #}
+      <div id="dm-subview-conv" class="hidden flex-col flex-1 min-h-0">
+        <div class="flex items-center gap-2 px-3 py-2 border-b border-gray-700 shrink-0">
+          <button onclick="dmBackToInbox()" class="text-gray-400 hover:text-white text-sm leading-none">← Back</button>
+          <span id="dm-conv-title" class="text-sm font-semibold text-gray-200 truncate flex-1"></span>
+        </div>
+        <div id="dm-panel-messages" class="flex-1 overflow-y-auto px-3 py-2 space-y-1"></div>
+        <div class="px-3 py-2 border-t border-gray-700 flex gap-2 shrink-0">
+          <input id="dm-input" type="text" maxlength="500"
+                 placeholder="Type a message…"
+                 class="flex-1 bg-gray-800 border border-gray-600 rounded px-2 py-1.5 text-xs text-gray-100 placeholder-gray-500 focus:outline-none focus:border-blue-500" />
+          <button onclick="sendDm()" type="button"
+                  class="bg-blue-600 hover:bg-blue-500 text-white text-xs px-3 py-1.5 rounded font-medium">Send</button>
+        </div>
+      </div>
+    </div>
+
+    {% if nav_clan_id %}
+    {# ── Clan Chat Pane ─────────────────────────────────────────────── #}
+    <div id="chat-pane-clan" class="hidden flex-col flex-1 min-h-0">
+      <div id="clan-chat-messages"
+           class="flex-1 overflow-y-auto px-3 py-2 space-y-1 text-xs"
+           hx-get="/api/clan/{{ nav_clan_id }}/chat"
+           hx-trigger="every 5s"
+           hx-swap="innerHTML">
+        <p class="text-gray-600 italic text-center">Loading…</p>
+      </div>
+      <div class="px-3 py-2 border-t border-gray-700 flex gap-2 shrink-0">
+        <input id="clan-chat-input" type="text" maxlength="500"
+               placeholder="Message your clan…"
+               class="flex-1 bg-gray-800 border border-gray-600 rounded px-2 py-1.5 text-xs text-gray-100 placeholder-gray-500 focus:outline-none focus:border-blue-500" />
+        <button onclick="sendClanChat()" type="button"
+                class="bg-blue-600 hover:bg-blue-500 text-white text-xs px-3 py-1.5 rounded font-medium">Send</button>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+
+  {# ── Player Context Menu ──────────────────────────────────────────── #}
+  <div id="player-ctx-menu"
+       class="hidden fixed z-50 bg-gray-900 border border-gray-600 rounded-xl shadow-2xl py-1"
+       style="min-width:200px">
+    <div class="px-3 py-2 border-b border-gray-700 text-xs font-semibold text-gray-300" id="ctx-player-name"></div>
+    <button type="button" onclick="ctxVisitCastle()"
+            class="w-full text-left px-4 py-2 text-sm text-gray-200 hover:bg-gray-700 flex items-center gap-2">
+      🏰 Visit Castle
+    </button>
+    <button type="button" onclick="ctxSeeOnMap()"
+            class="w-full text-left px-4 py-2 text-sm text-gray-200 hover:bg-gray-700 flex items-center gap-2">
+      📍 See on Map
+    </button>
+    <button type="button" onclick="ctxSendDm()"
+            class="w-full text-left px-4 py-2 text-sm text-gray-200 hover:bg-gray-700 flex items-center gap-2">
+      ✉ Send Message
+    </button>
+    <button type="button" onclick="ctxRecruit()"
+            class="w-full text-left px-4 py-2 text-sm text-gray-200 hover:bg-gray-700 flex items-center gap-2">
+      📣 Send Recruitment
+    </button>
+  </div>
+
+  <script>
+  // ═══════════════════════════════════════════════════════════════════
+  // Global Chat System
+  // ═══════════════════════════════════════════════════════════════════
+  const _NAV_CLAN_ID   = {{ nav_clan_id | tojson }};
+  const _NAV_PLAYER_ID = {{ session.get('player_id') | tojson }};
+
+  let _chatPanelOpen  = false;
+  let _chatActiveTab  = 'world';
+
+  // ── Panel open/close ─────────────────────────────────────────────── //
+  function toggleChatPanel() {
+    _chatPanelOpen = !_chatPanelOpen;
+    const panel = document.getElementById('chat-panel');
+    if (_chatPanelOpen) {
+      panel.classList.add('flex');
+      _refreshActiveTab();
+    } else {
+      panel.classList.remove('flex');
+    }
+  }
+
+  function _refreshActiveTab() {
+    if (_chatActiveTab === 'world') {
+      htmx.ajax('GET', '/api/world/chat', {target: '#world-chat-messages', swap: 'innerHTML'});
+    } else if (_chatActiveTab === 'dm') {
+      htmx.ajax('GET', '/api/dm/inbox', {target: '#dm-inbox-list', swap: 'innerHTML'});
+    } else if (_chatActiveTab === 'clan' && _NAV_CLAN_ID) {
+      htmx.ajax('GET', `/api/clan/${_NAV_CLAN_ID}/chat`, {target: '#clan-chat-messages', swap: 'innerHTML'});
+    }
+  }
+
+  // ── Tab switching ────────────────────────────────────────────────── //
+  function switchChatTab(tab) {
+    _chatActiveTab = tab;
+    document.querySelectorAll('[data-chat-tab]').forEach(btn => {
+      const t = btn.dataset.chatTab;
+      const isActive = t === tab;
+      const pane = document.getElementById(`chat-pane-${t}`);
+      btn.classList.toggle('text-white', isActive);
+      btn.classList.toggle('border-b-2', isActive);
+      btn.classList.toggle('border-blue-400', isActive);
+      btn.classList.toggle('text-gray-400', !isActive);
+      if (pane) {
+        pane.classList.toggle('hidden', !isActive);
+        pane.classList.toggle('flex', isActive);
+      }
+    });
+    _refreshActiveTab();
+  }
+
+  // ── World Chat ───────────────────────────────────────────────────── //
+  async function sendWorldChat() {
+    const input = document.getElementById('world-chat-input');
+    const msg = input.value.trim();
+    if (!msg) return;
+    input.value = '';
+    const res = await fetch('/api/world/chat', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({message: msg}),
+    });
+    if (res.ok) htmx.ajax('GET', '/api/world/chat', {target: '#world-chat-messages', swap: 'innerHTML'});
+  }
+
+  document.getElementById('world-chat-input').addEventListener('keydown', e => {
+    if (e.key === 'Enter') sendWorldChat();
+  });
+
+  document.getElementById('world-chat-messages').addEventListener('click', e => {
+    const btn = e.target.closest('.chat-name-btn');
+    if (!btn) return;
+    const pid = parseInt(btn.dataset.senderId);
+    if (pid === _NAV_PLAYER_ID) return;
+    showPlayerCtxMenu(e, {
+      id: pid,
+      name: btn.dataset.senderName,
+      castleId: btn.dataset.castleId || null,
+      gridX: btn.dataset.gridX || null,
+      gridY: btn.dataset.gridY || null,
+    });
+  });
+
+  // ── Clan Chat ────────────────────────────────────────────────────── //
+  async function sendClanChat() {
+    if (!_NAV_CLAN_ID) return;
+    const input = document.getElementById('clan-chat-input');
+    const msg = input.value.trim();
+    if (!msg) return;
+    input.value = '';
+    const res = await fetch(`/api/clan/${_NAV_CLAN_ID}/chat`, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({message: msg}),
+    });
+    if (res.ok) htmx.ajax('GET', `/api/clan/${_NAV_CLAN_ID}/chat`, {target: '#clan-chat-messages', swap: 'innerHTML'});
+  }
+
+  const _clanChatInput = document.getElementById('clan-chat-input');
+  if (_clanChatInput) _clanChatInput.addEventListener('keydown', e => {
+    if (e.key === 'Enter') sendClanChat();
+  });
+
+  // ── DM ───────────────────────────────────────────────────────────── //
+  let _dmPartnerId = null;
+  let _dmPollTimer = null;
+
+  function openDmPanel(partnerId, partnerName) {
+    _dmPartnerId = partnerId;
+    if (!_chatPanelOpen) toggleChatPanel();
+    switchChatTab('dm');
+    document.getElementById('dm-conv-title').textContent = partnerName;
+    document.getElementById('dm-subview-inbox').classList.add('hidden');
+    document.getElementById('dm-subview-inbox').classList.remove('flex');
+    document.getElementById('dm-subview-conv').classList.remove('hidden');
+    document.getElementById('dm-subview-conv').classList.add('flex');
+    loadDmMessages();
+    if (_dmPollTimer) clearInterval(_dmPollTimer);
+    _dmPollTimer = setInterval(loadDmMessages, 5000);
+  }
+
+  function dmBackToInbox() {
+    _dmPartnerId = null;
+    if (_dmPollTimer) { clearInterval(_dmPollTimer); _dmPollTimer = null; }
+    document.getElementById('dm-subview-conv').classList.add('hidden');
+    document.getElementById('dm-subview-conv').classList.remove('flex');
+    document.getElementById('dm-subview-inbox').classList.remove('hidden');
+    document.getElementById('dm-subview-inbox').classList.add('flex');
+    htmx.ajax('GET', '/api/dm/inbox', {target: '#dm-inbox-list', swap: 'innerHTML'});
+  }
+
+  async function loadDmMessages() {
+    if (!_dmPartnerId) return;
+    const res = await fetch(`/api/dm/${_dmPartnerId}`);
+    if (!res.ok) return;
+    const html = await res.text();
+    const container = document.getElementById('dm-panel-messages');
+    container.innerHTML = html;
+    container.scrollTop = container.scrollHeight;
+  }
+
+  async function sendDm() {
+    if (!_dmPartnerId) return;
+    const input = document.getElementById('dm-input');
+    const msg = input.value.trim();
+    if (!msg) return;
+    input.value = '';
+    const res = await fetch(`/api/dm/${_dmPartnerId}`, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({message: msg}),
+    });
+    if (res.ok) loadDmMessages();
+  }
+
+  document.getElementById('dm-input').addEventListener('keydown', e => {
+    if (e.key === 'Enter') sendDm();
+  });
+
+  document.getElementById('dm-inbox-list').addEventListener('click', e => {
+    const btn = e.target.closest('.dm-open-btn');
+    if (!btn) return;
+    openDmPanel(parseInt(btn.dataset.partnerId), btn.dataset.partnerName);
+  });
+
+  // ── Player context menu ──────────────────────────────────────────── //
+  let _ctxPlayer = null;
+
+  function showPlayerCtxMenu(event, player) {
+    _ctxPlayer = player;
+    const menu = document.getElementById('player-ctx-menu');
+    document.getElementById('ctx-player-name').textContent = player.name;
+    menu.classList.remove('hidden');
+    const x = Math.min(event.clientX, window.innerWidth - 220);
+    const y = Math.min(event.clientY, window.innerHeight - 200);
+    menu.style.left = `${x}px`;
+    menu.style.top  = `${y}px`;
+  }
+
+  function closeCtxMenu() {
+    document.getElementById('player-ctx-menu').classList.add('hidden');
+    _ctxPlayer = null;
+  }
+
+  document.addEventListener('click', e => {
+    if (!document.getElementById('player-ctx-menu').classList.contains('hidden')) {
+      if (!e.target.closest('#player-ctx-menu') && !e.target.closest('.chat-name-btn')) {
+        closeCtxMenu();
+      }
+    }
+  });
+
+  async function ctxVisitCastle() {
+    if (!_ctxPlayer) return;
+    closeCtxMenu();
+    window.location.href = `/world?highlight_player=${_ctxPlayer.id}`;
+  }
+
+  function ctxSeeOnMap() {
+    if (!_ctxPlayer || !_ctxPlayer.gridX) return;
+    closeCtxMenu();
+    if (typeof scrollGridToCell === 'function') {
+      scrollGridToCell(parseInt(_ctxPlayer.gridX), parseInt(_ctxPlayer.gridY));
+    } else {
+      window.location.href = '/world';
+    }
+  }
+
+  async function ctxRecruit() {
+    if (!_ctxPlayer) return;
+    const { id, name } = _ctxPlayer;
+    closeCtxMenu();
+    const res = await fetch(`/api/world/player/${id}/recruit`, {method: 'POST'});
+    if (res.ok) {
+      showToast(`Recruitment message sent to ${name}!`);
+      openDmPanel(id, name);
+    }
+  }
+
+  function ctxSendDm() {
+    if (!_ctxPlayer) return;
+    const { id, name } = _ctxPlayer;
+    closeCtxMenu();
+    openDmPanel(id, name);
+  }
+
+  // ── Unread badge poll ────────────────────────────────────────────── //
+  async function pollUnread() {
+    const res = await fetch('/api/dm/unread');
+    if (!res.ok) return;
+    const { unread } = await res.json();
+    const fabBadge = document.getElementById('chat-fab-badge');
+    const dmBadge  = document.getElementById('chat-dm-badge');
+    if (unread > 0) {
+      fabBadge.textContent = unread;
+      fabBadge.classList.remove('hidden');
+      if (dmBadge) { dmBadge.textContent = unread; dmBadge.classList.remove('hidden'); }
+    } else {
+      fabBadge.classList.add('hidden');
+      if (dmBadge) dmBadge.classList.add('hidden');
+    }
+  }
+  setInterval(pollUnread, 10000);
+  pollUnread();
+
+  // ── Toast ────────────────────────────────────────────────────────── //
+  function showToast(text) {
+    const el = document.createElement('div');
+    el.textContent = text;
+    el.className = 'fixed bottom-24 left-1/2 -translate-x-1/2 z-[9999] bg-gray-800 border border-gray-600 text-gray-100 text-sm px-5 py-2.5 rounded-xl shadow-xl pointer-events-none';
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), 3500);
+  }
+  </script>
+  {% endif %}
 
 </body>
 </html>

@@ -1,0 +1,199 @@
+{% extends "base.html" %}
+{% block title %}Advanced Combat — BattleCells Guide{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl space-y-8">
+
+  <!-- Breadcrumb -->
+  <nav class="text-xs text-gray-500 flex items-center gap-2">
+    <a href="{{ url_for('wiki.wiki_index') }}" class="hover:text-indigo-400">Wiki</a>
+    <span>›</span>
+    <a href="{{ url_for('wiki.guides_index') }}" class="hover:text-indigo-400">Guides</a>
+    <span>›</span>
+    <span class="text-gray-400">Advanced Combat</span>
+  </nav>
+
+  <!-- Header -->
+  <div>
+    <h1 class="text-4xl font-bold">🎯 Advanced Combat</h1>
+    <p class="text-gray-400 text-lg mt-3">
+      Master formations, loot calculations, and tactical strategy.
+    </p>
+  </div>
+
+  <!-- Battle Phases -->
+  <section class="space-y-4">
+    <h2 class="text-2xl font-bold text-indigo-300">How Battles Work (Phases)</h2>
+    <p class="text-gray-300">
+      Battles are deterministic and run through 6 phases over multiple ticks (up to 200 ticks max). 
+      Understanding these helps you predict outcomes:
+    </p>
+    
+    <div class="bg-gray-900 border border-gray-800 rounded-lg p-4 space-y-3 text-sm mt-3">
+      <div>
+        <h4 class="font-bold text-indigo-400">Phase 1–6: Combat Cycle</h4>
+        <p class="text-gray-400">
+          Each phase, units move across a battlefield grid and attack. Ranged units (Longbowmen, Wraiths) 
+          can attack from range. Melee units (Hussars, Trolls) must advance and engage up close.
+        </p>
+      </div>
+      <div>
+        <h4 class="font-bold text-indigo-400 mt-3">Battlefield Grid</h4>
+        <p class="text-gray-400">
+          The battle happens on a 9-wide grid (columns 0–8). Your army (Team A) spawns in columns 0–3. 
+          Enemy army (Team B) spawns in columns 5–8. Column 4 is neutral/no-man's-land.
+        </p>
+      </div>
+      <div>
+        <h4 class="font-bold text-indigo-400 mt-3">Speed Advantage</h4>
+        <p class="text-gray-400">
+          Units move based on their speed stat. Faster units close gaps and attack sooner. 
+          Hussars (fast) will engage before Longbowmen (slower).
+        </p>
+      </div>
+      <div>
+        <h4 class="font-bold text-indigo-400 mt-3">Ending Condition</h4>
+        <p class="text-gray-400">
+          Battle ends when one side is fully eliminated, or 200 ticks pass (stalemate = attacker loses by default).
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Formation Strategy -->
+  <section class="space-y-4 border-t border-gray-700 pt-6">
+    <h2 class="text-2xl font-bold text-indigo-300">Formation Strategy</h2>
+    <p class="text-gray-300">
+      How you arrange your army affects the outcome. Different formations suit different opponents:
+    </p>
+
+    <div class="space-y-3 mt-3">
+      <div class="bg-gray-900 border border-gray-800 rounded-lg p-4">
+        <h4 class="font-bold text-indigo-400">🎯 Balanced (Recommended)</h4>
+        <p class="text-gray-400 text-sm mt-2">
+          <strong>Composition:</strong> Mix ranged and cavalry (e.g., 60% Longbowmen, 40% Hussars)
+          <br/><strong>Advantage:</strong> Versatile vs. all enemy types.
+          <br/><strong>When to use:</strong> Scouting, unsure what you're facing.
+        </p>
+      </div>
+
+      <div class="bg-gray-900 border border-gray-800 rounded-lg p-4">
+        <h4 class="font-bold text-indigo-400">⚡ Heavy Ranged</h4>
+        <p class="text-gray-400 text-sm mt-2">
+          <strong>Composition:</strong> Mostly Longbowmen (80%+)
+          <br/><strong>Advantage:</strong> Sustained damage. Kites and overwhelms slow enemies.
+          <br/><strong>Weakness:</strong> Vulnerable to fast units that close gaps.
+          <br/><strong>When to use:</strong> Vs. Trolls or static defenses.
+        </p>
+      </div>
+
+      <div class="bg-gray-900 border border-gray-800 rounded-lg p-4">
+        <h4 class="font-bold text-indigo-400">🐴 Fast Cavalry</h4>
+        <p class="text-gray-400 text-sm mt-2">
+          <strong>Composition:</strong> Mostly Hussars (70%+)
+          <br/><strong>Advantage:</strong> Engages first. Overwhelms before enemy reaches halfway.
+          <br/><strong>Weakness:</strong> Lower HP and durability.
+          <br/><strong>When to use:</strong> Vs. slow ranged armies. Quick hit-and-run attacks.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- The Battle Simulator -->
+  <section class="space-y-4 border-t border-gray-700 pt-6">
+    <h2 class="text-2xl font-bold text-indigo-300">The Battle Simulator</h2>
+    <p class="text-gray-300">
+      Before attacking, you can use the <strong>battle simulator</strong> to practice and test formations:
+    </p>
+    <div class="bg-gray-900 border border-gray-800 rounded-lg p-4 space-y-2 text-sm mt-3">
+      <p class="text-gray-300"><strong>Access:</strong> From the main menu, go to "Battle Simulator".</p>
+      <p class="text-gray-300"><strong>Setup:</strong> Create a custom scenario (your army vs. a known enemy garrison).</p>
+      <p class="text-gray-300"><strong>Run:</strong> Simulate the battle 1+ times to see outcomes.</p>
+      <p class="text-gray-300"><strong>Save:</strong> Save successful formations as presets for reuse in real attacks.</p>
+    </div>
+    <p class="text-gray-300 mt-4">
+      <strong>Pro tip:</strong> Always simulate before high-risk attacks. The preview gives you valuable data.
+    </p>
+  </section>
+
+  <!-- Loot Calculations -->
+  <section class="space-y-4 border-t border-gray-700 pt-6">
+    <h2 class="text-2xl font-bold text-indigo-300">Loot & Resource Gains</h2>
+    <p class="text-gray-300">
+      When you win an attack, you gain resources based on what you defeated:
+    </p>
+
+    <div class="bg-gray-900 border border-gray-800 rounded-lg p-4 space-y-3 text-sm mt-3">
+      <div>
+        <h4 class="font-bold text-indigo-300">Monster Camp Victory</h4>
+        <p class="text-gray-400">
+          <strong>Loot:</strong> Gold + Metal (50–500+ depending on star level)
+          <br/><strong>Formula:</strong> Scales with difficulty
+        </p>
+      </div>
+      <div>
+        <h4 class="font-bold text-indigo-300 mt-3">Fort Capture</h4>
+        <p class="text-gray-400">
+          <strong>Loot:</strong> All accumulated resources at the fort (Gold, Metal, Food, Timber)
+          <br/><strong>Plus:</strong> Building loot from any structures you destroyed
+        </p>
+      </div>
+      <div>
+        <h4 class="font-bold text-indigo-300 mt-3">Cost vs. Reward</h4>
+        <p class="text-gray-400">
+          A victory is profitable if total loot &gt; army training cost. 
+          Example: Winning a 3-star camp nets ~200 loot; training your 10-troop army cost ~300. 
+          Break-even on resources, but you expanded territory (forts).
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Counter Strategy -->
+  <section class="space-y-4 border-t border-gray-700 pt-6">
+    <h2 class="text-2xl font-bold text-indigo-300">Counter Strategies</h2>
+    <p class="text-gray-300">
+      Different unit types and formations counter each other:
+    </p>
+    
+    <div class="space-y-2 text-sm mt-3">
+      <div class="flex gap-3">
+        <span class="text-indigo-400 font-bold">→</span>
+        <span class="text-gray-300"><strong>Trolls (tanky):</strong> Counter with Longbowmen. Sustained ranged damage bypasses armor.</span>
+      </div>
+      <div class="flex gap-3">
+        <span class="text-indigo-400 font-bold">→</span>
+        <span class="text-gray-300"><strong>Wraiths (fast ranged):</strong> Counter with Hussars. Close the gap before taking sustained damage.</span>
+      </div>
+      <div class="flex gap-3">
+        <span class="text-indigo-400 font-bold">→</span>
+        <span class="text-gray-300"><strong>Mixed garrison:</strong> Use balanced composition or test in simulator first.</span>
+      </div>
+      <div class="flex gap-3">
+        <span class="text-indigo-400 font-bold">→</span>
+        <span class="text-gray-300"><strong>Defense buildings (Cannons, Towers):</strong> They're stationary but powerful. Use speed to overwhelm before they kill your army.</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- Risk Management -->
+  <section class="bg-indigo-900/30 border border-indigo-800 rounded-lg p-6 space-y-4 border-t border-gray-700 pt-6">
+    <h3 class="font-bold text-lg">Risk Management</h3>
+    <ul class="space-y-2 text-gray-300 text-sm">
+      <li>✓ <strong>Always simulate first.</strong> A 30-second test saves you a lost army.</li>
+      <li>✓ <strong>Look for 70%+ win odds.</strong> Don't gamble on 50/50 battles unless desperate.</li>
+      <li>✓ <strong>Diversify targets.</strong> Mix monster camps (safe) with forts (riskier but more rewarding).</li>
+      <li>✓ <strong>Keep reserves.</strong> Don't spend all your troops on one attack. Maintain defense.</li>
+      <li>✓ <strong>Retreat-build strategy.</strong> If you lose, rebuild troops and try a different approach.</li>
+      <li>✓ <strong>Learn from losses.</strong> Review battle replays to understand what went wrong.</li>
+    </ul>
+  </section>
+
+  <!-- Navigation -->
+  <div class="flex justify-between pt-6 border-t border-gray-800">
+    <a href="{{ url_for('wiki.guide', guide='forts') }}" class="text-indigo-400 hover:text-indigo-300">← Forts</a>
+    <a href="{{ url_for('wiki.guide', guide='clans') }}" class="text-indigo-400 hover:text-indigo-300">Clans →</a>
+  </div>
+
+</div>
+{% endblock %}

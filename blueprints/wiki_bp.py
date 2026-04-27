@@ -251,3 +251,33 @@ def troop_detail(slug: str):
         category_color=_category_color(base["category"]),
         back_url=url_for("wiki.troops_index"),
     )
+
+
+# Game guides
+@wiki_bp.route("/guides")
+def guides_index():
+    return render_template("wiki/guide_index.html")
+
+
+@wiki_bp.route("/guides/<guide>")
+def guide(guide: str):
+    """Serve individual guide pages."""
+    valid_guides = {
+        "welcome":          "wiki/guide_welcome.html",
+        "getting-started":  "wiki/guide_getting_started.html",
+        "resources":        "wiki/guide_resources.html",
+        "buildings":        "wiki/guide_buildings.html",
+        "armies":           "wiki/guide_armies.html",
+        "world-map":        "wiki/guide_world_map.html",
+        "combat-basics":    "wiki/guide_combat_basics.html",
+        "monster-camps":    "wiki/guide_monster_camps.html",
+        "forts":            "wiki/guide_forts.html",
+        "advanced-combat":  "wiki/guide_advanced_combat.html",
+        "clans":            "wiki/guide_clans.html",
+        "tips":             "wiki/guide_tips.html",
+    }
+
+    if guide not in valid_guides:
+        abort(404)
+
+    return render_template(valid_guides[guide])

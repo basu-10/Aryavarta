@@ -112,6 +112,46 @@ def ban_player(player_id: int) -> None:
     set_player_role(player_id, "banned")
 
 
+def create_remember_token(player_id: int, token_hash: str, expires_at_ts: int) -> None:
+    """Rotate to one active remember token per player and persist it."""
+    db = get_db()
+    db.execute("DELETE FROM auth_remember_token WHERE player_id=?", (player_id,))
+    db.execute(
+        "INSERT INTO auth_remember_token (player_id, token_hash, expires_at_ts) VALUES (?,?,?)",
+        (player_id, token_hash, expires_at_ts),
+    )
+    db.commit()
+
+
+def get_player_by_remember_token_hash(token_hash: str) -> Optional[dict]:
+    row = get_db().execute(
+        """
+        SELECT p.*
+        FROM auth_remember_token t
+        JOIN player p ON p.id = t.player_id
+        WHERE t.token_hash = ?
+          AND t.revoked_at_ts IS NULL
+          AND t.expires_at_ts > CAST(strftime('%s', 'now') AS INTEGER)
+        LIMIT 1
+        """,
+        (token_hash,),
+    ).fetchone()
+    return _row(row)
+
+
+def revoke_remember_token_hash(token_hash: str) -> None:
+    db = get_db()
+    db.execute(
+        """
+        UPDATE auth_remember_token
+        SET revoked_at_ts = CAST(strftime('%s', 'now') AS INTEGER)
+        WHERE token_hash = ? AND revoked_at_ts IS NULL
+        """,
+        (token_hash,),
+    )
+    db.commit()
+
+
 # ── Castle ───────────────────────────────────────────────────────────── #
 
 def create_castle(player_id: int, slot_count: int, grid_x: int, grid_y: int) -> int:

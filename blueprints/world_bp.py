@@ -691,6 +691,7 @@ def _resolve_one_mission(mission: dict) -> dict:
     defender_units  = _build_defender_units(defender_spec) if defender_spec else []
 
     winner_label = "attacker"
+    all_battle_units: list[Unit] = attacker_units  # default: uncontested, all survive
 
     if not defender_units:
         # Empty target — attacker wins uncontested; still store one replay snapshot.
@@ -704,6 +705,7 @@ def _resolve_one_mission(mission: dict) -> dict:
     else:
         battle = Battle(attacker_units, defender_units)
         result = battle.run()
+        all_battle_units = result.all_units
 
         battle_id = str(uuid.uuid4())
         csv_path = Path(current_app.config["OUTPUT_DIR"]) / f"{battle_id}.csv"
@@ -725,7 +727,7 @@ def _resolve_one_mission(mission: dict) -> dict:
         winner_label = "attacker" if result.winner == "A" else "defender"
 
     # Apply consequences
-    _apply_outcome(mission, winner_label)
+    _apply_outcome(mission, winner_label, all_battle_units)
     m.resolve_mission(mission["id"], winner_label, battle_id)
 
     return {
@@ -737,14 +739,39 @@ def _resolve_one_mission(mission: dict) -> dict:
     }
 
 
-def _apply_outcome(mission: dict, winner_label: str) -> None:
+def _deduct_defender_casualties(
+    location_type: str, location_id: int, owner_id: int, all_units: list
+) -> None:
+    """Deduct dead defender troops from the garrison after a successful defence."""
+    for u in all_units:
+        if u.team == "B" and not u.is_alive() and not u.unit_id.startswith("B_DEF_"):
+            m.deduct_troop(owner_id, u.unit_type, u.quantity, location_type, location_id)
+
+
+def _apply_outcome(mission: dict, winner_label: str, all_units: list | None = None) -> None:
     attacker_id = mission["attacker_id"]
     target_type = mission["target_type"]
     target_id   = mission["target_id"]
+    origin_type = mission["origin_type"]
+    origin_id   = mission["origin_id"]
 
     if winner_label == "defender":
-        # Total wipeout — all troops already deducted at dispatch, nothing to do
+        # Attacker wiped out — troops already deducted at dispatch.
+        # Apply defender casualties to player-owned fort garrison.
+        if target_type == "fort" and all_units is not None:
+            fort = m.get_fort(target_id)
+            if fort and fort.get("owner_id") is not None:
+                _deduct_defender_casualties("fort", target_id, fort["owner_id"], all_units)
         return
+
+    # Attacker wins — return surviving attacker troops to their origin.
+    if all_units is not None:
+        survivors: dict[str, int] = {}
+        for u in all_units:
+            if u.team == "A" and u.is_alive():
+                survivors[u.unit_type] = survivors.get(u.unit_type, 0) + u.quantity
+        for utype, count in survivors.items():
+            m.add_troop(attacker_id, utype, count, origin_type, origin_id)
 
     # Attacker wins
     if target_type == "monster_camp":

@@ -1,0 +1,213 @@
+{% extends "base.html" %}
+{% block title %}Resources & Economy — BattleCells Guide{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl space-y-8">
+
+  <!-- Breadcrumb -->
+  <nav class="text-xs text-gray-500 flex items-center gap-2">
+    <a href="{{ url_for('wiki.wiki_index') }}" class="hover:text-indigo-400">Wiki</a>
+    <span>›</span>
+    <a href="{{ url_for('wiki.guides_index') }}" class="hover:text-indigo-400">Guides</a>
+    <span>›</span>
+    <span class="text-gray-400">Resources</span>
+  </nav>
+
+  <!-- Header -->
+  <div>
+    <h1 class="text-4xl font-bold">💰 Resources & Economy</h1>
+    <p class="text-gray-400 text-lg mt-3">
+      Master the four resources and understand how to build your economy efficiently.
+    </p>
+  </div>
+
+  <!-- The Four Resources -->
+  <section class="space-y-4">
+    <h2 class="text-2xl font-bold text-indigo-300">The Four Resources</h2>
+    <p class="text-gray-300">
+      Every action in BattleCells costs resources. You manage four types:
+    </p>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div class="bg-gray-900 border border-amber-800 rounded-lg p-4 space-y-2">
+        <h3 class="text-amber-400 font-bold text-lg">🌾 Food</h3>
+        <p class="text-gray-400 text-sm">Used for training troops, building some structures.</p>
+        <p class="text-gray-400 text-sm"><strong>Starting:</strong> 200</p>
+        <p class="text-gray-400 text-sm"><strong>Produced by:</strong> Farm (0.05/s, level 1)</p>
+      </div>
+      <div class="bg-gray-900 border border-amber-900 rounded-lg p-4 space-y-2">
+        <h3 class="text-amber-700 font-bold text-lg">🪵 Timber</h3>
+        <p class="text-gray-400 text-sm">Used for buildings, military structures, and upgrades.</p>
+        <p class="text-gray-400 text-sm"><strong>Starting:</strong> 200</p>
+        <p class="text-gray-400 text-sm"><strong>Produced by:</strong> Lumber Mill (0.05/s, level 1)</p>
+      </div>
+      <div class="bg-gray-900 border border-yellow-800 rounded-lg p-4 space-y-2">
+        <h3 class="text-yellow-400 font-bold text-lg">💛 Gold</h3>
+        <p class="text-gray-400 text-sm">Used for tech, recruitment, and premium structures.</p>
+        <p class="text-gray-400 text-sm"><strong>Starting:</strong> 100</p>
+        <p class="text-gray-400 text-sm"><strong>Produced by:</strong> Merchant (0.05/s, level 1)</p>
+      </div>
+      <div class="bg-gray-900 border border-slate-700 rounded-lg p-4 space-y-2">
+        <h3 class="text-slate-300 font-bold text-lg">⚙️ Metal</h3>
+        <p class="text-gray-400 text-sm">Used for defense buildings, weapons, and fortifications.</p>
+        <p class="text-gray-400 text-sm"><strong>Starting:</strong> 100</p>
+        <p class="text-gray-400 text-sm"><strong>Produced by:</strong> Mine (0.05/s, level 1)</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- How Production Works -->
+  <section class="space-y-4">
+    <h2 class="text-2xl font-bold text-indigo-300">How Resource Production Works</h2>
+    <p class="text-gray-300">
+      Production buildings generate resources automatically based on elapsed time. The system uses 
+      <strong>lazy evaluation</strong>: production is calculated only when you collect.
+    </p>
+    
+    <div class="bg-gray-900 border border-gray-800 rounded-lg p-4 space-y-3">
+      <div>
+        <h4 class="font-bold text-indigo-300">Production Formula</h4>
+        <p class="text-gray-400 text-sm font-mono bg-black/50 p-2 rounded mt-2">
+          amount = base_rate × 2^(level-1) × elapsed_seconds
+        </p>
+      </div>
+      <div>
+        <h4 class="font-bold text-indigo-300 mt-4">Example: A level 2 Farm</h4>
+        <p class="text-gray-400 text-sm">
+          Farm base rate: 0.05 Food/s<br />
+          Level 2 multiplier: 2^(2-1) = 2<br />
+          Effective rate: 0.05 × 2 = 0.1 Food/s<br />
+          <br />
+          After 100 seconds: 0.1 × 100 = 10 Food
+        </p>
+      </div>
+    </div>
+
+    <div class="bg-blue-900/20 border border-blue-800 rounded p-4 text-sm text-blue-200 mt-4">
+      💡 <strong>Key insight:</strong> Upgrading a building from level 1 to 2 doubles its output. 
+      Level 3 = 4× output. This exponential growth is huge for long-term economy.
+    </div>
+  </section>
+
+  <!-- Collection Strategy -->
+  <section class="space-y-4">
+    <h2 class="text-2xl font-bold text-indigo-300">Collection Strategy</h2>
+    <p class="text-gray-300">
+      Resources are only collected when you manually click <strong>Collect</strong> in the resource panel. 
+      Strategic collection timing can optimize your economy:
+    </p>
+    <ul class="space-y-2 text-gray-300 ml-4">
+      <li class="flex gap-2">
+        <span class="text-indigo-400 font-bold">Frequent collection</span>
+        <span>(every 1–5 minutes): Keeps resources flowing; less total resources accumulated but enables rapid spending.</span>
+      </li>
+      <li class="flex gap-2">
+        <span class="text-indigo-400 font-bold">Delayed collection</span>
+        <span>(every 10+ minutes): Massive resource bursts; good for planning big builds or attacks at specific times.</span>
+      </li>
+      <li class="flex gap-2">
+        <span class="text-indigo-400 font-bold">Before logging off</span>
+        <span>: Always collect before leaving so you don't lose passive production time.</span>
+      </li>
+    </ul>
+  </section>
+
+  <!-- Resource Costs Table -->
+  <section class="space-y-4">
+    <h2 class="text-2xl font-bold text-indigo-300">Common Resource Costs</h2>
+    <div class="bg-gray-900 border border-gray-800 rounded-lg p-4 overflow-x-auto">
+      <table class="w-full text-sm">
+        <thead>
+          <tr class="border-b border-gray-700">
+            <th class="text-left py-2">Item</th>
+            <th class="text-left py-2">Food</th>
+            <th class="text-left py-2">Timber</th>
+            <th class="text-left py-2">Gold</th>
+            <th class="text-left py-2">Metal</th>
+          </tr>
+        </thead>
+        <tbody class="space-y-1">
+          <tr class="border-b border-gray-700/50 text-gray-300">
+            <td class="py-2">Farm</td>
+            <td>—</td>
+            <td>50</td>
+            <td>50</td>
+            <td>—</td>
+          </tr>
+          <tr class="border-b border-gray-700/50 text-gray-300">
+            <td class="py-2">Garrison (Barracks)</td>
+            <td>—</td>
+            <td>100</td>
+            <td>100</td>
+            <td>50</td>
+          </tr>
+          <tr class="border-b border-gray-700/50 text-gray-300">
+            <td class="py-2">Longbowman (train)</td>
+            <td>25</td>
+            <td>—</td>
+            <td>10</td>
+            <td>—</td>
+          </tr>
+          <tr class="border-b border-gray-700/50 text-gray-300">
+            <td class="py-2">Hussar (train)</td>
+            <td>30</td>
+            <td>—</td>
+            <td>15</td>
+            <td>—</td>
+          </tr>
+          <tr class="text-gray-300">
+            <td class="py-2">Clan creation</td>
+            <td>1000</td>
+            <td>1000</td>
+            <td>1000</td>
+            <td>1000</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="text-gray-400 text-sm mt-2">
+      Check the <a href="{{ url_for('wiki.buildings_index') }}" class="text-indigo-400 hover:text-indigo-300">Buildings Index</a> for a full cost breakdown.
+    </p>
+  </section>
+
+  <!-- Multi-Fort Economy -->
+  <section class="space-y-4">
+    <h2 class="text-2xl font-bold text-indigo-300">Scaling: Multiple Locations</h2>
+    <p class="text-gray-300">
+      As you progress, you'll capture forts. Each fort can have its own buildings and armies:
+    </p>
+    <div class="bg-gray-900 border border-gray-800 rounded-lg p-4 space-y-3 text-gray-300 text-sm">
+      <p>
+        <strong>Castle:</strong> Primary economy. Build 5–6 production buildings + military buildings.
+      </p>
+      <p>
+        <strong>Fort 1:</strong> Secondary army base. Build Garrison + Stable; 2–3 production buildings for overflow.
+      </p>
+      <p>
+        <strong>Fort 2+:</strong> Dedicated military barracks or forward operating bases.
+      </p>
+      <p>
+        Resources pool across all your locations — you can spend gold from any location on any construction.
+      </p>
+    </div>
+  </section>
+
+  <!-- Economy Tips -->
+  <section class="bg-indigo-900/30 border border-indigo-800 rounded-lg p-6 space-y-3">
+    <h3 class="font-bold text-lg">Pro Economy Tips</h3>
+    <ul class="space-y-2 text-gray-300 text-sm">
+      <li>✓ <strong>Upgrade your farms early.</strong> Level 2 farm = double output. Massive compounding gain.</li>
+      <li>✓ <strong>Balanced production matters.</strong> A bottleneck in one resource slows everything.</li>
+      <li>✓ <strong>Watch your spending.</strong> Build troops gradually; don't bankrupt yourself.</li>
+      <li>✓ <strong>Collect before long journeys.</strong> Resources keep generating while you're logged off (if you collect right before leaving).</li>
+      <li>✓ <strong>Plan your upgrades.</strong> Going from level 1→2 is worth more than building an extra level-1 building.</li>
+    </ul>
+  </section>
+
+  <!-- Navigation -->
+  <div class="flex justify-between pt-6 border-t border-gray-800">
+    <a href="{{ url_for('wiki.guide', guide='getting-started') }}" class="text-indigo-400 hover:text-indigo-300">← First Steps</a>
+    <a href="{{ url_for('wiki.guide', guide='buildings') }}" class="text-indigo-400 hover:text-indigo-300">Buildings →</a>
+  </div>
+
+</div>
+{% endblock %}

@@ -1,0 +1,151 @@
+{% extends "base.html" %}
+{% block title %}Combat Basics — BattleCells Guide{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl space-y-8">
+
+  <!-- Breadcrumb -->
+  <nav class="text-xs text-gray-500 flex items-center gap-2">
+    <a href="{{ url_for('wiki.wiki_index') }}" class="hover:text-indigo-400">Wiki</a>
+    <span>›</span>
+    <a href="{{ url_for('wiki.guides_index') }}" class="hover:text-indigo-400">Guides</a>
+    <span>›</span>
+    <span class="text-gray-400">Combat Basics</span>
+  </nav>
+
+  <!-- Header -->
+  <div>
+    <h1 class="text-4xl font-bold">⚡ Combat Basics</h1>
+    <p class="text-gray-400 text-lg mt-3">
+      Learn how battles work and basic strategy for your first wins.
+    </p>
+  </div>
+
+  <!-- Attack Flow -->
+  <section class="space-y-4">
+    <h2 class="text-2xl font-bold text-indigo-300">The Attack Flow</h2>
+    <div class="space-y-3 bg-gray-900 border border-gray-800 rounded-lg p-6">
+      <div class="flex gap-4">
+        <div class="flex-shrink-0 text-2xl">1️⃣</div>
+        <div>
+          <h4 class="font-bold">Select target on the map</h4>
+          <p class="text-gray-400 text-sm">Click any entity (monster camp, fort, etc.)</p>
+        </div>
+      </div>
+      <div class="flex gap-4">
+        <div class="flex-shrink-0 text-2xl">2️⃣</div>
+        <div>
+          <h4 class="font-bold">Choose your army</h4>
+          <p class="text-gray-400 text-sm">Pick a preset or select units manually from the popup.</p>
+        </div>
+      </div>
+      <div class="flex gap-4">
+        <div class="flex-shrink-0 text-2xl">3️⃣</div>
+        <div>
+          <h4 class="font-bold">Confirm dispatch</h4>
+          <p class="text-gray-400 text-sm">Review the battle preview (your army vs their garrison). Click Attack if you're confident.</p>
+        </div>
+      </div>
+      <div class="flex gap-4">
+        <div class="flex-shrink-0 text-2xl">4️⃣</div>
+        <div>
+          <h4 class="font-bold">Travel countdown</h4>
+          <p class="text-gray-400 text-sm">Your army travels. You see a countdown timer (e.g., "Arriving in 5s").</p>
+        </div>
+      </div>
+      <div class="flex gap-4">
+        <div class="flex-shrink-0 text-2xl">5️⃣</div>
+        <div>
+          <h4 class="font-bold">Auto-resolve</h4>
+          <p class="text-gray-400 text-sm">When the timer hits zero, the battle runs and results are shown instantly.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Battle Preview -->
+  <section class="space-y-4 border-t border-gray-700 pt-6">
+    <h2 class="text-2xl font-bold text-indigo-300">Battle Preview</h2>
+    <p class="text-gray-300">
+      Before you attack, the game shows a <strong>preview</strong> of your army vs. the defender's garrison. 
+      This gives you a chance to estimate outcomes.
+    </p>
+    <div class="bg-gray-900 border border-gray-800 rounded-lg p-4 space-y-2 text-sm">
+      <p class="text-gray-300"><strong>Your army:</strong> e.g., "8 Longbowmen, 4 Hussars"</p>
+      <p class="text-gray-300"><strong>Defender garrison:</strong> e.g., "3 Trolls"</p>
+      <p class="text-gray-300"><strong>Battle odds:</strong> A rough estimate (usually shown as "Strong advantage" or "Evenly matched")</p>
+    </div>
+    <p class="text-gray-300 mt-4">
+      <strong>Green = you're favored. Red = risky. Yellow = 50/50.</strong> Use this to decide whether to attack.
+    </p>
+  </section>
+
+  <!-- Consequences -->
+  <section class="space-y-4 border-t border-gray-700 pt-6">
+    <h2 class="text-2xl font-bold text-indigo-300">⚠️ Important: Consequences</h2>
+    <div class="bg-red-900/20 border border-red-800 rounded-lg p-6 space-y-4">
+      <p class="text-red-200 font-bold">Your army is deducted IMMEDIATELY when you dispatch, not after the battle resolves.</p>
+      <p class="text-red-200">
+        If you lose the attack, those troops are gone forever. You don't get them back. The defender keeps the fort, but any defending troops killed in the battle are also permanently lost from the garrison.
+      </p>
+      <p class="text-red-200">
+        <strong>Strategy:</strong> Only attack targets you're confident you can beat. If you're unsure, skip the attack.
+      </p>
+    </div>
+  </section>
+
+  <!-- Outcomes -->
+  <section class="space-y-4 border-t border-gray-700 pt-6">
+    <h2 class="text-2xl font-bold text-indigo-300">Battle Outcomes</h2>
+    <p class="text-gray-300">After the battle resolves, one of these happens:</p>
+    <p class="text-gray-400 text-sm">
+      The battle results page is authoritative: it shows the exact survivors from the fight. If you win, only the surviving attackers are returned to your origin. If the defender wins, the attacker is destroyed and defender losses are removed from the garrison.
+    </p>
+    <div class="space-y-3">
+      <div class="bg-green-900/20 border border-green-800 rounded p-4">
+        <h4 class="font-bold text-green-400">✓ You Win vs. Monster Camp</h4>
+        <p class="text-gray-400 text-sm">
+          <strong>Reward:</strong> Gold + Metal loot (usually 50–500 depending on difficulty stars).
+          <br/><strong>Result:</strong> Camp is deactivated. A new camp respawns elsewhere later.
+        </p>
+      </div>
+      
+      <div class="bg-green-900/20 border border-green-800 rounded p-4">
+        <h4 class="font-bold text-green-400">✓ You Win vs. Monster Fort</h4>
+        <p class="text-gray-400 text-sm">
+          <strong>Reward:</strong> You capture the fort (turns green). Loot is added to your resources.
+          <br/><strong>Result:</strong> You now own the fort and can build there.
+        </p>
+      </div>
+      
+      <div class="bg-orange-900/20 border border-orange-800 rounded p-4">
+        <h4 class="font-bold text-orange-400">✗ You Lose</h4>
+        <p class="text-gray-400 text-sm">
+          <strong>Penalty:</strong> Your entire army is destroyed. Nothing else happens.
+          <br/><strong>Defense:</strong> If you were attacking a fort, the defender doesn't take damage to their fort itself, but any defending troops killed in the battle are removed from the garrison.
+          <br/><strong>Recovery:</strong> Go back to training troops.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- First Attack Tips -->
+  <section class="bg-indigo-900/30 border border-indigo-800 rounded-lg p-6 space-y-4 border-t border-gray-700 pt-6">
+    <h3 class="font-bold text-lg">Tips for Your First Attack</h3>
+    <ul class="space-y-2 text-gray-300 text-sm">
+      <li>✓ <strong>Start with 1-star targets.</strong> They have only 2–3 defenders. Your first 5 Longbowmen should win.</li>
+      <li>✓ <strong>Use the battle preview.</strong> If odds look bad, don't attack. Come back with more troops.</li>
+      <li>✓ <strong>Attack monster camps first.</strong> They're easier than forts and give decent loot.</li>
+      <li>✓ <strong>Scout nearby first.</strong> Short travel time = less risky (fewer things can go wrong).</li>
+      <li>✓ <strong>Build momentum.</strong> First win = confidence + resources for more armies.</li>
+    </ul>
+  </section>
+
+  <!-- Navigation -->
+  <div class="flex justify-between pt-6 border-t border-gray-800">
+    <a href="{{ url_for('wiki.guide', guide='world-map') }}" class="text-indigo-400 hover:text-indigo-300">← World Map</a>
+    <a href="{{ url_for('wiki.guide', guide='monster-camps') }}" class="text-indigo-400 hover:text-indigo-300">Monster Camps →</a>
+  </div>
+
+</div>
+{% endblock %}

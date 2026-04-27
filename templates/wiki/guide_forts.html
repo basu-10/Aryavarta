@@ -1,0 +1,201 @@
+{% extends "base.html" %}
+{% block title %}Forts & Territory — BattleCells Guide{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl space-y-8">
+
+  <!-- Breadcrumb -->
+  <nav class="text-xs text-gray-500 flex items-center gap-2">
+    <a href="{{ url_for('wiki.wiki_index') }}" class="hover:text-indigo-400">Wiki</a>
+    <span>›</span>
+    <a href="{{ url_for('wiki.guides_index') }}" class="hover:text-indigo-400">Guides</a>
+    <span>›</span>
+    <span class="text-gray-400">Forts</span>
+  </nav>
+
+  <!-- Header -->
+  <div>
+    <h1 class="text-4xl font-bold">🏰 Forts & Territory</h1>
+    <p class="text-gray-400 text-lg mt-3">
+      Expand your empire by capturing forts and defending your territory.
+    </p>
+  </div>
+
+  <!-- Types of Forts -->
+  <section class="space-y-4">
+    <h2 class="text-2xl font-bold text-indigo-300">Types of Forts</h2>
+    <p class="text-gray-300">Three types of forts exist on the map:</p>
+    
+    <div class="space-y-3 mt-3">
+      <div class="bg-gray-900 border border-orange-800 rounded-lg p-4">
+        <h3 class="font-bold text-orange-400 flex gap-2 items-center">🟠 Unowned Monster Forts</h3>
+        <p class="text-gray-400 text-sm mt-2">
+          <strong>Owner:</strong> None (wild)
+          <br/><strong>Garrison:</strong> 2–16 monsters (random star level 1–6)
+          <br/><strong>Capture reward:</strong> Ownership + loot (Gold, Metal, Food, Timber)
+          <br/><strong>Difficulty:</strong> Good beginner targets. Similar to monster camps but permanent.
+        </p>
+      </div>
+
+      <div class="bg-gray-900 border border-green-800 rounded-lg p-4">
+        <h3 class="font-bold text-green-400 flex gap-2 items-center">🟢 Your Forts</h3>
+        <p class="text-gray-400 text-sm mt-2">
+          <strong>Owner:</strong> You
+          <br/><strong>Garrison:</strong> Your troops + defense buildings
+          <br/><strong>Defensive state:</strong> When attacked, your troops + defenses fight back
+          <br/><strong>Building limit:</strong> 4–10 slots (random at capture)
+        </p>
+      </div>
+
+      <div class="bg-gray-900 border border-red-800 rounded-lg p-4">
+        <h3 class="font-bold text-red-400 flex gap-2 items-center">🔴 Enemy Forts</h3>
+        <p class="text-gray-400 text-sm mt-2">
+          <strong>Owner:</strong> Another player
+          <br/><strong>Garrison:</strong> Their troops + defense buildings
+          <br/><strong>Capture reward:</strong> Ownership + loot
+          <br/><strong>Difficulty:</strong> Highly variable. Depends on player strength.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Capturing Forts -->
+  <section class="space-y-4 border-t border-gray-700 pt-6">
+    <h2 class="text-2xl font-bold text-indigo-300">Capturing Forts</h2>
+    <p class="text-gray-300">
+      To capture a fort, you must defeat its garrison (all defending troops and buildings). 
+      Here's what happens:
+    </p>
+    
+    <div class="space-y-3 bg-gray-900 border border-gray-800 rounded-lg p-6 mt-3">
+      <div class="flex gap-4">
+        <div class="flex-shrink-0 text-2xl">1️⃣</div>
+        <div>
+          <h4 class="font-bold">Attack the fort</h4>
+          <p class="text-gray-400 text-sm">Dispatch your army to the target fort on the world map.</p>
+        </div>
+      </div>
+      <div class="flex gap-4">
+        <div class="flex-shrink-0 text-2xl">2️⃣</div>
+        <div>
+          <h4 class="font-bold">Battle resolves</h4>
+          <p class="text-gray-400 text-sm">
+            Your army fights the garrison. If you win, all defending buildings are <strong>destroyed</strong>.
+          </p>
+        </div>
+      </div>
+      <div class="flex gap-4">
+        <div class="flex-shrink-0 text-2xl">3️⃣</div>
+        <div>
+          <h4 class="font-bold">Ownership transfers</h4>
+          <p class="text-gray-400 text-sm">The fort turns your colour. You now own it. A new Command Centre spawns automatically.</p>
+        </div>
+      </div>
+      <div class="flex gap-4">
+        <div class="flex-shrink-0 text-2xl">4️⃣</div>
+        <div>
+          <h4 class="font-bold">Loot collected</h4>
+          <p class="text-gray-400 text-sm">Resources from the defeated garrison are added to your reserve.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="bg-red-900/20 border border-red-800 rounded p-4 text-sm text-red-200 mt-4">
+      ⚠️ <strong>Important:</strong> When a fort is captured, <strong>ALL buildings are destroyed</strong>. 
+      You start with only Command Centre. The new owner (you) can rebuild from scratch.
+    </div>
+  </section>
+
+  <!-- Defending Forts -->
+  <section class="space-y-4 border-t border-gray-700 pt-6">
+    <h2 class="text-2xl font-bold text-indigo-300">Defending Your Forts</h2>
+    <p class="text-gray-300">
+      Once you own a fort, you want to keep it. Defending is crucial:
+    </p>
+    
+    <div class="bg-gray-900 border border-gray-800 rounded-lg p-4 space-y-3 text-sm mt-3">
+      <div>
+        <h4 class="font-bold text-indigo-300">Station Troops</h4>
+        <p class="text-gray-400">
+          Keep an army idle at the fort. When someone attacks, your troops spawn on the battlefield 
+          and fight the invader's army.
+        </p>
+      </div>
+      <div>
+        <h4 class="font-bold text-indigo-300 mt-3">Build Defense Buildings</h4>
+        <p class="text-gray-400">
+          Cannons and Archer Towers spawn during battle, dealing heavy damage. They consume ammo per turn. 
+          Build at least 1–2 defensively crucial forts.
+        </p>
+      </div>
+      <div>
+        <h4 class="font-bold text-indigo-300 mt-3">Don't Abandon Resources</h4>
+        <p class="text-gray-400">
+          If a fort has tons of accumulated resources, it becomes a target. Regularly collect 
+          resources to move them to your castle.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Fort Loss & Reset -->
+  <section class="space-y-4 border-t border-gray-700 pt-6">
+    <h2 class="text-2xl font-bold text-indigo-300">Losing a Fort</h2>
+    <p class="text-gray-300">
+      If an attacker defeats your garrison, they capture the fort. What happens:
+    </p>
+    <div class="bg-orange-900/20 border border-orange-800 rounded-lg p-4 space-y-2 text-sm mt-3">
+      <p class="text-orange-200"><strong>Your troops:</strong> Destroyed (part of the battle loss).</p>
+      <p class="text-orange-200"><strong>Buildings:</strong> All destroyed (as with any capture).</p>
+      <p class="text-orange-200"><strong>Fort itself:</strong> Transfers to the new owner's control.</p>
+      <p class="text-orange-200"><strong>Your loot:</strong> Captured. The new owner gains resources.</p>
+    </div>
+    <p class="text-gray-300 mt-4">
+      <strong>Recovery:</strong> You lost a fort, but you still have your castle and any other forts. 
+      Focus on rebuilding troops and trying to recapture.
+    </p>
+  </section>
+
+  <!-- Multi-Fort Strategy -->
+  <section class="space-y-4 border-t border-gray-700 pt-6">
+    <h2 class="text-2xl font-bold text-indigo-300">Multi-Fort Strategy</h2>
+    <p class="text-gray-300">
+      As you grow, you'll own multiple forts. Here's a typical layout strategy:
+    </p>
+    <div class="bg-gray-900 border border-gray-800 rounded-lg p-4 space-y-3 text-sm mt-3">
+      <p class="text-gray-300">
+        <strong>Castle:</strong> Primary economy (4–5 production buildings, 1 training building for overflow).
+      </p>
+      <p class="text-gray-300">
+        <strong>Fort 1 (nearby):</strong> Secondary army (2 Garrison/Stable for troop production).
+      </p>
+      <p class="text-gray-300">
+        <strong>Fort 2 (far):</strong> Heavily defended (Cannons, Archer Towers, garrison troops).
+      </p>
+      <p class="text-gray-300">
+        <strong>Fort 3+ (strategic):</strong> Specialized (relay outposts for jumping attacks, resource overflow, etc.).
+      </p>
+    </div>
+  </section>
+
+  <!-- Fort Tips -->
+  <section class="bg-indigo-900/30 border border-indigo-800 rounded-lg p-6 space-y-3 border-t border-gray-700 pt-6">
+    <h3 class="font-bold text-lg">Fort Management Tips</h3>
+    <ul class="space-y-2 text-gray-300 text-sm">
+      <li>✓ <strong>Capture nearby forts first.</strong> Easier to defend and resupply.</li>
+      <li>✓ <strong>Prioritize rebuilding production.</strong> A captured fort with farms = free resources.</li>
+      <li>✓ <strong>Garrison key forts.</strong> Your most valuable forts should have idle troops + defenses.</li>
+      <li>✓ <strong>Collect resources regularly.</strong> Move loot to castle to prevent raids.</li>
+      <li>✓ <strong>Recapture lost territory.</strong> Use your forts as staging points for revenge attacks.</li>
+      <li>✓ <strong>Join a clan to coordinate defense.</strong> Clan-mates can help defend or recapture.</li>
+    </ul>
+  </section>
+
+  <!-- Navigation -->
+  <div class="flex justify-between pt-6 border-t border-gray-800">
+    <a href="{{ url_for('wiki.guide', guide='monster-camps') }}" class="text-indigo-400 hover:text-indigo-300">← Monster Camps</a>
+    <a href="{{ url_for('wiki.guide', guide='advanced-combat') }}" class="text-indigo-400 hover:text-indigo-300">Advanced Combat →</a>
+  </div>
+
+</div>
+{% endblock %}

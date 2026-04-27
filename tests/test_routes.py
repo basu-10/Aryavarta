@@ -1,9 +1,12 @@
 """tests/test_routes.py — Flask route tests using the test client."""
 
 import json
+import uuid
 import pytest
+from werkzeug.security import generate_password_hash
 
 from app import create_app
+from db import models as m
 
 
 @pytest.fixture
@@ -33,10 +36,65 @@ class TestSetupRoute:
         assert res.status_code == 200
         assert b"Battle Simulator" in res.data
 
-    def test_root_redirects_to_setup(self, client):
+    def test_root_loads_landing_for_guest(self, client):
+        res = client.get("/")
+        assert res.status_code == 200
+        assert b"BattleCells" in res.data
+
+    def test_root_redirects_logged_in_user_to_world(self, client):
+        with client.session_transaction() as sess:
+            sess["player_id"] = 1
+            sess["username"] = "demo"
+
         res = client.get("/")
         assert res.status_code in (301, 302)
-        assert "/setup" in res.headers["Location"]
+        assert "/world" in res.headers["Location"]
+
+
+class TestRememberAuth:
+
+    def _create_user(self, client, username: str | None = None, password: str = "pw123"):
+        username = username or f"u_{uuid.uuid4().hex[:8]}"
+        with client.application.app_context():
+            player_id = m.create_player(username, generate_password_hash(password))
+            m.create_castle(player_id, 4, 0, 0)
+        return username, password
+
+    def test_remember_cookie_restores_session_after_session_clear(self, client):
+        username, password = self._create_user(client)
+
+        login_res = client.post(
+            "/login",
+            data={"username": username, "password": password},
+            follow_redirects=False,
+        )
+        assert login_res.status_code in (301, 302)
+        assert "bc_remember=" in (login_res.headers.get("Set-Cookie") or "")
+
+        with client.session_transaction() as sess:
+            sess.clear()
+
+        restored = client.get("/api/dm/unread")
+        assert restored.status_code == 200
+        assert "unread" in restored.get_json()
+
+    def test_logout_revokes_remember_cookie(self, client):
+        username, password = self._create_user(client)
+
+        client.post(
+            "/login",
+            data={"username": username, "password": password},
+            follow_redirects=False,
+        )
+
+        client.get("/logout", follow_redirects=False)
+
+        with client.session_transaction() as sess:
+            sess.clear()
+
+        res = client.get("/api/dm/unread", follow_redirects=False)
+        assert res.status_code in (301, 302)
+        assert "/login" in res.headers.get("Location", "")
 
 
 class TestRunRoute:
