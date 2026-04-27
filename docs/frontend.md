@@ -29,7 +29,7 @@ The world map is rendered as a CSS grid (`#world-grid`) of clickable cells. The 
 
 ### Layout
 
-The map page overrides the default `main` container to `p-0` (no padding, no max-width), then sizes the outer flex column to `calc(100dvh - 52px)`. The map shell (`#world-map-shell`) takes all remaining height as a flex item, giving a true full-viewport experience on both desktop and mobile.
+The map page overrides the default body and `main` container so the document is a fixed-height viewport (`h-screen` on `body`, `min-h-0 flex flex-col` on `main`). The map shell (`#world-map-shell`) and inner scroll surface (`#world-map-scroll`) then take the remaining height as flex items, which keeps document scrolling disabled and confines overflow to the map itself on both desktop and mobile.
 
 ### Asset organization reference
 

@@ -1,9 +1,10 @@
 {% extends "base.html" %}
 {% block title %}World Map — BattleCells{% endblock %}
-{% block main_class %}p-0{% endblock %}
+{% block body_class %}h-screen overflow-hidden{% endblock %}
+{% block main_class %}p-0 overflow-hidden min-h-0 flex flex-col{% endblock %}
 {% block content %}
 
-<div class="flex flex-col" style="height:calc(100dvh - 52px);min-height:400px">
+<div class="flex-1 min-h-0 flex flex-col">
 
   {# ── Title / label-toggle bar ─────────────────────────────────────── #}
   <div class="flex items-center gap-3 px-4 py-2 bg-gray-950 border-b border-gray-800 shrink-0 flex-wrap">
@@ -18,11 +19,11 @@
   </div>
 
   {# ── Map shell — fills remaining height ───────────────────────────── #}
-  <div id="world-map-shell" class="relative flex-1 overflow-hidden bg-gray-950">
+  <div id="world-map-shell" class="relative flex-1 min-h-0 overflow-hidden bg-gray-950">
     {# Scrollable grid #}
-    <div id="world-map-scroll" class="w-full h-full overflow-auto">
+    <div id="world-map-scroll" class="w-full h-full min-h-0 overflow-auto">
            <div id="world-grid"
-             style="display:inline-grid;grid-template-columns:repeat({{ world_w }}, var(--cell-size, 26px));gap:1px;padding:4px;min-width:max-content;background:#2f4b2f;">
+             style="display:inline-grid;grid-template-columns:repeat({{ world_w }}, var(--cell-size, 52px));gap:0;min-width:max-content;background:#4e9844;">
           <!-- filled by buildGrid() -->
         </div>
       </div>
@@ -40,7 +41,7 @@
         <button id="zoom-in"    type="button"
                 class="px-1.5 py-0.5 rounded bg-gray-800 border border-gray-700 hover:bg-gray-700 text-xs font-bold"
                 aria-label="Zoom in">+</button>
-        <input id="zoom-range" type="range" min="50" max="200" step="10" value="100"
+        <input id="zoom-range" type="range" min="25" max="200" step="5" value="100"
                class="w-20 accent-blue-500 ml-1 hidden sm:block" aria-label="World map zoom" />
       </div>
 
@@ -104,32 +105,14 @@ const LOCATION_ICON = {
   monster_camp: '/assets/theme1/map/locations/monster-camp.svg',
 };
 
-// Tile-set oriented renderer (platformer-style map tiling). This can be
-// switched by admin from the admin panel; server passes the active theme via Jinja2.
-const TILESETS = {
-  theme1: {
-    grass: "/assets/theme1/map/terrain/grass.svg"
-  },
-  theme2: {
-    grass: "/assets/theme2/map/terrain/grass.svg"
-  }
-};
-
-const ACTIVE_TILESET_KEY = '{{ active_theme }}';
-const BASE_TILE_ID = 'grass';
-
-function tileUrl(tileId) {
-  const set = TILESETS[ACTIVE_TILESET_KEY] || TILESETS.theme1;
-  return set[tileId] || set[BASE_TILE_ID];
-}
-
+// Terrain is rendered via the grid container background — no per-cell SVG tiles.
+// This approach scales to large grids (500×500) without per-cell image overhead.
 function cellStyle(overlayColor) {
-  const tile = tileUrl(BASE_TILE_ID);
   const size = cellPx();
   if (!overlayColor || overlayColor === 'transparent') {
-    return `width:${size}px;height:${size}px;background-image:url(${tile});background-size:${size}px ${size}px;background-repeat:no-repeat;`;
+    return `width:${size}px;height:${size}px;`;
   }
-  return `width:${size}px;height:${size}px;background-image:linear-gradient(${overlayColor},${overlayColor}),url(${tile});background-size:${size}px ${size}px,${size}px ${size}px;background-repeat:no-repeat;`;
+  return `width:${size}px;height:${size}px;background:${overlayColor};`;
 }
 
 let entityMap = {};
@@ -137,11 +120,11 @@ let showLabels = false;
 let legendOpen = true;
 let popupAnchor = { x: 12, y: 12 };
 
-// Start smaller on mobile for better readability
-const _isMobile = window.innerWidth < 640;
-let zoomLevel = _isMobile ? 0.6 : 1.0;
+// Default zoom is 1.0 = 52 px cells (2× the legacy 26 px baseline).
+// Slider range 50–200 maps to 26 px – 104 px.  Reset always returns to 1.0.
+let zoomLevel = 1.0;
 
-const ZOOM_MIN = 0.5;
+const ZOOM_MIN = 0.25;
 const ZOOM_MAX = 2;
 const ZOOM_STEP = 0.1;
 
@@ -150,7 +133,7 @@ function clampZoom(value) {
 }
 
 function cellPx() {
-  return Math.max(12, Math.round(26 * zoomLevel));
+  return Math.max(13, Math.round(52 * zoomLevel));
 }
 
 function applyZoom() {
@@ -370,10 +353,11 @@ function stopMapScroll() {
 function scrollGridToCell(gx, gy) {
   const size    = cellPx();
   const scrollEl = document.getElementById('world-map-scroll');
-  const left = gx * (size + 1) - scrollEl.clientWidth  / 2;
-  const top  = gy * (size + 1) - scrollEl.clientHeight / 2;
+  const left = gx * size - scrollEl.clientWidth  / 2;
+  const top  = gy * size - scrollEl.clientHeight / 2;
   scrollEl.scrollTo({ left: Math.max(0, left), top: Math.max(0, top), behavior: 'smooth' });
 }
 </script>
 
 {% endblock %}
+{% block footer %}{% endblock %}

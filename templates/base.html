@@ -21,7 +21,7 @@
   <script src="https://unpkg.com/htmx.org@1.9.12"></script>
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
 </head>
-<body class="bg-gray-950 text-gray-100 min-h-screen flex flex-col">
+<body class="bg-gray-950 text-gray-100 {% block body_class %}min-h-screen{% endblock %} flex flex-col">
 
   <nav class="bg-gray-900 border-b border-gray-800 px-6 py-3 flex items-center gap-6 flex-wrap">
     <span class="font-bold text-lg tracking-wide text-white">⚔ BattleCells</span>
@@ -63,15 +63,15 @@
     {% block content %}{% endblock %}
   </main>
 
-  <footer class="text-center text-xs text-gray-600 py-4">
+  {% block footer %}<footer class="text-center text-xs text-gray-600 py-4">
     BattleCells — Multiplayer World
-  </footer>
+  </footer>{% endblock %}
 
   {% if session.get('player_id') %}
   {# ── Floating Chat Button ─────────────────────────────────────────── #}
   <button id="chat-fab"
           onclick="toggleChatPanel()"
-          class="fixed bottom-6 right-6 z-40 w-14 h-14 rounded-full bg-blue-600 hover:bg-blue-500 active:bg-blue-700 shadow-2xl flex items-center justify-center text-2xl select-none relative"
+      class="fixed bottom-6 right-6 z-50 w-14 h-14 rounded-full bg-blue-600 hover:bg-blue-500 active:bg-blue-700 shadow-2xl flex items-center justify-center text-2xl select-none"
           aria-label="Chat">
     💬
     <span id="chat-fab-badge"
