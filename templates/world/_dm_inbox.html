@@ -1,0 +1,19 @@
+{% for conv in inbox %}
+<button type="button"
+        class="w-full text-left flex items-center gap-2 px-3 py-2 rounded hover:bg-gray-700 transition-colors dm-open-btn"
+        data-partner-id="{{ conv.partner_id }}"
+        data-partner-name="{{ conv.partner_username }}">
+  <div class="w-7 h-7 rounded-full bg-blue-600 flex items-center justify-center text-white text-xs font-bold shrink-0">
+    {{ conv.partner_username[0].upper() }}
+  </div>
+  <div class="flex-1 min-w-0">
+    <div class="font-semibold text-sm text-gray-100 truncate">{{ conv.partner_username }}</div>
+    <div class="text-xs text-gray-500 truncate">{{ conv.last_at[5:16] }}</div>
+  </div>
+  {% if conv.unread > 0 %}
+  <span class="bg-red-500 text-white text-[10px] font-bold rounded-full px-1.5 py-0.5 min-w-[18px] text-center">{{ conv.unread }}</span>
+  {% endif %}
+</button>
+{% else %}
+<p class="text-gray-600 text-xs italic text-center py-4">No messages yet.</p>
+{% endfor %}

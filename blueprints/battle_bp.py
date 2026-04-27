@@ -32,7 +32,7 @@ from flask import (
 
 from engine.battle import Battle
 from engine.unit import Unit
-from utils.battle_store import store_battle, get_battle
+from utils.battle_store import store_battle, get_battle, list_battles_sorted
 from utils.csv_writer import write_battle_csv
 from utils.serializer import build_tick_data, army_from_json
 from utils.troops_store import (
@@ -176,6 +176,19 @@ def list_presets():
     return jsonify({"presets": names})
 
 
+@battle_bp.route("/presets/all", methods=["GET"])
+def list_presets_all():
+    """Return every preset's full data in one request (for visual modal)."""
+    PRESETS_DIR.mkdir(exist_ok=True)
+    presets = []
+    for f in sorted(PRESETS_DIR.glob("*.json")):
+        try:
+            presets.append(json.loads(f.read_text(encoding="utf-8")))
+        except Exception:
+            pass
+    return jsonify({"presets": presets})
+
+
 @battle_bp.route("/presets/<path:name>", methods=["GET"])
 def get_preset(name: str):
     safe = _safe_preset_name(name)
@@ -275,6 +288,16 @@ def results(battle_id: str):
     if record is None:
         return "Battle not found. It may have expired (server restart clears memory).", 404
 
+    ordered = list_battles_sorted()
+    prev_id = next_id = None
+    battle_index = battle_total = None
+    if battle_id in ordered and len(ordered) > 1:
+        idx = ordered.index(battle_id)
+        prev_id = ordered[(idx - 1) % len(ordered)]
+        next_id = ordered[(idx + 1) % len(ordered)]
+        battle_index = idx + 1
+        battle_total = len(ordered)
+
     return render_template(
         "results.html",
         battle_id=battle_id,
@@ -283,6 +306,10 @@ def results(battle_id: str):
         grid_rows=config.GRID_ROWS,
         grid_cols=config.GRID_COLS,
         tick_data_json=json.dumps(record["tick_data"]),
+        prev_id=prev_id,
+        next_id=next_id,
+        battle_index=battle_index,
+        battle_total=battle_total,
     )
 
 

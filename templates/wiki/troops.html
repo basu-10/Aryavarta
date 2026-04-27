@@ -1,12 +1,17 @@
 {% extends "base.html" %}
-{% block title %}Troopedia — BattleCells{% endblock %}
+{% block title %}Troops — BattleCells Wiki{% endblock %}
 
 {% block content %}
 <div class="space-y-10">
 
-  <!-- Header -->
+  <!-- Breadcrumb + Header -->
   <div>
-    <h1 class="text-3xl font-bold tracking-tight">⚔ Troopedia</h1>
+    <nav class="text-xs text-gray-500 flex items-center gap-1 mb-3">
+      <a href="{{ url_for('wiki.wiki_index') }}" class="hover:text-white transition-colors">Wiki</a>
+      <span>/</span>
+      <span class="text-gray-300">Troops</span>
+    </nav>
+    <h1 class="text-3xl font-bold tracking-tight">⚔ Troops</h1>
     <p class="text-gray-400 text-sm mt-2">
       The complete field guide to every unit in BattleCells. Tap a card to learn more.
     </p>

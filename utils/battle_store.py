@@ -58,3 +58,14 @@ def get_battle(battle_id: str) -> dict | None:
 
 def all_battle_ids() -> list[str]:
     return list(_battles.keys())
+
+
+def list_battles_sorted() -> list[str]:
+    """Return all battle IDs sorted by file modification time (oldest first)."""
+    if _output_dir is None:
+        return list(_battles.keys())
+    try:
+        paths = sorted(_output_dir.glob("*.json"), key=lambda p: p.stat().st_mtime)
+        return [p.stem for p in paths]
+    except Exception:
+        return list(_battles.keys())

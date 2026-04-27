@@ -93,20 +93,22 @@ function tickViewer() {
     },
 
     // ── Grid rendering ────────────────────────────────────────────────── //
+    isNeutral(c) {
+      // Column 4 is no-man's land (TEAM_A_COLS=[0..3], TEAM_B_COLS=[5..8])
+      return c === 4;
+    },
+
     getCell(r, c) {
       const key = `${r},${c}`;
       return this.currentSnap.cells ? (this.currentSnap.cells[key] || null) : null;
     },
 
     getCellClass(r, c) {
+      if (this.isNeutral(c)) return 'bc-cell-neutral';
+      const teamCls = c < 4 ? 'bc-cell-a' : 'bc-cell-b';
       const cell = this.getCell(r, c);
-      if (!cell) {
-        return 'bg-gray-800 border-gray-700';
-      }
-      if (cell.team === 'A') {
-        return 'bg-blue-900 border-blue-600 text-blue-100';
-      }
-      return 'bg-red-900 border-red-600 text-red-100';
+      if (cell) return teamCls + ' ring-1 ring-inset ring-white/20';
+      return teamCls;
     },
 
     unitInitial(type) {

@@ -3,106 +3,322 @@
 {% block content %}
 
 {% if clan %}
-  <div class="flex items-center justify-between mb-4">
-    <h1 class="text-2xl font-bold">⚔ {{ clan.name }}</h1>
-    <form method="POST" action="{{ url_for('clan.api_leave_clan') }}"
-          onsubmit="event.preventDefault(); fetch(this.action,{method:'POST'}).then(()=>location.reload())">
-      <button class="text-xs text-red-400 hover:text-red-300">Leave clan</button>
-    </form>
+{# ══════════════════════════════════════════════════════
+   MEMBER VIEW — tabbed interface
+   ══════════════════════════════════════════════════════ #}
+{% set my_role = player.clan_role %}
+{% set is_leader    = (my_role == 'leader') %}
+{% set is_coleader  = (my_role == 'co-leader') %}
+{% set is_elder     = (my_role == 'elder') %}
+{% set can_manage   = is_leader or is_coleader %}
+{% set can_apps     = is_leader or is_coleader or is_elder %}
+{% set can_desc     = is_leader or is_coleader %}
+{% set can_recruit  = my_role in ('leader','co-leader','elder') %}
+
+{% set role_badge = {
+  'leader':    'bg-yellow-600 text-yellow-100',
+  'co-leader': 'bg-purple-700 text-purple-100',
+  'elder':     'bg-blue-700 text-blue-100',
+  'member':    'bg-gray-600 text-gray-200'
+} %}
+
+<div x-data="clanHub()" class="max-w-4xl mx-auto">
+
+  <!-- Header -->
+  <div class="flex items-center justify-between mb-4 gap-3 flex-wrap">
+    <div class="flex items-center gap-3">
+      <h1 class="text-2xl font-bold">⚔ {{ clan.name }}</h1>
+      <span class="text-xs px-2 py-0.5 rounded {{ role_badge[my_role] if my_role in role_badge else 'bg-gray-600 text-gray-200' }}">
+        {{ my_role|capitalize }}
+      </span>
+      <span class="text-xs text-gray-400">{{ clan.member_count }} member{{ 's' if clan.member_count != 1 }}</span>
+    </div>
+    <!-- Notification badges -->
+    <div class="flex items-center gap-2">
+      {% if can_apps and applications %}
+      <button @click="tab='applications'"
+              class="relative flex items-center gap-1 text-xs bg-amber-700 hover:bg-amber-600 text-white px-3 py-1 rounded">
+        🔔 Applications
+        <span class="bg-red-500 text-white text-xs rounded-full px-1.5">{{ applications|length }}</span>
+      </button>
+      {% endif %}
+      <button @click="confirmLeave()" class="text-xs text-red-400 hover:text-red-300">Leave clan</button>
+    </div>
   </div>
 
-  <h2 class="text-sm font-semibold text-gray-400 uppercase mb-2">Members</h2>
-  <ul class="mb-6 space-y-1">
-    {% for m in members %}
-    <li class="text-sm bg-gray-800 rounded px-3 py-1">
-      {{ m.username }} {% if m.id == clan.leader_id %}<span class="text-yellow-400 text-xs">(Leader)</span>{% endif %}
+  <!-- Tabs -->
+  <div class="flex gap-1 border-b border-gray-700 mb-4 flex-wrap">
+    {% for t, label in [('chat','💬 Chat'),('members','👥 Members'),('info','📋 Info'),('applications','📥 Applications'),('attacks','⚔ Attacks')] %}
+      {% if t != 'applications' or can_apps %}
+      <button @click="tab='{{ t }}'"
+              :class="tab==='{{ t }}' ? 'border-b-2 border-blue-400 text-white' : 'text-gray-400 hover:text-white'"
+              class="px-4 py-2 text-sm font-medium transition-colors">
+        {{ label }}
+        {% if t == 'applications' and applications %}
+        <span class="ml-1 bg-red-500 text-white text-xs rounded-full px-1.5">{{ applications|length }}</span>
+        {% endif %}
+      </button>
+      {% endif %}
+    {% endfor %}
+  </div>
+
+  <!-- ── TAB: CHAT ─────────────────────────────────────── -->
+  <div x-show="tab==='chat'">
+    <div id="chat-box"
+         class="bg-gray-900 border border-gray-700 rounded p-3 h-72 overflow-y-auto mb-3 space-y-1"
+         hx-get="/api/clan/{{ clan.id }}/chat"
+         hx-trigger="every 3s"
+         hx-swap="innerHTML">
+      {% include "clan/chat_messages.html" %}
+    </div>
+    <div class="flex gap-2" x-data="{ msg: '' }">
+      <input type="text" x-model="msg" placeholder="Message…" maxlength="500"
+             @keydown.enter="sendMsg({{ clan.id }}, $data)"
+             class="flex-1 bg-gray-800 border border-gray-700 rounded px-3 py-2 text-sm text-white focus:outline-none focus:border-blue-500" />
+      <button @click="sendMsg({{ clan.id }}, $data)"
+              class="bg-blue-600 hover:bg-blue-500 text-white text-sm px-4 rounded">Send</button>
+    </div>
+  </div>
+
+  <!-- ── TAB: MEMBERS ───────────────────────────────────── -->
+  <div x-show="tab==='members'">
+    {% if can_recruit %}
+    <p class="text-xs text-gray-400 mb-3">Click a player's name outside the clan on the world map to send a recruitment DM.</p>
+    {% endif %}
+    <ul class="space-y-2">
+      {% for mem in members %}
+      {% set mem_role = mem.clan_role or 'member' %}
+      <li class="flex items-center justify-between bg-gray-800 rounded px-4 py-2">
+        <div class="flex items-center gap-2">
+          <span class="text-sm font-medium">{{ mem.username }}</span>
+          <span class="text-xs px-1.5 py-0.5 rounded {{ role_badge[mem_role] if mem_role in role_badge else 'bg-gray-600 text-gray-200' }}">
+            {{ mem_role }}
+          </span>
+        </div>
+        {% if mem.id != player.id %}
+        <div class="flex items-center gap-2">
+          {% if can_manage and (
+               (is_leader and mem_role != 'leader') or
+               (is_coleader and mem_role in ('elder','member'))
+             ) %}
+          <select class="text-xs bg-gray-700 border border-gray-600 rounded px-2 py-1 text-white"
+                  onchange="setRole({{ clan.id }}, {{ mem.id }}, this.value, this)">
+            <option value="" disabled selected>Change role…</option>
+            {% if is_leader %}
+            <option value="co-leader" {% if mem_role=='co-leader' %}disabled{% endif %}>Co-leader</option>
+            <option value="elder"     {% if mem_role=='elder' %}disabled{% endif %}>Elder</option>
+            {% endif %}
+            <option value="member"    {% if mem_role=='member' %}disabled{% endif %}>Member</option>
+            {% if is_leader %}
+            <option value="leader">Transfer Leadership</option>
+            {% endif %}
+          </select>
+          <button onclick="kickMember({{ clan.id }}, {{ mem.id }}, '{{ mem.username }}')"
+                  class="text-xs text-red-400 hover:text-red-300">Kick</button>
+          {% endif %}
+        </div>
+        {% endif %}
+      </li>
+      {% endfor %}
+    </ul>
+  </div>
+
+  <!-- ── TAB: INFO ─────────────────────────────────────── -->
+  <div x-show="tab==='info'" class="space-y-4">
+    <div class="bg-gray-800 rounded p-4">
+      <div class="flex items-center justify-between mb-2">
+        <h2 class="font-semibold text-gray-200">Clan Description</h2>
+        {% if can_desc %}
+        <button @click="editDesc=!editDesc" class="text-xs text-blue-400 hover:text-blue-300">Edit</button>
+        {% endif %}
+      </div>
+      <p class="text-sm text-gray-300 whitespace-pre-wrap" x-show="!editDesc">{{ clan.description or 'No description set.' }}</p>
+      {% if can_desc %}
+      <div x-show="editDesc" class="mt-2 space-y-2">
+        <textarea id="desc-input" maxlength="500" rows="4"
+                  class="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 text-sm text-white focus:outline-none"
+                  placeholder="Describe your clan…">{{ clan.description }}</textarea>
+        <button onclick="saveDesc({{ clan.id }})" class="bg-blue-600 hover:bg-blue-500 text-white text-xs px-3 py-1 rounded">Save</button>
+      </div>
+      {% endif %}
+    </div>
+    <div class="bg-gray-800 rounded p-4 text-sm text-gray-300 space-y-1">
+      <div><span class="text-gray-400">Founded:</span> {{ clan.created_at[:10] }}</div>
+      <div><span class="text-gray-400">Members:</span> {{ clan.member_count }}</div>
+    </div>
+  </div>
+
+  <!-- ── TAB: APPLICATIONS ─────────────────────────────── -->
+  {% if can_apps %}
+  <div x-show="tab==='applications'"
+       id="applications-panel"
+       hx-get="/api/clan/{{ clan.id }}/applications"
+       hx-trigger="revealed, every 5s"
+       hx-swap="innerHTML">
+    {% include "clan/applications_partial.html" with context %}
+  </div>
+  {% endif %}
+
+  <!-- ── TAB: ATTACKS ─────────────────────────────────── -->
+  <div x-show="tab==='attacks'">
+    <p class="text-gray-400 text-sm">Clan attack log coming soon.</p>
+  </div>
+
+</div><!-- end clanHub -->
+
+<script>
+function clanHub() {
+  return {
+    tab: 'chat',
+    editDesc: false,
+  };
+}
+
+function sendMsg(clanId, compData) {
+  const msg = compData.msg.trim();
+  if (!msg) return;
+  fetch(`/api/clan/${clanId}/chat`, {
+    method: 'POST', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({message: msg})
+  }).then(r => r.json()).then(d => {
+    if (d.ok) compData.msg = '';
+  });
+}
+
+function setRole(clanId, playerId, role, sel) {
+  if (!role) return;
+  const confirm_msg = role === 'leader'
+    ? `Transfer leadership? You will become co-leader.`
+    : `Set ${sel.closest('li').querySelector('.font-medium').textContent.trim()} to ${role}?`;
+  if (!confirm(confirm_msg)) { sel.value = ''; return; }
+  fetch(`/api/clan/${clanId}/set_role`, {
+    method: 'POST', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({player_id: playerId, role: role})
+  }).then(r => r.json()).then(d => {
+    if (d.ok) location.reload(); else alert(d.error);
+  });
+}
+
+function kickMember(clanId, playerId, username) {
+  if (!confirm(`Kick ${username} from the clan?`)) return;
+  fetch(`/api/clan/${clanId}/kick`, {
+    method: 'POST', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({player_id: playerId})
+  }).then(r => r.json()).then(d => {
+    if (d.ok) location.reload(); else alert(d.error);
+  });
+}
+
+function saveDesc(clanId) {
+  const desc = document.getElementById('desc-input').value.trim();
+  fetch(`/api/clan/${clanId}/description`, {
+    method: 'POST', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({description: desc})
+  }).then(r => r.json()).then(d => {
+    if (d.ok) location.reload(); else alert(d.error);
+  });
+}
+
+function confirmLeave() {
+  if (!confirm('Leave this clan?')) return;
+  fetch('/api/clan/leave', {method:'POST'}).then(r => r.json()).then(d => {
+    if (d.ok) location.reload(); else alert(d.error);
+  });
+}
+
+function resolveApp(clanId, appId, accept) {
+  fetch(`/api/clan/${clanId}/application/${appId}/resolve`, {
+    method: 'POST', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({accept: accept})
+  }).then(r => r.json()).then(d => {
+    if (d.ok) {
+      const row = document.getElementById('app-' + appId);
+      if (row) row.remove();
+    } else alert(d.error);
+  });
+}
+</script>
+
+{% else %}
+{# ══════════════════════════════════════════════════════
+   NON-MEMBER VIEW — create or browse clans
+   ══════════════════════════════════════════════════════ #}
+<h1 class="text-2xl font-bold mb-2">Clans</h1>
+<p class="text-sm text-gray-400 mb-6">Create your own clan or apply to an existing one.</p>
+
+<div class="grid md:grid-cols-2 gap-6 mb-8">
+  <!-- Create -->
+  <div class="bg-gray-800 rounded p-5" x-data="{ name: '', status: '' }">
+    <h2 class="font-semibold mb-1">Create a Clan</h2>
+    <p class="text-xs text-gray-400 mb-3">
+      Costs
+      <span class="text-yellow-400">1000 🌾 Food</span>,
+      <span class="text-green-400">1000 🪵 Timber</span>,
+      <span class="text-yellow-300">1000 💰 Gold</span>,
+      <span class="text-gray-300">1000 🔩 Metal</span>
+    </p>
+    <input type="text" x-model="name" placeholder="Clan name" maxlength="40"
+           class="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 text-sm text-white mb-2 focus:outline-none" />
+    <button @click="createClan($data)"
+            class="w-full bg-blue-600 hover:bg-blue-500 text-white text-sm py-2 rounded">Create</button>
+    <p class="text-xs text-red-400 mt-2" x-show="status" x-text="status"></p>
+  </div>
+
+  <!-- Search hint -->
+  <div class="bg-gray-800 rounded p-5 flex flex-col justify-center">
+    <h2 class="font-semibold mb-2">Browse Clans</h2>
+    <p class="text-sm text-gray-400">Search below and click <strong>Apply</strong> to request membership.</p>
+  </div>
+</div>
+
+<!-- All Clans -->
+<div x-data="{ search: '' }">
+  <div class="flex items-center gap-3 mb-3">
+    <h2 class="font-semibold">All Clans</h2>
+    <input type="text" x-model="search" placeholder="Search…" maxlength="40"
+           class="bg-gray-700 border border-gray-600 rounded px-3 py-1.5 text-sm text-white focus:outline-none w-48" />
+  </div>
+  {% if all_clans %}
+  <ul class="space-y-2">
+    {% for c in all_clans %}
+    <li x-show="!search || '{{ c.name }}'.toLowerCase().includes(search.toLowerCase())"
+        class="flex items-center justify-between bg-gray-800 rounded px-4 py-3">
+      <div>
+        <a href="/clan/{{ c.id }}" class="font-medium hover:text-blue-300">{{ c.name }}</a>
+        <span class="text-xs text-gray-400 ml-2">{{ c.member_count }} member{{ 's' if c.member_count != 1 }}</span>
+      </div>
+      <button onclick="applyClan({{ c.id }}, this)"
+              class="text-xs bg-green-700 hover:bg-green-600 text-white px-3 py-1 rounded">Apply</button>
     </li>
     {% endfor %}
   </ul>
+  {% else %}
+  <p class="text-gray-500 text-sm">No clans yet. Be the first!</p>
+  {% endif %}
+</div>
 
-  <!-- Chat -->
-  <h2 class="text-sm font-semibold text-gray-400 uppercase mb-2">Chat</h2>
-  <div id="chat-box"
-       class="bg-gray-900 border border-gray-700 rounded p-3 h-64 overflow-y-auto mb-3 space-y-1"
-       hx-get="{{ url_for('clan.api_clan_chat', clan_id=clan.id) }}"
-       hx-trigger="every 3s"
-       hx-swap="innerHTML">
-    {% include "clan/chat_messages.html" %}
-  </div>
+<script>
+function createClan(d) {
+  if (!d.name.trim()) { d.status = 'Enter a clan name.'; return; }
+  fetch('/api/clan/create', {
+    method: 'POST', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({name: d.name.trim()})
+  }).then(r => r.json()).then(j => {
+    if (j.ok) location.reload(); else d.status = j.error;
+  });
+}
 
-  <div class="flex gap-2" x-data="{ msg: '' }">
-    <input type="text" x-model="msg" placeholder="Message…" maxlength="500"
-           @keydown.enter="sendMsg()"
-           class="flex-1 bg-gray-800 border border-gray-700 rounded px-3 py-2 text-sm text-white focus:outline-none focus:border-blue-500" />
-    <button @click="sendMsg()"
-            class="bg-blue-600 hover:bg-blue-500 text-white text-sm px-4 rounded">Send</button>
-  </div>
-
-  <script>
-  function sendMsg() {
-    const el = document.querySelector('[x-data]');
-    const comp = Alpine.$data(el);
-    const msg = comp.msg.trim();
-    if (!msg) return;
-    fetch('/api/clan/{{ clan.id }}/chat', {
-      method: 'POST', headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({message: msg})
-    }).then(r => r.json()).then(d => { if(d.ok) comp.msg = ''; });
-  }
-  </script>
-
-{% else %}
-  <h1 class="text-2xl font-bold mb-6">Clans</h1>
-
-  <div class="grid md:grid-cols-2 gap-6 mb-8">
-    <!-- Create -->
-    <div class="bg-gray-800 rounded p-4" x-data="{ name: '', status: '' }">
-      <h2 class="font-semibold mb-3">Create a Clan</h2>
-      <input type="text" x-model="name" placeholder="Clan name" maxlength="40"
-             class="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 text-sm text-white mb-2 focus:outline-none" />
-      <button @click="createClan()"
-              class="w-full bg-blue-600 hover:bg-blue-500 text-white text-sm py-2 rounded">Create</button>
-      <p class="text-xs text-yellow-400 mt-2" x-text="status"></p>
-      <script>
-      function createClan() {
-        const el = document.querySelectorAll('[x-data]')[0];
-        const d = Alpine.$data(el);
-        fetch('/api/clan/create', {
-          method:'POST', headers:{'Content-Type':'application/json'},
-          body: JSON.stringify({name: d.name})
-        }).then(r=>r.json()).then(j => {
-          if(j.ok) location.reload(); else d.status = j.error;
-        });
-      }
-      </script>
-    </div>
-
-    <!-- Join -->
-    <div class="bg-gray-800 rounded p-4">
-      <h2 class="font-semibold mb-3">Join a Clan</h2>
-      {% if all_clans %}
-      <ul class="space-y-2">
-        {% for c in all_clans %}
-        <li class="flex items-center justify-between text-sm bg-gray-700 rounded px-3 py-2">
-          <span>{{ c.name }}</span>
-          <button onclick="joinClan({{ c.id }})"
-                  class="text-xs bg-green-700 hover:bg-green-600 text-white px-2 py-1 rounded">Join</button>
-        </li>
-        {% endfor %}
-      </ul>
-      {% else %}
-      <p class="text-gray-500 text-sm">No clans yet.</p>
-      {% endif %}
-    </div>
-  </div>
-
-  <script>
-  function joinClan(id) {
-    fetch('/api/clan/join', {
-      method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({clan_id: id})
-    }).then(r=>r.json()).then(j => { if(j.ok) location.reload(); else alert(j.error); });
-  }
-  </script>
+function applyClan(id, btn) {
+  btn.disabled = true;
+  fetch(`/api/clan/${id}/apply`, {
+    method: 'POST', headers: {'Content-Type':'application/json'}
+  }).then(r => r.json()).then(j => {
+    if (j.ok) { btn.textContent = 'Applied ✓'; btn.className = btn.className.replace('green','gray'); }
+    else { alert(j.error); btn.disabled = false; }
+  });
+}
+</script>
 {% endif %}
+
 {% endblock %}
+

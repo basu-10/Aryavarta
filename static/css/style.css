@@ -2,8 +2,17 @@
 
 /* Smooth cell transitions on the battlefield grid */
 .battle-cell {
-  transition: background-color 0.2s ease, border-color 0.2s ease, transform 0.15s ease;
+  transition: background-color 0.18s ease, filter 0.18s ease;
+  border-right: 1px solid rgba(0, 0, 0, 0.22);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.22);
 }
+
+/* Team cell backgrounds */
+.bc-cell-a        { background: rgba(50, 78, 120, 0.52); }
+.bc-cell-a:hover  { background: rgba(65, 100, 155, 0.68); }
+.bc-cell-b        { background: rgba(105, 38, 38, 0.52); }
+.bc-cell-b:hover  { background: rgba(135, 50, 50, 0.68); }
+.bc-cell-neutral  { background: rgba(92, 74, 36, 0.60); cursor: not-allowed; }
 
 /* HP bar fill animation */
 .hp-fill {

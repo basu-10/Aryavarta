@@ -5,6 +5,7 @@ CREATE TABLE IF NOT EXISTS clan (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT UNIQUE NOT NULL,
     leader_id INTEGER NOT NULL,
+    description TEXT NOT NULL DEFAULT '',
     created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 CREATE TABLE IF NOT EXISTS player (
@@ -18,6 +19,10 @@ CREATE TABLE IF NOT EXISTS player (
     metal REAL NOT NULL DEFAULT 100.0,
     clan_id INTEGER REFERENCES clan(id) ON DELETE
     SET NULL,
+        clan_role TEXT,
+        -- 'leader'|'co-leader'|'elder'|'member'
+        clan_joined_at TEXT,
+        -- UTC ISO, for chat history cutoff
         created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 CREATE TABLE IF NOT EXISTS castle (
@@ -97,6 +102,35 @@ CREATE TABLE IF NOT EXISTS clan_message (
     sender_id INTEGER NOT NULL REFERENCES player(id),
     message TEXT NOT NULL,
     sent_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE TABLE IF NOT EXISTS clan_application (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    clan_id INTEGER NOT NULL REFERENCES clan(id) ON DELETE CASCADE,
+    player_id INTEGER NOT NULL REFERENCES player(id) ON DELETE CASCADE,
+    status TEXT NOT NULL DEFAULT 'pending',
+    -- 'pending'|'accepted'|'rejected'
+    applied_at TEXT NOT NULL DEFAULT (datetime('now')),
+    resolved_at TEXT,
+    resolved_by INTEGER REFERENCES player(id),
+    UNIQUE(clan_id, player_id)
+);
+CREATE TABLE IF NOT EXISTS world_message (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    sender_id INTEGER NOT NULL REFERENCES player(id),
+    message TEXT NOT NULL,
+    sent_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE TABLE IF NOT EXISTS dm_message (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    sender_id INTEGER NOT NULL REFERENCES player(id),
+    recipient_id INTEGER NOT NULL REFERENCES player(id),
+    message TEXT NOT NULL,
+    sent_at TEXT NOT NULL DEFAULT (datetime('now')),
+    read_at TEXT,
+    is_recruit INTEGER NOT NULL DEFAULT 0,
+    -- 1 = clan recruitment message
+    recruit_clan_id INTEGER REFERENCES clan(id) ON DELETE
+    SET NULL
 );
 -- ── Training Queue ───────────────────────────────────────────────────── --
 -- One row per troop queued for training.  Ordered by complete_at; the entry

@@ -488,7 +488,20 @@ def _get_defender_spec(mission: dict) -> list[dict]:
 
     # Monster-occupied fort
     if fort.get("owner_id") is None:
-        return fort.get("monster_data") or []
+        monster_data = fort.get("monster_data")
+        if not monster_data:
+            # Fort has no stored garrison — generate a fresh star-1 spec and persist it
+            from db.world_seeder import _random_monster_spec
+            star = max(1, int(fort.get("star_level") or 1))
+            monster_data = _random_monster_spec(star)
+            from db import get_db
+            import json as _json
+            get_db().execute(
+                "UPDATE fort SET monster_data=? WHERE id=?",
+                (_json.dumps(monster_data), fort["id"]),
+            )
+            get_db().commit()
+        return monster_data
 
     # Player-owned fort: defence buildings (with ammo) + garrisoned troops
     spec_entries: list[dict] = []
@@ -574,6 +587,102 @@ def _build_uncontested_tick_data(attacker_units: list[Unit]) -> list[dict]:
             "units": units,
         }
     ]
+
+
+# ── World chat ─────────────────────────────────────────────────────── #
+
+_MAX_WORLD_MSG_LEN = 300
+
+
+@world_bp.route("/api/world/chat")
+@login_required
+def api_world_chat_get():
+    """HTMX-polled endpoint — returns latest world chat messages as HTML partial."""
+    messages = m.get_world_messages(60)
+    player_id = session["player_id"]
+    return render_template("world/_world_chat.html", messages=messages, player_id=player_id)
+
+
+@world_bp.route("/api/world/chat", methods=["POST"])
+@login_required
+def api_world_chat_post():
+    data = request.get_json(force=True, silent=True) or {}
+    msg = data.get("message", "").strip()[:_MAX_WORLD_MSG_LEN]
+    if not msg:
+        return jsonify({"error": "Empty message"}), 400
+    m.add_world_message(session["player_id"], msg)
+    return jsonify({"ok": True})
+
+
+# ── Player-to-player DM ───────────────────────────────────────────── #
+
+_MAX_DM_LEN = 500
+
+
+@world_bp.route("/api/dm/<int:partner_id>")
+@login_required
+def api_dm_conversation(partner_id: int):
+    """HTMX-polled partial — renders DM conversation."""
+    player_id = session["player_id"]
+    if partner_id == player_id:
+        return "Cannot DM yourself", 400
+    partner = m.get_player_by_id(partner_id)
+    if not partner:
+        return "Player not found", 404
+    m.mark_dms_read(player_id, partner_id)
+    messages = m.get_dm_conversation(player_id, partner_id)
+    return render_template("world/_dm_conversation.html",
+                           messages=messages,
+                           partner=partner,
+                           player_id=player_id)
+
+
+@world_bp.route("/api/dm/<int:partner_id>", methods=["POST"])
+@login_required
+def api_dm_send(partner_id: int):
+    player_id = session["player_id"]
+    if partner_id == player_id:
+        return jsonify({"error": "Cannot DM yourself"}), 400
+    if not m.get_player_by_id(partner_id):
+        return jsonify({"error": "Player not found"}), 404
+    data = request.get_json(force=True, silent=True) or {}
+    msg = data.get("message", "").strip()[:_MAX_DM_LEN]
+    if not msg:
+        return jsonify({"error": "Empty message"}), 400
+    m.send_dm(player_id, partner_id, msg)
+    return jsonify({"ok": True})
+
+
+@world_bp.route("/api/dm/inbox")
+@login_required
+def api_dm_inbox():
+    """HTMX partial listing conversation partners."""
+    player_id = session["player_id"]
+    inbox = m.get_dm_inbox(player_id)
+    return render_template("world/_dm_inbox.html", inbox=inbox, player_id=player_id)
+
+
+@world_bp.route("/api/dm/unread")
+@login_required
+def api_dm_unread():
+    count = m.get_dm_unread_count(session["player_id"])
+    return jsonify({"unread": count})
+
+
+@world_bp.route("/api/world/player/<int:target_id>/recruit", methods=["POST"])
+@login_required
+def api_send_recruitment(target_id: int):
+    """Send a standard recruitment message DM to a player."""
+    player_id = session["player_id"]
+    if target_id == player_id:
+        return jsonify({"error": "Cannot recruit yourself"}), 400
+    target = m.get_player_by_id(target_id)
+    if not target:
+        return jsonify({"error": "Player not found"}), 404
+    sender = m.get_player_by_id(player_id)
+    msg = f"Hey {target['username']}! Join me — let's conquer the world together. — {sender['username']}"
+    m.send_dm(player_id, target_id, msg)
+    return jsonify({"ok": True})
 
 
 def _resolve_one_mission(mission: dict) -> dict:

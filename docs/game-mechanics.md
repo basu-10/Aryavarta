@@ -139,6 +139,64 @@ Army buildings train only human troops and use a real queue (not passive lazy pr
 
 ---
 
+## Clans
+
+### Creation
+
+Any player can found a clan by spending **1000 Food, 1000 Timber, 1000 Gold, and 1000 Metal**. The founding player becomes the clan's **Leader** automatically.
+
+### Role hierarchy
+
+```
+Leader  >  Co-leader  >  Elder  >  Member
+```
+
+All new joiners are assigned the **Member** role.
+
+### Promotion and demotion rules
+
+| Actor role | Can promote/demote |
+|---|---|
+| Leader | Anyone below Leader (co-leader, elder, member) |
+| Co-leader | Elders and Members only |
+| Elder | Nobody |
+| Member | Nobody |
+
+A Leader can transfer leadership to any member. The old Leader is automatically demoted to Co-leader when this happens.
+
+### Join flow (application)
+
+1. A player without a clan visits any public clan page (`/clan/<id>`) or the clan list (`/clan`) and clicks **Apply**.
+2. An `clan_application` row is created with `status = 'pending'`.
+3. The pending application appears in the **Applications** tab of the clan's member UI, visible to Elders and above.
+4. An Elder, Co-leader, or Leader accepts or rejects the application.
+5. On acceptance the player is added to the clan with the Member role and `clan_joined_at` is set.
+6. A rejected player may re-apply.
+
+### Recruitment DMs
+
+Elders, Co-leaders, and Leaders can send a **recruitment DM** directly to any player from the world map. The DM appears in the recipient's inbox with **Accept / Decline** buttons. Accepting the invite automatically adds the player to the clan as a Member (instant join — no application approval needed).
+
+### Chat
+
+Clan chat is polled every 3 seconds. A player only sees messages sent **after** the timestamp they joined the clan (`clan_joined_at`), so no pre-join history is visible. Old history is not shown regardless of how much history exists.
+
+### Leaving and disbanding
+
+- Any non-Leader member can leave at any time.
+- A Leader must transfer leadership before leaving if other members remain.
+- If the Leader is the only member, leaving automatically **disbands** the clan (all data, messages, and applications are deleted).
+
+### Clan description
+
+The clan description (up to 500 characters) can be set and edited by the Leader or Co-leader only. It is shown on the public clan page and in the Info tab.
+
+### Public clan page
+
+`/clan/<id>` is visible to any logged-in player. Non-members see the Apply button (or a "pending" indicator if they have already applied). Members see a "View My Clan" link instead.
+
+---
+
 ## Monster camp loot
 
 Defeating a monster camp awards: **50 gold + 30 metal**.

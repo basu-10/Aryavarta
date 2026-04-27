@@ -1,5 +1,5 @@
-{% extends "base.html" %}
-{% block title %}Setup — BattleCells{% endblock %}
+﻿{% extends "base.html" %}
+{% block title %}Setup â€” BattleCells{% endblock %}
 
 {% block content %}
 <div
@@ -12,113 +12,70 @@
   <div>
     <h1 class="text-2xl font-bold">Battle Simulator</h1>
     <p class="text-gray-400 text-sm mt-1">
-      Place units for both teams directly on the battlefield image.
-      Click a cell to add or manage stacked troops.
+      Click any cell to place troops. One troop type per cell â€” stack any quantity.
     </p>
   </div>
 
-  <!-- ── GRID ─────────────────────────────────────────────────────────── -->
+  <!-- â”€â”€ BATTLEFIELD GRID â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ -->
   <div class="overflow-x-auto">
     <div class="inline-block">
-      <div class="rounded-lg border border-gray-800 p-2 bg-black/30" style="background-image:url('/assets/theme1/ui/battlefield/grid.svg');background-size:cover;background-position:center;">
-      <!-- Column labels -->
-      <div class="flex mb-1 ml-8">
-        <template x-for="c in {{ grid_cols }}" :key="c">
-          <div class="w-24 text-center text-xs text-gray-500" x-text="colLabel(c - 1)"></div>
+
+
+      <!-- Grid: CSS-styled cells, no SVG background -->
+      <div class="rounded-lg border border-gray-700 overflow-hidden">
+        <template x-for="r in {{ grid_rows }}" :key="r">
+          <div class="flex">
+            <template x-for="c in {{ grid_cols }}" :key="c">
+              <div
+                @click="toggleCell(r - 1, c - 1)"
+                :class="cellClass(r - 1, c - 1)"
+                class="battle-cell w-20 h-20 cursor-pointer flex flex-col items-center justify-center select-none"
+              >
+                <!-- Neutral zone -->
+                <template x-if="isNeutral(c - 1)">
+                  <span class="text-gray-600/40 text-lg pointer-events-none select-none">|</span>
+                </template>
+
+                <!-- Empty team cell -->
+                <template x-if="!isNeutral(c - 1) && !getUnit(r - 1, c - 1)">
+                  <span class="text-white/40 text-3xl leading-none pointer-events-none select-none">+</span>
+                </template>
+
+                <!-- Occupied cell: icon + formatted quantity -->
+                <template x-if="!isNeutral(c - 1) && getUnit(r - 1, c - 1)">
+                  <div class="flex flex-col items-center gap-0.5 pointer-events-none select-none">
+                    <template x-if="troopIcon(getUnit(r - 1, c - 1).type)">
+                      <img :src="troopVisual(getUnit(r - 1, c - 1).type, 'idle')"
+                           :alt="getUnit(r - 1, c - 1).type"
+                           class="w-8 h-8 object-contain drop-shadow" />
+                    </template>
+                    <template x-if="!troopIcon(getUnit(r - 1, c - 1).type)">
+                      <span class="text-base font-bold leading-none"
+                            x-text="typeAbbrev(getUnit(r - 1, c - 1).type)"></span>
+                    </template>
+                    <span class="text-xs leading-none font-semibold text-yellow-200"
+                          x-text="'Ã—' + fmtQty(getUnit(r - 1, c - 1).quantity || 1)"></span>
+                  </div>
+                </template>
+              </div>
+            </template>
+          </div>
         </template>
       </div>
 
-      <!-- Grid rows -->
-      <template x-for="r in {{ grid_rows }}" :key="r">
-        <div class="flex items-center mb-1">
-          <!-- Row label -->
-          <div class="w-8 text-right pr-2 text-xs text-gray-500" x-text="r - 1"></div>
-
-          <!-- Cells -->
-          <template x-for="c in {{ grid_cols }}" :key="c">
-            <div
-              @click="toggleCell(r - 1, c - 1)"
-              :class="cellClass(r - 1, c - 1)"
-              class="w-24 h-16 rounded cursor-pointer flex flex-col items-center justify-center text-sm font-semibold transition-all select-none relative"
-            >
-              <!-- No-man's land indicator -->
-              <template x-if="isNeutral(c - 1)">
-                <span class="text-gray-600 text-xs">—</span>
-              </template>
-
-              <!-- Empty team cell -->
-              <template x-if="!isNeutral(c - 1) && getUnitCount(r - 1, c - 1) === 0">
-                <span class="text-white/85 text-lg leading-none">+</span>
-              </template>
-
-              <!-- Single unit placed -->
-              <template x-if="getUnitCount(r - 1, c - 1) === 1">
-                <div class="text-center leading-tight">
-                  <template x-if="troopIcon(getUnits(r - 1, c - 1)[0].type)">
-                    <img :src="troopVisual(getUnits(r - 1, c - 1)[0].type, 'idle')" :alt="getUnits(r - 1, c - 1)[0].type" class="troop-icon-cell" />
-                  </template>
-                  <template x-if="!troopIcon(getUnits(r - 1, c - 1)[0].type)">
-                    <div x-text="unitInitial(getUnits(r - 1, c - 1)[0].type)" class="troop-fallback-cell"></div>
-                  </template>
-                  <div x-text="getUnits(r - 1, c - 1)[0].type[0] + ' ' + getUnits(r - 1, c - 1)[0].unit_id.split('_')[1]" class="text-xs opacity-75"></div>
-                </div>
-              </template>
-
-              <!-- Multiple units: show count badge -->
-              <template x-if="getUnitCount(r - 1, c - 1) > 1">
-                <div class="text-center">
-                  <div class="bg-yellow-500 text-gray-900 rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold" x-text="getUnitCount(r - 1, c - 1)"></div>
-                  <div class="text-xs mt-1 text-gray-300">units</div>
-                </div>
-              </template>
-            </div>
-          </template>
-        </div>
-      </template>
-
-      <!-- Legend -->
-      <div class="flex gap-4 mt-2 ml-8 text-xs text-gray-400 flex-wrap">
-        <div>Left deployment: Team A</div>
-        <div>Right deployment: Team B</div>
-        <div>Center lane: no placement</div>
-      </div>
-      </div>
     </div>
   </div>
 
-  <!-- ── CONTROLS BELOW BATTLEFIELD ─────────────────────────────────── -->
+  <!-- â”€â”€ CONTROLS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ -->
   <div class="bg-gray-900/70 border border-gray-800 rounded-lg p-4">
     <div class="flex items-center gap-3 flex-wrap">
-      <div class="relative">
-        <button
-          @click="togglePresetList()"
-          class="text-sm px-4 py-2 rounded bg-gray-700 hover:bg-gray-600 transition-colors flex items-center gap-2"
-        >
-          Load Preset
-          <svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3 transition-transform" :class="showPresetList ? 'rotate-180' : ''" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
-        </button>
-
-        <div
-          x-show="showPresetList"
-          x-transition
-          @click.outside="showPresetList = false"
-          class="absolute top-full left-0 mt-1 bg-gray-800 border border-gray-700 rounded-lg shadow-xl z-50 min-w-48 py-1"
-        >
-          <template x-if="presetsLoading">
-            <p class="text-sm text-gray-500 px-4 py-3">Loading...</p>
-          </template>
-          <template x-if="!presetsLoading && presetList.length === 0">
-            <p class="text-sm text-gray-500 px-4 py-3 italic">No saved presets yet</p>
-          </template>
-          <template x-for="p in presetList" :key="p">
-            <button
-              @click="loadPreset(p)"
-              class="w-full text-left px-4 py-2 text-sm hover:bg-gray-700 transition-colors"
-              x-text="p"
-            ></button>
-          </template>
-        </div>
-      </div>
+      <button
+        @click="openPresetModal()"
+        class="text-sm px-4 py-2 rounded bg-gray-700 hover:bg-gray-600 transition-colors flex items-center gap-2"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"/></svg>
+        Load Preset
+      </button>
 
       <input
         type="text"
@@ -137,7 +94,7 @@
         class="px-5 py-2 rounded bg-green-600 hover:bg-green-500 disabled:opacity-50 disabled:cursor-not-allowed text-sm font-semibold transition-colors"
       >
         <span x-show="!submitting">Run Battle</span>
-        <span x-show="submitting">Simulating...</span>
+        <span x-show="submitting">Simulatingâ€¦</span>
       </button>
 
       <span
@@ -149,133 +106,258 @@
     </div>
   </div>
 
-  <!-- ── TROOP SELECTION MODAL ───────────────────────────────────────── -->
-  <template x-if="showTroopModal">
-    <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div class="bg-gray-900 border border-gray-700 rounded-lg shadow-2xl max-w-2xl w-full mx-4 max-h-96 overflow-y-auto">
-        <!-- Modal Header -->
-        <div class="sticky top-0 bg-gray-900 border-b border-gray-700 px-6 py-4 flex justify-between items-center">
-          <div>
-            <h2 class="font-semibold text-lg">Select Troop</h2>
-            <p class="text-sm text-gray-400 mt-1" x-text="'Position: (' + modalCell.r + ', ' + modalCell.c + ')'"></p>
-          </div>
+  <!-- â”€â”€ CELL MODAL â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ -->
+  <!-- PRESET MODAL -->
+  <template x-if="showPresetModal">
+    <div
+      class="fixed inset-0 bg-black/70 flex items-start justify-center z-50 pt-12 pb-8 overflow-y-auto"
+      @click.self="showPresetModal = false"
+    >
+      <div class="bg-gray-900 border border-gray-700 rounded-xl shadow-2xl w-full max-w-4xl mx-4">
+        <!-- Header -->
+        <div class="border-b border-gray-700 px-6 py-4 flex items-center justify-between">
+          <h2 class="font-semibold text-lg">Load Preset</h2>
+          <button @click="showPresetModal = false" class="text-gray-500 hover:text-white text-xl leading-none px-1">✕</button>
         </div>
 
-        <!-- Modal Body: Current Troops (if exist) and Troop Categories -->
-        <div class="px-6 py-4 space-y-6">
-          <!-- Current Troops Display -->
-          <template x-if="modalCell.units && modalCell.units.length > 0">
-            <div class="bg-gray-800 border border-gray-700 rounded-lg p-4 space-y-2">
-              <h3 class="text-sm font-semibold text-gray-300 mb-3">Current Troops (<span x-text="modalCell.units.length"></span>)</h3>
-              <template x-for="troop in modalCell.units" :key="troop.unit_id">
-                <div class="flex items-center justify-between bg-gray-700 rounded px-3 py-2">
-                  <div class="min-w-0">
-                    <div class="font-semibold text-sm flex items-center gap-2">
-                      <img x-show="troopIcon(troop.type)" :src="troopVisual(troop.type, 'idle')" :alt="troop.type" class="troop-icon-inline" />
-                      <span x-text="troop.unit_id + ' — ' + troop.type"></span>
-                    </div>
-                    <div class="text-xs text-gray-500 mt-1">
-                      <span x-text="'HP: ' + UNIT_STATS[troop.type].hp"></span>
-                      <span class="mx-2">DMG: <span x-text="UNIT_STATS[troop.type].damage"></span></span>
-                      <span>DEF: <span x-text="UNIT_STATS[troop.type].defense"></span></span>
-                    </div>
+        <!-- Body -->
+        <div class="p-6">
+          <template x-if="presetsLoading">
+            <p class="text-gray-400 text-center py-10">Loading presets…</p>
+          </template>
+          <template x-if="!presetsLoading && presetCards.length === 0">
+            <p class="text-gray-500 italic text-center py-10">No saved presets yet. Name and save one using the field below.</p>
+          </template>
+          <template x-if="!presetsLoading && presetCards.length > 0">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              <template x-for="pc in presetCards" :key="pc.name">
+                <div
+                  class="bg-gray-800 border border-gray-700 hover:border-indigo-500 rounded-lg p-4 cursor-pointer transition-all"
+                  @click="loadPresetFromModal(pc)"
+                >
+                  <!-- Name + cell count -->
+                  <div class="flex items-start justify-between mb-3">
+                    <h3 class="font-semibold text-sm truncate flex-1 mr-2" x-text="pc.name"></h3>
+                    <span class="text-xs text-gray-500 shrink-0"
+                          x-text="(pc.army_a.length + pc.army_b.length) + ' cells'"></span>
                   </div>
-                  <button
-                    @click="deleteSpecificTroop(troop.unit_id)"
-                    class="px-3 py-1 rounded bg-red-700 hover:bg-red-600 text-xs font-medium transition-colors ml-2 flex-shrink-0"
-                  >Remove</button>
+
+                  <!-- Mini battlefield grid -->
+                  <div class="rounded overflow-hidden border border-gray-600 w-full">
+                    <template x-for="mr in 4" :key="mr">
+                      <div class="flex">
+                        <template x-for="mc in 9" :key="mc">
+                          <div
+                            :style="miniCellStyle(pc, mr-1, mc-1)"
+                            class="flex-1 border-r border-b border-black/20"
+                            style="height:12px"
+                          ></div>
+                        </template>
+                      </div>
+                    </template>
+                  </div>
+
+                  <!-- Team footers -->
+                  <div class="mt-2 flex justify-between text-xs">
+                    <span class="text-blue-400">A: <span x-text="pc.army_a.length + ' cell' + (pc.army_a.length !== 1 ? 's' : '')"></span></span>
+                    <span class="text-red-400">B: <span x-text="pc.army_b.length + ' cell' + (pc.army_b.length !== 1 ? 's' : '')"></span></span>
+                  </div>
                 </div>
               </template>
             </div>
           </template>
-
-          <!-- Troop Categories for Adding Troops -->
-          <div class="space-y-4">
-            <h3 class="text-sm font-semibold text-gray-300">Add Troop to Cell</h3>
-            <template x-for="[faction, factionLabel] in [['human', 'Human Units'], ['monster', 'Monster Units']]" :key="faction">
-              <div x-show="getCategoryTroops(faction, 'melee').length > 0 || getCategoryTroops(faction, 'ranged').length > 0">
-                <h4 class="text-sm font-semibold text-gray-400 mb-3" x-text="factionLabel"></h4>
-                <div class="space-y-3">
-                  <!-- Melee Troops -->
-                  <template x-if="getCategoryTroops(faction, 'melee').length > 0">
-                    <div>
-                      <h5 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Melee</h5>
-                      <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                        <template x-for="troop in getCategoryTroops(faction, 'melee')" :key="troop">
-                          <div
-                            @click="selectTroop(troop)"
-                            class="bg-gray-800 border border-gray-700 rounded-lg p-3 cursor-pointer hover:border-gray-500 transition-all"
-                          >
-                            <div class="flex items-center gap-2">
-                              <img x-show="troopIcon(troop)" :src="troopVisual(troop, 'idle')" :alt="troop" class="troop-icon-choice" />
-                              <div class="font-semibold text-sm" x-text="troop"></div>
-                            </div>
-                            <div class="text-xs text-gray-500 mt-2 grid grid-cols-2 gap-1">
-                              <span x-text="'HP: ' + UNIT_STATS[troop].hp"></span>
-                              <span x-text="'DMG: ' + UNIT_STATS[troop].damage"></span>
-                              <span x-text="'DEF: ' + UNIT_STATS[troop].defense"></span>
-                              <span x-text="'SPD: ' + UNIT_STATS[troop].speed + 'x'"></span>
-                            </div>
-                          </div>
-                        </template>
-                      </div>
-                    </div>
-                  </template>
-
-                  <!-- Ranged Troops -->
-                  <template x-if="getCategoryTroops(faction, 'ranged').length > 0">
-                    <div>
-                      <h5 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Ranged</h5>
-                      <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                        <template x-for="troop in getCategoryTroops(faction, 'ranged')" :key="troop">
-                          <div
-                            @click="selectTroop(troop)"
-                            class="bg-gray-800 border border-gray-700 rounded-lg p-3 cursor-pointer hover:border-gray-500 transition-all"
-                          >
-                            <div class="flex items-center gap-2">
-                              <img x-show="troopIcon(troop)" :src="troopVisual(troop, 'idle')" :alt="troop" class="troop-icon-choice" />
-                              <div class="font-semibold text-sm" x-text="troop"></div>
-                            </div>
-                            <div class="text-xs text-gray-500 mt-2 grid grid-cols-2 gap-1">
-                              <span x-text="'HP: ' + UNIT_STATS[troop].hp"></span>
-                              <span x-text="'DMG: ' + UNIT_STATS[troop].damage"></span>
-                              <span x-text="'DEF: ' + UNIT_STATS[troop].defense"></span>
-                              <span x-text="'RNG: ' + UNIT_STATS[troop].range"></span>
-                            </div>
-                          </div>
-                        </template>
-                      </div>
-                    </div>
-                  </template>
-                </div>
-              </div>
-            </template>
-          </div>
-        </div>
-
-        <!-- Modal Footer: Cancel Button -->
-        <div class="sticky bottom-0 bg-gray-900 border-t border-gray-700 px-6 py-4 flex justify-end">
-          <button
-            @click="closeTroopModal()"
-            class="px-4 py-2 rounded bg-gray-700 hover:bg-gray-600 text-sm font-medium transition-colors"
-          >Cancel</button>
         </div>
       </div>
     </div>
   </template>
 
-  <!-- ── VALIDATION ERROR ──────────────────────────────────────────────── -->
+  <!-- CELL MODAL -->
+  <template x-if="showTroopModal">
+    <div
+      class="fixed inset-0 bg-black/60 flex items-center justify-center z-50"
+      @click.self="closeTroopModal()"
+    >
+      <div class="bg-gray-900 border border-gray-700 rounded-xl shadow-2xl max-w-2xl w-full mx-4 flex flex-col max-h-[90vh]">
+
+        <!-- Header -->
+        <div class="border-b border-gray-700 px-6 py-4 flex items-center justify-between shrink-0">
+          <div>
+            <h2 class="font-semibold text-lg">
+              Cell (<span x-text="modalCell.r"></span>, <span x-text="modalCell.c"></span>)
+            </h2>
+            <p class="text-xs text-gray-400 mt-0.5"
+               x-text="'Team ' + teamOfCol(modalCell.c) + ' deployment zone'"></p>
+          </div>
+          <button @click="closeTroopModal()" class="text-gray-500 hover:text-white text-xl leading-none px-1">âœ•</button>
+        </div>
+
+        <!-- Current state / quantity controls -->
+        <div class="px-6 py-4 border-b border-gray-800 shrink-0">
+
+          <!-- Cell is occupied -->
+          <template x-if="modalCell.unit">
+            <div class="flex items-center gap-4 bg-gray-800 rounded-lg px-4 py-3">
+              <template x-if="troopIcon(modalCell.unit.type)">
+                <img :src="troopVisual(modalCell.unit.type, 'idle')"
+                     :alt="modalCell.unit.type"
+                     class="w-10 h-10 object-contain shrink-0" />
+              </template>
+              <template x-if="!troopIcon(modalCell.unit.type)">
+                <span class="text-2xl font-bold shrink-0"
+                      x-text="typeAbbrev(modalCell.unit.type)"></span>
+              </template>
+              <div class="flex-1 min-w-0">
+                <p class="font-semibold" x-text="modalCell.unit.type"></p>
+                <p class="text-xs text-gray-400">Select a different type below to replace</p>
+              </div>
+              <div class="flex items-center gap-2 shrink-0">
+                <label class="text-xs text-gray-400 whitespace-nowrap">Quantity</label>
+                <input
+                  type="text"
+                  x-model="modalQtyInput"
+                  @input.debounce.400ms="applyQtyUpdate()"
+                  @keydown.enter="applyQtyUpdate()"
+                  class="w-28 bg-gray-700 border border-gray-600 rounded px-2 py-1.5 text-sm text-right font-mono focus:outline-none focus:border-indigo-500"
+                  placeholder="e.g. 5M"
+                />
+                <button
+                  @click="clearCell()"
+                  class="px-3 py-1.5 text-xs bg-red-900/50 hover:bg-red-800/70 border border-red-800/60 rounded text-red-300 whitespace-nowrap"
+                >Clear</button>
+              </div>
+            </div>
+          </template>
+
+          <!-- Cell is empty -->
+          <template x-if="!modalCell.unit">
+            <div class="flex items-center gap-3 flex-wrap">
+              <label class="text-sm text-gray-300 whitespace-nowrap">Quantity to place:</label>
+              <input
+                type="text"
+                x-model="modalQtyInput"
+                @keydown.enter.prevent=""
+                class="w-36 bg-gray-800 border border-gray-700 rounded px-3 py-1.5 text-sm font-mono focus:outline-none focus:border-indigo-500"
+                placeholder="e.g. 1, 1k, 5M"
+              />
+              <span class="text-xs text-gray-500">k = Ã—1,000 &nbsp;Â·&nbsp; M = Ã—1,000,000 &nbsp;Â·&nbsp; B = Ã—1,000,000,000</span>
+            </div>
+          </template>
+        </div>
+
+        <!-- Troop picker (scrollable) -->
+        <div class="px-6 py-4 overflow-y-auto flex-1">
+          <h3 class="text-xs font-semibold uppercase tracking-wider text-gray-500 mb-3"
+              x-text="modalCell.unit ? 'Change Troop Type (replaces current)' : 'Select Troop Type'"></h3>
+
+          <template x-for="[faction, factionLabel] in [['human', 'Human Units'], ['monster', 'Monster Units']]" :key="faction">
+            <div
+              x-show="getCategoryTroops(faction, 'melee').length > 0 || getCategoryTroops(faction, 'ranged').length > 0"
+              class="mb-6"
+            >
+              <h4 class="text-sm font-semibold text-gray-400 mb-3" x-text="factionLabel"></h4>
+              <div class="space-y-3">
+
+                <!-- Melee -->
+                <template x-if="getCategoryTroops(faction, 'melee').length > 0">
+                  <div>
+                    <h5 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Melee</h5>
+                    <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                      <template x-for="troop in getCategoryTroops(faction, 'melee')" :key="troop">
+                        <div
+                          @click="selectTroop(troop)"
+                          :class="modalCell.unit && modalCell.unit.type === troop
+                            ? 'border-indigo-500 bg-indigo-900/20'
+                            : 'border-gray-700 hover:border-gray-500'"
+                          class="bg-gray-800 border rounded-lg p-3 cursor-pointer transition-all"
+                        >
+                          <div class="flex items-center gap-2">
+                            <img x-show="troopIcon(troop)" :src="troopVisual(troop, 'idle')" :alt="troop" class="w-6 h-6 object-contain" />
+                            <div class="font-semibold text-sm" x-text="troop"></div>
+                          </div>
+                          <div class="text-xs text-gray-500 mt-2 grid grid-cols-2 gap-0.5">
+                            <span x-text="'HP: ' + fmtQty(UNIT_STATS[troop].hp)"></span>
+                            <span x-text="'DMG: ' + fmtQty(UNIT_STATS[troop].damage)"></span>
+                            <span x-text="'DEF: ' + fmtQty(UNIT_STATS[troop].defense)"></span>
+                            <span x-text="'SPD: ' + UNIT_STATS[troop].speed + 'x'"></span>
+                          </div>
+                        </div>
+                      </template>
+                    </div>
+                  </div>
+                </template>
+
+                <!-- Ranged -->
+                <template x-if="getCategoryTroops(faction, 'ranged').length > 0">
+                  <div>
+                    <h5 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Ranged</h5>
+                    <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                      <template x-for="troop in getCategoryTroops(faction, 'ranged')" :key="troop">
+                        <div
+                          @click="selectTroop(troop)"
+                          :class="modalCell.unit && modalCell.unit.type === troop
+                            ? 'border-indigo-500 bg-indigo-900/20'
+                            : 'border-gray-700 hover:border-gray-500'"
+                          class="bg-gray-800 border rounded-lg p-3 cursor-pointer transition-all"
+                        >
+                          <div class="flex items-center gap-2">
+                            <img x-show="troopIcon(troop)" :src="troopVisual(troop, 'idle')" :alt="troop" class="w-6 h-6 object-contain" />
+                            <div class="font-semibold text-sm" x-text="troop"></div>
+                          </div>
+                          <div class="text-xs text-gray-500 mt-2 grid grid-cols-2 gap-0.5">
+                            <span x-text="'HP: ' + fmtQty(UNIT_STATS[troop].hp)"></span>
+                            <span x-text="'DMG: ' + fmtQty(UNIT_STATS[troop].damage)"></span>
+                            <span x-text="'DEF: ' + fmtQty(UNIT_STATS[troop].defense)"></span>
+                            <span x-text="'RNG: ' + UNIT_STATS[troop].range"></span>
+                          </div>
+                        </div>
+                      </template>
+                    </div>
+                  </div>
+                </template>
+
+              </div>
+            </div>
+          </template>
+        </div>
+
+        <!-- Footer -->
+        <div class="border-t border-gray-700 px-6 py-3 shrink-0 flex justify-end">
+          <button
+            @click="closeTroopModal()"
+            class="px-4 py-2 rounded bg-gray-700 hover:bg-gray-600 text-sm font-medium transition-colors"
+          >Close</button>
+        </div>
+      </div>
+    </div>
+  </template>
+
+  <!-- â”€â”€ VALIDATION ERROR â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ -->
   <template x-if="errorMsg">
     <div class="bg-red-900 border border-red-700 text-red-200 rounded px-4 py-3 text-sm" x-text="errorMsg"></div>
   </template>
 
-  <!-- ── ARMY SUMMARY ──────────────────────────────────────────────────── -->
+  <!-- â”€â”€ ARMY SUMMARY â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ -->
   <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
     <template x-for="[label, key, colorClass] in [['Team A (Blue)', 'army_a', 'text-blue-400'], ['Team B (Red)', 'army_b', 'text-red-400']]" :key="key">
       <div class="bg-gray-900 border border-gray-800 rounded-lg p-5">
-        <h3 class="text-sm font-semibold mb-1" :class="colorClass" x-text="label"></h3>
-        <div class="text-4xl font-bold text-white" x-text="armies[key].length"></div>
-        <p class="text-xs text-gray-500 mt-1">Total units deployed</p>
+        <h3 class="text-sm font-semibold mb-3" :class="colorClass" x-text="label"></h3>
+        <template x-if="armies[key].length === 0">
+          <p class="text-xs text-gray-600 italic">No troops placed</p>
+        </template>
+        <template x-if="armies[key].length > 0">
+          <div class="space-y-1.5">
+            <template x-for="entry in armySummary(key)" :key="entry.type">
+              <div class="flex items-center justify-between text-sm">
+                <span class="text-gray-300" x-text="entry.type"></span>
+                <span class="font-mono text-white">
+                  <span x-text="entry.cells"></span> cell<span x-text="entry.cells > 1 ? 's' : ''"></span>
+                  &nbsp;Â·&nbsp;
+                  <span class="text-yellow-300 font-semibold" x-text="'Ã—' + fmtQty(entry.totalQty)"></span> total
+                </span>
+              </div>
+            </template>
+          </div>
+        </template>
       </div>
     </template>
   </div>
@@ -283,7 +365,6 @@
 </div>
 
 <script>
-  // Static data passed from Flask
   const GRID_ROWS = {{ grid_rows }};
   const GRID_COLS = {{ grid_cols }};
   const TEAM_A_COLS = {{ team_a_cols | tojson }};
@@ -314,45 +395,63 @@
       },
     },
     Longbowman: { icon: '/assets/theme1/troops/human/map-icons/longbowman.svg' },
-    Hussar: { icon: '/assets/theme1/troops/human/map-icons/hussar.svg' },
-    Troll: { icon: '/assets/theme1/troops/monster/map-icons/troll.svg' },
-    Wraith: { icon: '/assets/theme1/troops/monster/map-icons/wraith.svg' },
+    Hussar:     { icon: '/assets/theme1/troops/human/map-icons/hussar.svg' },
+    Troll:      { icon: '/assets/theme1/troops/monster/map-icons/troll.svg' },
+    Wraith:     { icon: '/assets/theme1/troops/monster/map-icons/wraith.svg' },
   };
 
   function armyBuilder() {
     return {
-      // unit map: "row,col" -> array of unit objects
+      // unitMap: "row,col" -> single unit object { unit_id, team, type, row, col, quantity }
       unitMap: {},
       armies: { army_a: [], army_b: [] },
-      unitTypes: UNIT_TYPES,
-      unitStats: UNIT_STATS,
-      unitClassification: UNIT_CLASSIFICATION,
       errorMsg: '',
       submitting: false,
 
       // Modal state
       showTroopModal: false,
-      modalCell: { r: null, c: null, units: [] },
+      modalCell: { r: null, c: null, unit: null },
+      modalQtyInput: '1',
 
       // Preset state
       showPresetList: false,
       presetsLoading: false,
       presetList: [],
       presetNameInput: '',
-      currentPresetName: null,   // name of the preset that was loaded
+      currentPresetName: null,
       presetSaveMsg: '',
       presetSaveError: false,
 
+      // Preset modal state
+      showPresetModal: false,
+      presetCards: [],
+
       init() {
-        // No preset auto-load on init — let user click button
+        // No-op â€” presets loaded on demand
       },
 
-      colLabel(c) {
-        if (TEAM_A_COLS.includes(c)) return `A (col ${c})`;
-        if (TEAM_B_COLS.includes(c)) return `B (col ${c})`;
-        return `col ${c}`;
+      // â”€â”€ Quantity helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+      parseQty(str) {
+        if (!str) return 1;
+        const s = String(str).trim().toLowerCase().replace(/,/g, '').replace(/\s/g, '');
+        const m = s.match(/^(\d+(?:\.\d+)?)([kmb]?)$/);
+        if (!m) return 1;
+        const n = parseFloat(m[1]);
+        if (m[2] === 'k') return Math.max(1, Math.floor(n * 1_000));
+        if (m[2] === 'm') return Math.max(1, Math.floor(n * 1_000_000));
+        if (m[2] === 'b') return Math.max(1, Math.floor(n * 1_000_000_000));
+        return Math.max(1, Math.floor(n));
       },
 
+      fmtQty(n) {
+        if (!n || n < 1) return '0';
+        if (n >= 1_000_000_000) return (n / 1_000_000_000).toFixed(1).replace(/\.0$/, '') + 'B';
+        if (n >= 1_000_000)     return (n / 1_000_000).toFixed(1).replace(/\.0$/, '') + 'M';
+        if (n >= 1_000)         return (n / 1_000).toFixed(1).replace(/\.0$/, '') + 'k';
+        return String(n);
+      },
+
+      // â”€â”€ Cell helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
       isNeutral(c) {
         return !TEAM_A_COLS.includes(c) && !TEAM_B_COLS.includes(c);
       },
@@ -364,42 +463,36 @@
       },
 
       getUnit(r, c) {
-        // Legacy: return first unit or null for backward compatibility
-        const units = this.unitMap[`${r},${c}`];
-        return units && units.length > 0 ? units[0] : null;
-      },
-
-      getUnits(r, c) {
-        // Get all units in a cell
-        return this.unitMap[`${r},${c}`] || [];
-      },
-
-      getUnitCount(r, c) {
-        // Get count of units in a cell
-        return (this.unitMap[`${r},${c}`] || []).length;
+        return this.unitMap[`${r},${c}`] || null;
       },
 
       cellClass(r, c) {
-        const units = this.getUnits(r, c);
+        if (this.isNeutral(c)) return 'bc-cell-neutral opacity-60 !cursor-not-allowed';
+        const teamCls = TEAM_A_COLS.includes(c) ? 'bc-cell-a' : 'bc-cell-b';
+        const unit = this.getUnit(r, c);
+        if (unit) return teamCls + ' ring-1 ring-inset ring-white/20';
+        return teamCls;
+      },
 
-        if (this.isNeutral(c)) {
-          return 'cursor-not-allowed opacity-35';
+      miniCellStyle(preset, r, c) {
+        if (!preset._cellMap) {
+          preset._cellMap = {};
+          for (const u of [...(preset.army_a || []), ...(preset.army_b || [])]) {
+            preset._cellMap[`${u.row},${u.col}`] = u;
+          }
         }
-        if (units.length > 0) {
-          return 'bg-black/25 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.08)] hover:bg-black/35';
-        }
-        return 'bg-transparent hover:bg-white/10';
+        const neutral = !TEAM_A_COLS.includes(c) && !TEAM_B_COLS.includes(c);
+        const occupied = !!preset._cellMap[`${r},${c}`];
+        if (neutral) return 'background:rgba(92,74,36,0.70)';
+        if (TEAM_A_COLS.includes(c)) return occupied ? 'background:rgba(59,130,246,0.85)' : 'background:rgba(50,78,120,0.50)';
+        return occupied ? 'background:rgba(239,68,68,0.85)' : 'background:rgba(105,38,38,0.50)';
       },
 
       typeAbbrev(type) {
-        const map = { Barbarian: 'B', Archer: 'AR' };
-        if (map[type]) return map[type];
-        // Custom type: strip non-alpha, take up to 3 uppercase letters
-        return type.replace(/[^A-Za-z]/g, '').slice(0, 3).toUpperCase() || type[0].toUpperCase();
-      },
-
-      unitInitial(type) {
-        return { Barbarian: 'B', Archer: '🏹' }[type] || type[0].toUpperCase();
+        const map = { Barbarian: 'B', Archer: 'AR', Troll: 'TR', Wraith: 'WR',
+                      Longbowman: 'LB', Hussar: 'HS', Cannon: 'CN', 'Archer Tower': 'AT',
+                      Demon: 'DM', Pegasus: 'PG' };
+        return map[type] || type.replace(/[^A-Za-z]/g, '').slice(0, 3).toUpperCase();
       },
 
       troopIcon(type) {
@@ -413,102 +506,123 @@
         return asset.icon || '';
       },
 
-      toggleCell(r, c) {
-        if (this.isNeutral(c)) return;
-        this.openTroopModal(r, c);
+      getCategoryTroops(faction, type) {
+        return UNIT_TYPES.filter(name => {
+          const cls = UNIT_CLASSIFICATION[name];
+          return cls && cls.faction === faction && cls.type === type;
+        });
       },
 
-      openTroopModal(r, c) {
+      // â”€â”€ Modal â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+      toggleCell(r, c) {
         if (this.isNeutral(c)) return;
-        const units = this.getUnits(r, c);
-        this.modalCell = {
-          r,
-          c,
-          units: units.map(u => ({ ...u })), // Deep copy
-        };
+        const unit = this.getUnit(r, c);
+        this.modalCell = { r, c, unit: unit ? { ...unit } : null };
+        this.modalQtyInput = unit ? String(unit.quantity || 1) : '1';
         this.showTroopModal = true;
       },
 
       closeTroopModal() {
         this.showTroopModal = false;
-        this.modalCell = { r: null, c: null, units: [] };
+        this.modalCell = { r: null, c: null, unit: null };
+        this.modalQtyInput = '1';
       },
 
-      getCategoryTroops(faction, type) {
-        return UNIT_TYPES.filter(troopName => {
-          const classification = this.unitClassification[troopName];
-          return classification && classification.faction === faction && classification.type === type;
-        });
-      },
-
+      // Place or replace the troop type in the current cell
       selectTroop(troopName) {
-        if (!this.modalCell || this.modalCell.r === null) return;
         const { r, c } = this.modalCell;
+        if (r === null) return;
         const key = `${r},${c}`;
         const team = this.teamOfCol(c);
+        const qty = this.parseQty(this.modalQtyInput);
 
-        // Initialize array if not exists
-        if (!this.unitMap[key]) {
-          this.unitMap[key] = [];
-        }
-
-        // Generate unique unit_id
-        const allUnits = Object.values(this.unitMap).flat();
-        const teamUnits = allUnits.filter(u => u.team === team);
-        const count = teamUnits.length + 1;
+        // Reuse existing unit_id if same type, otherwise generate new
+        const existing = this.unitMap[key];
         const typeInitial = this.typeAbbrev(troopName);
+        const allUnits = Object.values(this.unitMap).filter(Boolean);
+        const count = allUnits.filter(u => u.team === team).length + (existing ? 0 : 1);
+        const unit_id = (existing && existing.type === troopName)
+          ? existing.unit_id
+          : `${team}_${typeInitial}${count}`;
 
-        // Add new unit to the array
-        const newUnit = {
-          unit_id: `${team}_${typeInitial}${count}`,
-          team,
-          type: troopName,
-          row: r,
-          col: c,
-        };
-
-        this.unitMap[key].push(newUnit);
-        
-        // Update modal units display
-        this.modalCell.units.push({ ...newUnit });
-
+        const newUnit = { unit_id, team, type: troopName, row: r, col: c, quantity: qty };
+        this.unitMap[key] = newUnit;
+        this.modalCell.unit = { ...newUnit };
         this.rebuildArmies();
       },
 
-      deleteSpecificTroop(unit_id) {
-        if (!this.modalCell || this.modalCell.r === null) return;
-        const key = `${this.modalCell.r},${this.modalCell.c}`;
-
-        // Remove from unitMap
-        if (this.unitMap[key]) {
-          this.unitMap[key] = this.unitMap[key].filter(u => u.unit_id !== unit_id);
-          // Clean up empty arrays
-          if (this.unitMap[key].length === 0) {
-            delete this.unitMap[key];
-          }
-        }
-
-        // Remove from modal display
-        this.modalCell.units = this.modalCell.units.filter(u => u.unit_id !== unit_id);
-
+      // Update quantity of current cell's troop (called on input debounce)
+      applyQtyUpdate() {
+        const { r, c } = this.modalCell;
+        if (r === null || !this.unitMap[`${r},${c}`]) return;
+        const qty = this.parseQty(this.modalQtyInput);
+        this.unitMap[`${r},${c}`].quantity = qty;
+        this.modalCell.unit = { ...this.unitMap[`${r},${c}`] };
         this.rebuildArmies();
       },
 
-      updateSelected() {
-        // No longer used with modal-based troop selection
-      },
-
-      focusUnit(u) {
-        // Open modal when clicking on a unit in the army summary
-        this.openTroopModal(u.row, u.col);
+      clearCell() {
+        const { r, c } = this.modalCell;
+        if (r === null) return;
+        delete this.unitMap[`${r},${c}`];
+        this.modalCell.unit = null;
+        this.modalQtyInput = '1';
+        this.rebuildArmies();
       },
 
       rebuildArmies() {
-        // Flatten all units from all cells
-        const allUnits = Object.values(this.unitMap).flat();
-        this.armies.army_a = allUnits.filter(u => u.team === 'A');
-        this.armies.army_b = allUnits.filter(u => u.team === 'B');
+        const all = Object.values(this.unitMap).filter(Boolean);
+        this.armies.army_a = all.filter(u => u.team === 'A');
+        this.armies.army_b = all.filter(u => u.team === 'B');
       },
+
+      // Per-type summary for army panel
+      armySummary(key) {
+        const units = this.armies[key];
+        const byType = {};
+        for (const u of units) {
+          if (!byType[u.type]) byType[u.type] = { type: u.type, cells: 0, totalQty: 0 };
+          byType[u.type].cells++;
+          byType[u.type].totalQty += (u.quantity || 1);
+        }
+        return Object.values(byType);
+      },
+
+      // â”€â”€ Presets â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+      async openPresetModal() {
+        this.showPresetModal = true;
+        if (this.presetCards.length > 0) return;
+        this.presetsLoading = true;
+        try {
+          const res = await fetch('/presets/all');
+          const data = await res.json();
+          this.presetCards = data.presets || [];
+        } catch (e) {
+          this.presetCards = [];
+        } finally {
+          this.presetsLoading = false;
+        }
+      },
+
+      loadPresetFromModal(preset) {
+        this.unitMap = {};
+        for (const u of [...(preset.army_a || []), ...(preset.army_b || [])]) {
+          const key = `${u.row},${u.col}`;
+          const existing = this.unitMap[key];
+          if (!existing) {
+            this.unitMap[key] = { ...u, quantity: u.quantity || 1 };
+          } else if (existing.type === u.type) {
+            existing.quantity = (existing.quantity || 1) + (u.quantity || 1);
+          }
+        }
+        this.rebuildArmies();
+        this.errorMsg = '';
+        this.currentPresetName = preset.name;
+        this.presetNameInput = preset.name;
+        this.showPresetModal = false;
+      },
+
+
 
       async togglePresetList() {
         if (!this.showPresetList) {
@@ -534,17 +648,23 @@
           if (!res.ok) { this.errorMsg = 'Preset not found.'; return; }
           const preset = await res.json();
           this.unitMap = {};
+
+          // Support both old format (many units per cell, no qty) and new (single unit with qty)
           for (const u of [...(preset.army_a || []), ...(preset.army_b || [])]) {
             const key = `${u.row},${u.col}`;
-            if (!this.unitMap[key]) {
-              this.unitMap[key] = [];
+            const existing = this.unitMap[key];
+            if (!existing) {
+              this.unitMap[key] = { ...u, quantity: u.quantity || 1 };
+            } else if (existing.type === u.type) {
+              // Old format: multiple same-type entries per cell â†’ merge qty
+              existing.quantity = (existing.quantity || 1) + (u.quantity || 1);
             }
-            this.unitMap[key].push({ ...u });
+            // Different type at same cell: skip (keep first)
           }
+
           this.rebuildArmies();
           this.errorMsg = '';
           this.showPresetList = false;
-          // Populate preset name field with the loaded preset's name
           this.currentPresetName = preset.name || name;
           this.presetNameInput = preset.name || name;
         } catch (e) {
@@ -572,14 +692,19 @@
             this.presetSaveMsg = `"${name}" saved!`;
             setTimeout(() => this.presetSaveMsg = '', 2500);
             if (isNew) {
-              // New preset saved — clear the name field so it feels fresh
               this.presetNameInput = '';
               this.currentPresetName = null;
             }
-            // Refresh cached list if dropdown was opened before
             if (this.presetList.length > 0) {
               const listRes = await fetch('/presets');
               this.presetList = (await listRes.json()).presets || [];
+            }
+            // Refresh preset modal cards if already loaded
+            if (this.presetCards.length > 0) {
+              try {
+                const allRes = await fetch('/presets/all');
+                this.presetCards = (await allRes.json()).presets || [];
+              } catch (e) {}
             }
           } else {
             this.presetSaveError = true;
@@ -597,7 +722,6 @@
           this.errorMsg = 'Both teams must have at least one unit.';
           return;
         }
-
         this.submitting = true;
         try {
           const res = await fetch('/run', {
@@ -608,13 +732,11 @@
               army_b: this.armies.army_b,
             }),
           });
-
           const data = await res.json();
           if (!res.ok) {
             this.errorMsg = Array.isArray(data.error) ? data.error.join('\n') : data.error;
             return;
           }
-
           window.location.href = data.redirect;
         } catch (err) {
           this.errorMsg = 'Network error: ' + err.message;

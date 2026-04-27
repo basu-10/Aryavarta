@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+{% block title %}{{ clan.name }} — Clan{% endblock %}
+{% block content %}
+
+{% set role_badge = {
+  'leader':    'bg-yellow-600 text-yellow-100',
+  'co-leader': 'bg-purple-700 text-purple-100',
+  'elder':     'bg-blue-700 text-blue-100',
+  'member':    'bg-gray-600 text-gray-200'
+} %}
+
+<div class="max-w-2xl mx-auto">
+  <!-- Breadcrumb -->
+  <nav class="text-xs text-gray-500 mb-4">
+    <a href="/clan" class="hover:text-gray-300">Clans</a>
+    <span class="mx-1">/</span>
+    <span class="text-gray-300">{{ clan.name }}</span>
+  </nav>
+
+  <div class="flex items-center justify-between mb-4 flex-wrap gap-3">
+    <div>
+      <h1 class="text-2xl font-bold">⚔ {{ clan.name }}</h1>
+      <p class="text-sm text-gray-400">{{ clan.member_count }} member{{ 's' if clan.member_count != 1 }}</p>
+    </div>
+    {% if not is_member and not player.clan_id %}
+      {% if existing_app and existing_app.status == 'pending' %}
+      <span class="text-sm text-yellow-400 bg-yellow-900/30 px-3 py-1 rounded">Application pending…</span>
+      {% elif existing_app and existing_app.status == 'rejected' %}
+      <div x-data>
+        <button onclick="applyClan({{ clan.id }}, this)"
+                class="bg-green-700 hover:bg-green-600 text-white text-sm px-4 py-2 rounded">Re-apply</button>
+      </div>
+      {% else %}
+      <div x-data>
+        <button onclick="applyClan({{ clan.id }}, this)"
+                class="bg-green-700 hover:bg-green-600 text-white text-sm px-4 py-2 rounded">Apply to Join</button>
+      </div>
+      {% endif %}
+    {% elif is_member %}
+    <a href="/clan" class="bg-blue-700 hover:bg-blue-600 text-white text-sm px-4 py-2 rounded">View My Clan</a>
+    {% endif %}
+  </div>
+
+  {% if clan.description %}
+  <div class="bg-gray-800 rounded p-4 mb-4">
+    <p class="text-sm text-gray-300 whitespace-pre-wrap">{{ clan.description }}</p>
+  </div>
+  {% endif %}
+
+  <h2 class="text-sm font-semibold text-gray-400 uppercase mb-2">Members</h2>
+  <ul class="space-y-2">
+    {% for mem in members %}
+    {% set mem_role = mem.clan_role or 'member' %}
+    <li class="flex items-center gap-2 bg-gray-800 rounded px-4 py-2">
+      <span class="text-sm font-medium">{{ mem.username }}</span>
+      <span class="text-xs px-1.5 py-0.5 rounded {{ role_badge[mem_role] if mem_role in role_badge else 'bg-gray-600 text-gray-200' }}">
+        {{ mem_role }}
+      </span>
+    </li>
+    {% endfor %}
+  </ul>
+</div>
+
+<script>
+function applyClan(id, btn) {
+  btn.disabled = true;
+  fetch(`/api/clan/${id}/apply`, {
+    method: 'POST', headers: {'Content-Type':'application/json'}
+  }).then(r => r.json()).then(j => {
+    if (j.ok) {
+      btn.textContent = 'Applied ✓';
+      btn.className = btn.className.replace(/bg-green-\d+/g, 'bg-gray-600').replace(/hover:bg-green-\d+/g, '');
+    } else { alert(j.error); btn.disabled = false; }
+  });
+}
+</script>
+
+{% endblock %}

@@ -23,11 +23,28 @@ The navbar receives a `nav_is_admin` flag from an app-level context processor an
 
 ## Player roles
 
+There are two independent role fields on the `player` table:
+
+### System role (`player.role`)
+Controls access to game routes and the admin area.
+
 | Role | Access |
 |---|---|
 | `player` | All normal game routes |
 | `admin` | All normal routes + `/admin/*` (dashboard + test harness) |
 | `banned` | Login rejected at the `login_required` check |
+
+### Clan role (`player.clan_role`)
+Controls permissions within the player's clan. `NULL` when the player is not in any clan.
+
+| Clan role | Permissions |
+|---|---|
+| `leader` | Full control — promote/demote anyone, set description, kick, disband |
+| `co-leader` | Promote/demote Elders and Members; accept/reject applications |
+| `elder` | Accept/reject applications; send recruitment DMs |
+| `member` | Chat only |
+
+The two roles are completely independent. An `admin` player has no special powers inside a clan unless they also hold a leader/elder role there.
 
 ---
 

@@ -190,7 +190,7 @@ def run_admin_formation_tests(
     if not player or player.get("role") != "admin":
         raise ValueError("Only admin accounts can run test harness battles.")
 
-    star_level = max(1, min(6, int(star_level)))
+    star_level = max(1, min(10, int(star_level)))
     clean_types = {t for t in target_types if t in ALLOWED_TARGET_TYPES}
     if not clean_types:
         raise ValueError("At least one target type must be selected.")

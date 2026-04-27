@@ -99,9 +99,9 @@ _DEFENCE_BUILDINGS: dict[str, dict] = {
         "base_costs":        {"gold": 50, "food": 0, "timber": 0,  "metal": 100},
         "base_build_time":   45,
         "unit_produced":     "Cannon",
-        "base_unit_hp":      30,
-        "base_unit_damage":  5,
-        "base_unit_defense": 3,
+        "base_unit_hp":      300,
+        "base_unit_damage":  50,
+        "base_unit_defense": 30,
         "unit_range":        4,
     },
     "Archer Tower": {
@@ -109,9 +109,9 @@ _DEFENCE_BUILDINGS: dict[str, dict] = {
         "base_costs":        {"gold": 0,  "food": 0, "timber": 60, "metal": 60},
         "base_build_time":   45,
         "unit_produced":     "Archer Tower",
-        "base_unit_hp":      20,
-        "base_unit_damage":  3,
-        "base_unit_defense": 2,
+        "base_unit_hp":      200,
+        "base_unit_damage":  30,
+        "base_unit_defense": 20,
         "unit_range":        3,
     },
 }
@@ -129,8 +129,8 @@ _SPECIAL_BUILDINGS: dict[str, dict] = {
 _TROOPS: dict[str, dict] = {
     "Barbarian": {
         "category":          "infantry",
-        "base_hp":           10, "base_damage": 1, "base_defense": 0,
-        "base_range":        1,  "speed": 1.0,
+        "base_hp":           100, "base_damage": 10, "base_defense": 0,
+        "base_range":        1,   "speed": 1.0,
         "base_costs":        {"gold": 5,  "food": 3,  "timber": 0, "metal": 0},
         "base_training_time": 30,
         "lore": (
@@ -141,8 +141,8 @@ _TROOPS: dict[str, dict] = {
     },
     "Archer": {
         "category":          "ranged",
-        "base_hp":           6,  "base_damage": 2, "base_defense": 0,
-        "base_range":        2,  "speed": 0.5,
+        "base_hp":           60,  "base_damage": 20, "base_defense": 0,
+        "base_range":        2,   "speed": 0.5,
         "base_costs":        {"gold": 8,  "food": 2,  "timber": 0, "metal": 0},
         "base_training_time": 45,
         "lore": (
@@ -153,8 +153,8 @@ _TROOPS: dict[str, dict] = {
     },
     "Troll": {
         "category":          "monster",
-        "base_hp":           20, "base_damage": 3, "base_defense": 2,
-        "base_range":        1,  "speed": 1.0,
+        "base_hp":           200, "base_damage": 30, "base_defense": 20,
+        "base_range":        1,   "speed": 1.0,
         "base_costs":        {"gold": 20, "food": 5,  "timber": 0, "metal": 5},
         "base_training_time": 120,
         "lore": (
@@ -165,8 +165,8 @@ _TROOPS: dict[str, dict] = {
     },
     "Wraith": {
         "category":          "monster",
-        "base_hp":           8,  "base_damage": 3, "base_defense": 0,
-        "base_range":        3,  "speed": 1.0,
+        "base_hp":           80,  "base_damage": 30, "base_defense": 0,
+        "base_range":        3,   "speed": 1.0,
         "base_costs":        {"gold": 25, "food": 0,  "timber": 0, "metal": 10},
         "base_training_time": 120,
         "lore": (
@@ -177,8 +177,8 @@ _TROOPS: dict[str, dict] = {
     },
     "Longbowman": {
         "category":          "ranged",
-        "base_hp":           6,  "base_damage": 2, "base_defense": 0,
-        "base_range":        3,  "speed": 0.5,
+        "base_hp":           60,  "base_damage": 20, "base_defense": 0,
+        "base_range":        3,   "speed": 0.5,
         "base_costs":        {"gold": 12, "food": 2,  "timber": 3, "metal": 0},
         "base_training_time": 60,
         "lore": (
@@ -189,8 +189,8 @@ _TROOPS: dict[str, dict] = {
     },
     "Hussar": {
         "category":          "cavalry",
-        "base_hp":           8,  "base_damage": 3, "base_defense": 1,
-        "base_range":        1,  "speed": 2.0,
+        "base_hp":           80,  "base_damage": 30, "base_defense": 10,
+        "base_range":        1,   "speed": 2.0,
         "base_costs":        {"gold": 18, "food": 5,  "timber": 0, "metal": 4},
         "base_training_time": 90,
         "lore": (
@@ -201,8 +201,8 @@ _TROOPS: dict[str, dict] = {
     },
     "Cannon": {
         "category":          "siege_defence",
-        "base_hp":           30, "base_damage": 5, "base_defense": 3,
-        "base_range":        4,  "speed": 0.0,
+        "base_hp":           300, "base_damage": 50, "base_defense": 30,
+        "base_range":        4,   "speed": 0.0,
         "base_costs":        {"gold": 50, "food": 0,  "timber": 0,  "metal": 80},
         "base_training_time": 300,
         "lore": (
@@ -213,8 +213,8 @@ _TROOPS: dict[str, dict] = {
     },
     "Archer Tower": {
         "category":          "siege_defence",
-        "base_hp":           20, "base_damage": 3, "base_defense": 2,
-        "base_range":        3,  "speed": 0.0,
+        "base_hp":           200, "base_damage": 30, "base_defense": 20,
+        "base_range":        3,   "speed": 0.0,
         "base_costs":        {"gold": 35, "food": 0,  "timber": 30, "metal": 50},
         "base_training_time": 300,
         "lore": (
@@ -222,6 +222,38 @@ _TROOPS: dict[str, dict] = {
             "sustained ranged fire."
         ),
         "notes": "Spawned into battle from the Archer Tower building. Stationary (speed 0).",
+    },
+    # ── Tier-10 monster types ────────────────────────────────────────── #
+    # Appear in star-level 7-10 camps and forts.
+    # Stats are set so that ~1 billion level-10 Barbarians+Archers (16 cells,
+    # 62.5M per cell) barely defeat 2 Demons/Pegasi.
+    "Demon": {
+        "category":          "monster",
+        "base_hp":           400_000_000_000,    # 400 billion
+        "base_damage":       1_200_000_000,       # 1.2 billion
+        "base_defense":      1_000_000_000,       # 1 billion — blocks unstacked troops
+        "base_range":        1,  "speed": 1.0,
+        "base_costs":        {"gold": 0, "food": 0, "timber": 0, "metal": 0},
+        "base_training_time": 0,
+        "lore": (
+            "An ancient infernal champion. Its armour alone repels all but "
+            "the most overwhelming forces."
+        ),
+        "notes": "Tier-10 monster unit. Spawns in star-level 7-10 forts and camps.",
+    },
+    "Pegasus": {
+        "category":          "monster",
+        "base_hp":           250_000_000_000,    # 250 billion
+        "base_damage":       2_000_000_000,       # 2 billion
+        "base_defense":      0,
+        "base_range":        3,  "speed": 0.5,
+        "base_costs":        {"gold": 0, "food": 0, "timber": 0, "metal": 0},
+        "base_training_time": 0,
+        "lore": (
+            "A demonic winged hunter. Unarmoured but deals catastrophic "
+            "ranged damage from afar."
+        ),
+        "notes": "Tier-10 monster unit. Spawns in star-level 7-10 forts and camps.",
     },
 }
 

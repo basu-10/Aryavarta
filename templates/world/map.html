@@ -317,4 +317,272 @@ loadMap();
 setInterval(loadMap, 10000);
 </script>
 
+{# ── World Chat Panel ────────────────────────────────────────────────── #}
+<div class="mt-4 flex gap-4 flex-wrap">
+
+  {# World Chat #}
+  <div class="flex-1 min-w-[280px] bg-gray-900 border border-gray-700 rounded-xl flex flex-col" style="height:320px">
+    <div class="px-4 py-2 border-b border-gray-700 flex items-center justify-between">
+      <span class="font-semibold text-sm text-gray-200">🌍 World Chat</span>
+    </div>
+    <div id="world-chat-messages"
+         class="flex-1 overflow-y-auto px-3 py-2 space-y-1 text-xs"
+         hx-get="/api/world/chat"
+         hx-trigger="load, every 5s"
+         hx-swap="innerHTML">
+      <p class="text-gray-600 italic text-center">Loading…</p>
+    </div>
+    <div class="px-3 py-2 border-t border-gray-700 flex gap-2">
+      <input id="world-chat-input" type="text" maxlength="300"
+             placeholder="Say something to the world…"
+             class="flex-1 bg-gray-800 border border-gray-600 rounded px-2 py-1.5 text-xs text-gray-100 placeholder-gray-500 focus:outline-none focus:border-blue-500" />
+      <button onclick="sendWorldChat()" type="button"
+              class="bg-blue-600 hover:bg-blue-500 text-white text-xs px-3 py-1.5 rounded font-medium">Send</button>
+    </div>
+  </div>
+
+  {# DM Inbox #}
+  <div class="w-56 bg-gray-900 border border-gray-700 rounded-xl flex flex-col" style="height:320px">
+    <div class="px-4 py-2 border-b border-gray-700 flex items-center justify-between">
+      <span class="font-semibold text-sm text-gray-200">✉ Messages</span>
+      <span id="dm-unread-badge" class="hidden bg-red-500 text-white text-[10px] font-bold rounded-full px-1.5 py-0.5">0</span>
+    </div>
+    <div id="dm-inbox-list"
+         class="flex-1 overflow-y-auto py-1"
+         hx-get="/api/dm/inbox"
+         hx-trigger="load, every 8s"
+         hx-swap="innerHTML">
+    </div>
+  </div>
+</div>
+
+{# Player context menu (shown on name click) #}
+<div id="player-ctx-menu"
+     class="hidden fixed z-50 bg-gray-900 border border-gray-600 rounded-xl shadow-2xl py-1 min-w-[200px]"
+     style="min-width:200px">
+  <div class="px-3 py-2 border-b border-gray-700 text-xs font-semibold text-gray-300" id="ctx-player-name"></div>
+  <button type="button" onclick="ctxVisitCastle()"
+          class="w-full text-left px-4 py-2 text-sm text-gray-200 hover:bg-gray-700 flex items-center gap-2">
+    🏰 Visit Castle
+  </button>
+  <button type="button" onclick="ctxSeeOnMap()"
+          class="w-full text-left px-4 py-2 text-sm text-gray-200 hover:bg-gray-700 flex items-center gap-2">
+    📍 See on Map
+  </button>
+  <button type="button" onclick="ctxSendDm()"
+          class="w-full text-left px-4 py-2 text-sm text-gray-200 hover:bg-gray-700 flex items-center gap-2">
+    ✉ Send Message
+  </button>
+  <button type="button" onclick="ctxRecruit()"
+          class="w-full text-left px-4 py-2 text-sm text-gray-200 hover:bg-gray-700 flex items-center gap-2">
+    📣 Send Recruitment
+  </button>
+</div>
+
+{# DM Conversation panel #}
+<div id="dm-panel"
+     class="hidden fixed bottom-0 right-4 z-50 bg-gray-900 border border-gray-700 rounded-t-xl shadow-2xl flex flex-col"
+     style="width:320px;height:420px">
+  <div class="flex items-center justify-between px-4 py-2 border-b border-gray-700">
+    <span id="dm-panel-title" class="font-semibold text-sm text-gray-200">DM</span>
+    <button onclick="closeDmPanel()" class="text-gray-400 hover:text-white text-lg leading-none">&times;</button>
+  </div>
+  <div id="dm-panel-messages" class="flex-1 overflow-y-auto px-3 py-2"></div>
+  <div class="px-3 py-2 border-t border-gray-700 flex gap-2">
+    <input id="dm-input" type="text" maxlength="500"
+           placeholder="Type a message…"
+           class="flex-1 bg-gray-800 border border-gray-600 rounded px-2 py-1.5 text-xs text-gray-100 placeholder-gray-500 focus:outline-none focus:border-blue-500" />
+    <button onclick="sendDm()" type="button"
+            class="bg-blue-600 hover:bg-blue-500 text-white text-xs px-3 py-1.5 rounded font-medium">Send</button>
+  </div>
+</div>
+
+<script>
+// ── World Chat ──────────────────────────────────────────────────────── //
+async function sendWorldChat() {
+  const input = document.getElementById('world-chat-input');
+  const msg = input.value.trim();
+  if (!msg) return;
+  input.value = '';
+  const res = await fetch('/api/world/chat', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({message: msg}),
+  });
+  if (res.ok) {
+    // Trigger HTMX refresh
+    htmx.trigger('#world-chat-messages', 'load');
+  }
+}
+
+document.getElementById('world-chat-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter') sendWorldChat();
+});
+
+// Delegated click on sender names in world chat
+document.getElementById('world-chat-messages').addEventListener('click', e => {
+  const btn = e.target.closest('.chat-name-btn');
+  if (!btn) return;
+  const pid = parseInt(btn.dataset.senderId);
+  if (pid === PLAYER_ID) return; // don't show menu for self
+  showPlayerCtxMenu(e, {
+    id: pid,
+    name: btn.dataset.senderName,
+    castleId: btn.dataset.castleId || null,
+    gridX: btn.dataset.gridX || null,
+    gridY: btn.dataset.gridY || null,
+  });
+});
+
+// ── Player context menu ─────────────────────────────────────────────── //
+let _ctxPlayer = null;
+
+function showPlayerCtxMenu(event, player) {
+  _ctxPlayer = player;
+  const menu = document.getElementById('player-ctx-menu');
+  document.getElementById('ctx-player-name').textContent = player.name;
+  menu.classList.remove('hidden');
+  const x = Math.min(event.clientX, window.innerWidth - 220);
+  const y = Math.min(event.clientY, window.innerHeight - 200);
+  menu.style.left = `${x}px`;
+  menu.style.top  = `${y}px`;
+}
+
+function closeCtxMenu() {
+  document.getElementById('player-ctx-menu').classList.add('hidden');
+  _ctxPlayer = null;
+}
+
+document.addEventListener('click', e => {
+  if (!document.getElementById('player-ctx-menu').classList.contains('hidden')) {
+    if (!e.target.closest('#player-ctx-menu') && !e.target.closest('.chat-name-btn')) {
+      closeCtxMenu();
+    }
+  }
+});
+
+async function ctxVisitCastle() {
+  if (!_ctxPlayer) return;
+  closeCtxMenu();
+  const pid = _ctxPlayer.id;
+  // Navigate to the player's castle — use the world item popup for now
+  // since there's no public castle view yet; fall back to a world anchor.
+  window.location.href = `/world?highlight_player=${pid}`;
+}
+
+function ctxSeeOnMap() {
+  if (!_ctxPlayer || !_ctxPlayer.gridX) return;
+  closeCtxMenu();
+  const x = parseInt(_ctxPlayer.gridX);
+  const y = parseInt(_ctxPlayer.gridY);
+  // Scroll the world grid to the player's castle cell
+  scrollGridToCell(x, y);
+}
+
+function scrollGridToCell(gx, gy) {
+  const size = cellPx();
+  const scrollEl = document.getElementById('world-map-scroll');
+  const left = gx * (size + 1) - scrollEl.clientWidth / 2;
+  const top  = gy * (size + 1) - scrollEl.clientHeight / 2;
+  scrollEl.scrollTo({ left: Math.max(0, left), top: Math.max(0, top), behavior: 'smooth' });
+}
+
+async function ctxRecruit() {
+  if (!_ctxPlayer) return;
+  const pid = _ctxPlayer.id;
+  closeCtxMenu();
+  const res = await fetch(`/api/world/player/${pid}/recruit`, {method:'POST'});
+  if (res.ok) {
+    showToast(`Recruitment message sent to ${_ctxPlayer.name}!`);
+    openDmPanel(_ctxPlayer.id, _ctxPlayer.name);
+  }
+}
+
+function ctxSendDm() {
+  if (!_ctxPlayer) return;
+  const { id, name } = _ctxPlayer;
+  closeCtxMenu();
+  openDmPanel(id, name);
+}
+
+// ── DM panel ───────────────────────────────────────────────────────── //
+let _dmPartnerId = null;
+let _dmPollTimer = null;
+
+function openDmPanel(partnerId, partnerName) {
+  _dmPartnerId = partnerId;
+  document.getElementById('dm-panel-title').textContent = `✉ ${partnerName}`;
+  document.getElementById('dm-panel').classList.remove('hidden');
+  loadDmMessages();
+  if (_dmPollTimer) clearInterval(_dmPollTimer);
+  _dmPollTimer = setInterval(loadDmMessages, 5000);
+}
+
+function closeDmPanel() {
+  document.getElementById('dm-panel').classList.add('hidden');
+  _dmPartnerId = null;
+  if (_dmPollTimer) { clearInterval(_dmPollTimer); _dmPollTimer = null; }
+}
+
+async function loadDmMessages() {
+  if (!_dmPartnerId) return;
+  const res = await fetch(`/api/dm/${_dmPartnerId}`);
+  if (!res.ok) return;
+  const html = await res.text();
+  const container = document.getElementById('dm-panel-messages');
+  container.innerHTML = html;
+  container.scrollTop = container.scrollHeight;
+}
+
+async function sendDm() {
+  if (!_dmPartnerId) return;
+  const input = document.getElementById('dm-input');
+  const msg = input.value.trim();
+  if (!msg) return;
+  input.value = '';
+  const res = await fetch(`/api/dm/${_dmPartnerId}`, {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({message: msg}),
+  });
+  if (res.ok) loadDmMessages();
+}
+
+document.getElementById('dm-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter') sendDm();
+});
+
+// Inbox: open DM on click
+document.getElementById('dm-inbox-list').addEventListener('click', e => {
+  const btn = e.target.closest('.dm-open-btn');
+  if (!btn) return;
+  openDmPanel(parseInt(btn.dataset.partnerId), btn.dataset.partnerName);
+});
+
+// Poll unread count for nav badge
+async function pollUnread() {
+  const res = await fetch('/api/dm/unread');
+  if (!res.ok) return;
+  const {unread} = await res.json();
+  const badge = document.getElementById('dm-unread-badge');
+  if (unread > 0) {
+    badge.textContent = unread;
+    badge.classList.remove('hidden');
+  } else {
+    badge.classList.add('hidden');
+  }
+}
+setInterval(pollUnread, 10000);
+pollUnread();
+
+// ── Toast helper ───────────────────────────────────────────────────── //
+function showToast(text) {
+  const el = document.createElement('div');
+  el.textContent = text;
+  el.className = 'fixed bottom-6 left-1/2 -translate-x-1/2 z-[9999] bg-gray-800 border border-gray-600 text-gray-100 text-sm px-5 py-2.5 rounded-xl shadow-xl';
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 3500);
+}
+</script>
+
 {% endblock %}

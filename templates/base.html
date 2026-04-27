@@ -32,7 +32,7 @@
       <a href="{{ url_for('clan.clan_page') }}"    class="text-gray-400 hover:text-white text-sm transition-colors">Clan</a>
       <a href="{{ url_for('battle.setup') }}"      class="text-gray-400 hover:text-white text-sm transition-colors">Simulate</a>
       <a href="{{ url_for('auth.battles') }}"      class="text-gray-400 hover:text-white text-sm transition-colors">Battles</a>
-      <a href="{{ url_for('wiki.troopedia_index') }}" class="text-gray-400 hover:text-white text-sm transition-colors">Troopedia</a>
+      <a href="{{ url_for('wiki.wiki_index') }}" class="text-gray-400 hover:text-white text-sm transition-colors">Wiki</a>
       {% if nav_is_admin %}
       <a href="{{ url_for('admin.dashboard') }}" class="text-amber-400 hover:text-amber-300 text-sm transition-colors">Admin Dashboard</a>
       <a href="{{ url_for('admin.test_run_page') }}" class="text-amber-400 hover:text-amber-300 text-sm transition-colors">Test Run</a>
@@ -40,7 +40,7 @@
       <span class="ml-auto text-gray-500 text-xs">{{ session.get('username') }}</span>
       <a href="{{ url_for('auth.logout') }}"       class="text-red-400 hover:text-red-300 text-sm">Logout</a>
     {% else %}
-      <a href="{{ url_for('wiki.troopedia_index') }}" class="text-gray-400 hover:text-white text-sm transition-colors">Troopedia</a>
+      <a href="{{ url_for('wiki.wiki_index') }}" class="text-gray-400 hover:text-white text-sm transition-colors">Wiki</a>
       <a href="{{ url_for('auth.login') }}"    class="ml-auto text-gray-400 hover:text-white text-sm">Login</a>
       <a href="{{ url_for('auth.register') }}" class="text-gray-400 hover:text-white text-sm">Register</a>
     {% endif %}

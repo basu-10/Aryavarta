@@ -8,66 +8,87 @@ TEAM_A_COLS = [0, 1, 2, 3]   # Team A starts on the left
 TEAM_B_COLS = [5, 6, 7, 8]   # Team B starts on the right
 # Column 4 is no-man's land
 
-MAX_TICKS = 200  # Safety ceiling to prevent infinite loops
+MAX_TICKS = 500  # Safety ceiling to prevent infinite loops — raised to handle high-HP battles
 
-# Unit base stats registry
+# Unit base stats registry (LEVEL 1 base stats)
+# All human troops scaled to Barbarian base_hp = 100 (10× rescale from original).
+# Monster difficulty tiers:
+#   Tier 1 (star 1-6) : Troll / Wraith  — challenging for small stacks
+#   Tier 10 (star 7-10): Demon / Pegasus — require ~1 billion stacked level-10 troops
 # speed: 1.0 = 1 cell/tick (1x), 0.5 = 1 cell every 2 ticks (0.5x)
 UNIT_STATS: dict[str, dict] = {
     "Barbarian": {
-        "hp": 10,
-        "damage": 1,
+        "hp": 100,
+        "damage": 10,
         "defense": 0,
         "range": 1,
         "speed": 1.0,   # 1x — advances 1 cell every tick
     },
     "Archer": {
-        "hp": 6,
-        "damage": 2,
+        "hp": 60,
+        "damage": 20,
         "defense": 0,
         "range": 2,
         "speed": 0.5,   # 0.5x — advances 1 cell every 2 ticks
     },
     "Troll": {
-        "hp": 20,
-        "damage": 3,
-        "defense": 2,
+        "hp": 200,
+        "damage": 30,
+        "defense": 20,
         "range": 1,
         "speed": 1.0,   # 1x melee brute
     },
     "Wraith": {
-        "hp": 8,
-        "damage": 3,
+        "hp": 80,
+        "damage": 30,
         "defense": 0,
         "range": 3,
         "speed": 1.0,   # 1x fast ranged glass cannon
     },
     "Longbowman": {
-        "hp": 6,
-        "damage": 2,
+        "hp": 60,
+        "damage": 20,
         "defense": 0,
         "range": 3,
         "speed": 0.5,   # slow, long-range infantry
     },
     "Hussar": {
-        "hp": 8,
-        "damage": 3,
-        "defense": 1,
+        "hp": 80,
+        "damage": 30,
+        "defense": 10,
         "range": 1,
         "speed": 2.0,   # fast cavalry
     },
     "Cannon": {
-        "hp": 30,
-        "damage": 5,
-        "defense": 3,
+        "hp": 300,
+        "damage": 50,
+        "defense": 30,
         "range": 4,
         "speed": 0.0,   # stationary defence building unit
     },
     "Archer Tower": {
-        "hp": 20,
-        "damage": 3,
-        "defense": 2,
+        "hp": 200,
+        "damage": 30,
+        "defense": 20,
         "range": 3,
         "speed": 0.0,   # stationary defence building unit
+    },
+    # ── Tier-10 monster types ────────────────────────────────────────── #
+    # Require ~1 billion stacked level-10 Barbarians+Archers (across all 16
+    # attacker cells) to defeat 2 Demons — the minimum spawn count.
+    "Demon": {
+        "hp": 400_000_000_000,       # 400 billion
+        "damage": 1_200_000_000,     # 1.2 billion
+        "defense": 1_000_000_000,    # 1 billion — blocks all but stacked troops
+        "range": 1,
+        "speed": 1.0,
+    },
+    "Pegasus": {
+        "hp": 250_000_000_000,       # 250 billion
+        "damage": 2_000_000_000,     # 2 billion
+        "defense": 0,                # No physical armour — pure glass-cannon
+        "range": 3,
+        "speed": 0.5,
     },
 }
 
@@ -83,6 +104,8 @@ UNIT_CLASSIFICATION: dict[str, dict] = {
     "Hussar": {"faction": "human", "type": "melee"},
     "Cannon": {"faction": "human", "type": "ranged"},
     "Archer Tower": {"faction": "human", "type": "ranged"},
+    "Demon": {"faction": "monster", "type": "melee"},
+    "Pegasus": {"faction": "monster", "type": "ranged"},
 }
 
 # ── World map ──────────────────────────────────────────────────────── #
@@ -101,23 +124,47 @@ MAX_MONSTER_CAMPS   = 10  # standalone monster camps on the map
 # Fort slot distribution weights [4, 5, 6, 7, 8, 9, 10 slots]
 FORT_SLOT_WEIGHTS = [20, 20, 20, 15, 10, 10, 5]
 
-# Monster fort/camp spawn table
+# Monster fort/camp spawn table (star levels 1-10)
+# Stars 1-6: Troll/Wraith tier   Stars 7-10: Demon/Pegasus tier
 MONSTER_STAR_SPAWN_WEIGHTS: dict[int, int] = {
-    1: 25,
-    2: 25,
-    3: 20,
-    4: 15,
-    5: 10,
-    6: 5,
+    1:  20,
+    2:  18,
+    3:  15,
+    4:  12,
+    5:  10,
+    6:   8,
+    7:   7,
+    8:   5,
+    9:   3,
+    10:  2,
+}
+
+# Monster unit tier per star level
+# Stars 1-6 → Troll/Wraith,  Stars 7-10 → Demon/Pegasus
+MONSTER_STAR_TIER: dict[int, list[str]] = {
+    1:  ["Troll", "Wraith"],
+    2:  ["Troll", "Wraith"],
+    3:  ["Troll", "Wraith"],
+    4:  ["Troll", "Wraith"],
+    5:  ["Troll", "Wraith"],
+    6:  ["Troll", "Wraith"],
+    7:  ["Demon", "Pegasus"],
+    8:  ["Demon", "Pegasus"],
+    9:  ["Demon", "Pegasus"],
+    10: ["Demon", "Pegasus"],
 }
 
 MONSTER_STAR_UNIT_RANGES: dict[int, tuple[int, int]] = {
-    1: (2, 3),
-    2: (4, 5),
-    3: (6, 8),
-    4: (9, 11),
-    5: (12, 14),
-    6: (15, 16),
+    1:  (2,  3),
+    2:  (4,  5),
+    3:  (6,  8),
+    4:  (9,  11),
+    5:  (12, 14),
+    6:  (15, 16),
+    7:  (2,  3),
+    8:  (4,  5),
+    9:  (6,  8),
+    10: (9,  11),
 }
 
 # Generic star thresholds derived from the world spawn table.

@@ -2,17 +2,22 @@
 
 ## Schema overview
 
-Nine tables in `db/schema.sql`:
+Twelve tables in `db/schema.sql`:
 
 ```
 clan ──< player >──── castle
-                │
-                ├──── fort >──── building
-                │               (also castle → building)
-                ├──── troop
-                ├──── battle_mission
-                └──── clan_message
+  │         │
+  │         ├──── fort >──── building
+  │         │               (also castle → building)
+  │         ├──── troop
+  │         ├──── battle_mission
+  │         └──── clan_message
+  │
+  └──< clan_application >── player
 monster_camp (standalone)
+dm_message (sender ↔ recipient, optional recruit_clan_id)
+training_queue ──< building
+building_ammo  ──< building
 ```
 
 ---
@@ -20,7 +25,22 @@ monster_camp (standalone)
 ## Key design decisions
 
 ### Circular FK between `player` and `clan`
-`clan.leader_id` references `player.id`, and `player.clan_id` references `clan.id`. SQLite cannot enforce both directions without deferrable constraints (which it doesn't support). The FK from `player.clan_id` to `clan` is declared; the reverse is enforced at the application layer (disband_clan clears all member clan_ids before deleting the clan row).
+`clan.leader_id` references `player.id`, and `player.clan_id` references `clan.id`. SQLite cannot enforce both directions without deferrable constraints (which it doesn't support). The FK from `player.clan_id` to `clan` is declared; the reverse is enforced at the application layer (`disband_clan` clears all member `clan_id`s before deleting the clan row).
+
+### Clan roles stored on `player`
+`player.clan_role` holds `'leader' | 'co-leader' | 'elder' | 'member'` (or `NULL` when not in a clan). Storing the role on the player row avoids a separate join table for the common case of "what is this player's clan rank?". Because there is exactly one active role per player at a time, the denormalisation is safe.
+
+### `clan_joined_at` as chat cutoff
+`player.clan_joined_at` records the UTC timestamp at which the player joined their current clan. The clan chat query filters by `sent_at >= clan_joined_at`, so players only see messages from after they joined — no pre-join history is exposed. This is reset to `NULL` when they leave.
+
+### `clan_application` table
+Pending join requests live in a separate table (`status = 'pending' | 'accepted' | 'rejected'`) rather than a boolean flag on the player. This allows:
+- A player to re-apply after rejection (row is updated back to `pending`).
+- The application history to be auditable (`resolved_by`, `resolved_at`).
+- Multiple clans to have independent pending applications from the same player (enforced by the `UNIQUE(clan_id, player_id)` constraint).
+
+### Recruitment DMs reuse `dm_message`
+Instead of a separate `clan_invite` table, recruitment messages set `is_recruit = 1` and store the inviting clan's ID in `recruit_clan_id`. This keeps DM rendering uniform (same inbox) while allowing the recipient to accept/decline inline without a separate page.
 
 ### `fort.owner_id` is nullable
 `NULL` means the fort is unowned / occupied by monsters. No separate "unowned fort" concept is needed; the same row represents both states. When a player captures the fort, `owner_id` is set and `monster_data` is cleared.

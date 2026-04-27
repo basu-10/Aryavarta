@@ -30,11 +30,12 @@ There is no Celery, Redis, or cron. Battle resolution is **client-triggered**: t
 
 | Blueprint | URL prefix | Responsibility |
 |---|---|---|
-| `battle_bp` | `/` | Existing battle simulator (setup, run, results, download) |
+| `battle_bp` | `/` | Battle simulator (setup, run, results, download, history navigation) |
 | `auth_bp` | `/` | Register, login, logout, battle history (`/battles`) |
 | `world_bp` | `/world` | World map, attack dispatch, mission resolution |
 | `fort_bp` | `/` | Castle and fort management (buildings, troops, collect) |
-| `clan_bp` | `/clan` | Clan CRUD, chat |
+| `clan_bp` | `/clan` | Full clan system — creation, roles, applications, chat, recruitment DMs |
+| `wiki_bp` | `/wiki` | Game wiki — landing page, troops compendium, buildings reference, troop detail |
 | `admin_bp` | `/admin` | Admin dashboard (ban, promote, spawn, disband) |
 
 All world-game routes are gated behind the `login_required` decorator defined in `auth_bp`.

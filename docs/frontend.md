@@ -77,9 +77,72 @@ Zoom updates world-cell size and marker size without changing server APIs.
 | Feature | Endpoint | Interval | Trigger |
 |---|---|---|---|
 | Clan chat | `/api/clan/<id>/chat` | 3 s | `hx-trigger="every 3s"` |
+| Clan applications | `/api/clan/<id>/applications` | 5 s | `hx-trigger="every 5s"` |
 | Resource bars | `/api/fort/<id>/resources`, `/api/castle/resources` | 5 s | `hx-trigger="every 5s"` |
 | Active missions countdown | `/api/battles/active` | 5 s | `hx-trigger="every 5s"` |
 | World map | `/api/world/map` (JS fetch) | 10 s | `setInterval` |
+
+---
+
+## Clan tabbed interface
+
+The clan hub (`/clan`) renders one of two views depending on whether the player is currently in a clan.
+
+### Non-member view
+- **Create** form: shows the resource cost (1000 ×4) and submits to `POST /api/clan/create` via Alpine `createClan()`.
+- **All clans** list: each clan card shows member count and a per-card **Apply** button (calls `applyClan(id)`).
+- **Search box**: client-side filter on clan name.
+
+### Member view
+The member view wraps five tabs managed by an Alpine `clanHub()` component:
+
+| Tab | Contents | HTMX polling |
+|---|---|---|
+| Chat | Message list + send box | `every 3s` → `/api/clan/<id>/chat?since=<clan_joined_at>` |
+| Members | Role-badged list; promote/demote/kick for eligible actors | — |
+| Info | Description (editable by Leader/Co-leader), founded date, member count | — |
+| Applications | Pending applicant list with Accept / Reject; only shown for Elder+ | `every 5s` → `/api/clan/<id>/applications` |
+| Attacks | Placeholder for future clan war feature | — |
+
+The header bar shows: clan name, the player's own role badge, member count, **Leave** button, and a notification bell.
+
+---
+
+## Battle history navigation
+
+The results page (`/results/<battle_id>`) now includes ◀ (previous) and ▶ (next) navigation controls.
+
+- `GET /results/<id>?prev=1` and `GET /results/<id>?next=1` resolve the adjacent battle in the list sorted by file modification time.
+- Navigation wraps around (last battle → first; first battle → last).
+- A counter (`N / total`) shows the current position in the full history.
+- `list_battles_sorted()` in `utils/battle_store.py` returns all battle IDs ordered by file mtime.
+
+---
+
+## Battle results battlefield
+
+The tick-by-tick replay viewer on the results page uses the same visual style as the battle setup page:
+
+- **Cell classes**: `bc-cell-a` (Team A columns 0–3), `bc-cell-neutral` (column 4), `bc-cell-b` (Team B columns 5–8).
+- **Cell size**: 80 × 80 px to match the setup battlefield.
+- **Neutral detection**: `isNeutral(col)` in `static/js/tick_viewer.js` checks `col === 4`.
+- Troop sprites and a legend are shown the same way as on the setup page.
+
+---
+
+## Wiki
+
+The wiki replaces the former Troopedia at a new URL hierarchy under `/wiki/`.
+
+| Page | URL | Description |
+|---|---|---|
+| Landing | `/wiki/` | Two entry cards: Troops and Buildings |
+| Troops | `/wiki/troops` | Filterable list of all troop types with stats |
+| Buildings | `/wiki/buildings` | Four category sections: Resource, Military, Defence, Special |
+| Troop detail | `/wiki/troops/<slug>` | Full stat card for a single troop type |
+
+- Data is sourced from the reference tables seeded by `db/ref_seeder.py` (no extra files).
+- Nav link in `base.html` reads "Wiki" (was "Troopedia").
 
 ---
 

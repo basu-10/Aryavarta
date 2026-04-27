@@ -1,0 +1,20 @@
+{% if applications %}
+<ul class="space-y-3" id="applications-list">
+  {% for app in applications %}
+  <li id="app-{{ app.id }}" class="flex items-center justify-between bg-gray-800 rounded px-4 py-3">
+    <div>
+      <span class="font-medium text-sm">{{ app.username }}</span>
+      <span class="text-xs text-gray-400 ml-2">Applied {{ app.applied_at[:10] }}</span>
+    </div>
+    <div class="flex gap-2">
+      <button onclick="resolveApp({{ clan_id }}, {{ app.id }}, true)"
+              class="text-xs bg-green-700 hover:bg-green-600 text-white px-3 py-1 rounded">Accept</button>
+      <button onclick="resolveApp({{ clan_id }}, {{ app.id }}, false)"
+              class="text-xs bg-red-700 hover:bg-red-600 text-white px-3 py-1 rounded">Reject</button>
+    </div>
+  </li>
+  {% endfor %}
+</ul>
+{% else %}
+<p class="text-gray-500 text-sm">No pending applications.</p>
+{% endif %}

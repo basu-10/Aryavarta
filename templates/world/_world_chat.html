@@ -1,0 +1,19 @@
+{% for msg in messages %}
+<div class="flex items-start gap-2 group" data-sender-id="{{ msg.sender_id }}"
+     data-sender-name="{{ msg.username }}" data-castle-id="{{ msg.castle_id or '' }}"
+     data-grid-x="{{ msg.grid_x or '' }}" data-grid-y="{{ msg.grid_y or '' }}">
+  <div class="flex-1 min-w-0">
+    <button type="button"
+            class="font-semibold text-blue-400 hover:text-blue-300 text-xs leading-none chat-name-btn"
+            data-sender-id="{{ msg.sender_id }}"
+            data-sender-name="{{ msg.username }}"
+            data-castle-id="{{ msg.castle_id or '' }}"
+            data-grid-x="{{ msg.grid_x or '' }}"
+            data-grid-y="{{ msg.grid_y or '' }}">{{ msg.username }}</button>
+    <span class="text-gray-300 text-xs ml-1 break-words">{{ msg.message }}</span>
+  </div>
+  <span class="text-gray-600 text-[10px] mt-0.5 shrink-0">{{ msg.sent_at[11:16] }}</span>
+</div>
+{% else %}
+<p class="text-gray-600 text-xs italic text-center">No messages yet. Say hello!</p>
+{% endfor %}

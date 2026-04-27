@@ -40,58 +40,77 @@
 
 <h2 class="text-lg font-semibold mb-3">Buildings ({{ location.slot_count }} slots)</h2>
 {% if location_type == 'castle' %}
+{# ── CoC-style top-down castle base ──────────────────────────────────── #}
 <div class="max-w-4xl mb-8">
-  <div class="grid grid-cols-3 gap-3">
-    {% for slot in range(1, 10) %}
-      {% set is_open_slot = slot <= location.slot_count %}
-      {% if slot in occupied %}
-        {% set b = occupied[slot] %}
-        {% set building_icon = building_icon_map.get(b.type) %}
-        <div onclick="openBuildingPanel({{ b.id }})"
-             class="relative min-h-[150px] sm:min-h-[170px] rounded-xl border {% if b.is_destroyed %}border-red-700{% elif b.build_complete_at %}border-yellow-700{% else %}border-emerald-700/60 hover:border-blue-400 cursor-pointer{% endif %} overflow-hidden transition-colors"
-             style="background-image: linear-gradient(to bottom, rgba(15,23,42,0.12), rgba(15,23,42,0.6)), url('/assets/theme1/map/terrain/grass.svg'); background-size: cover; background-position: center;">
-          <div class="absolute inset-0 bg-gradient-to-t from-slate-950/75 via-slate-900/25 to-transparent"></div>
-          <div class="absolute bottom-0 left-0 right-0 p-2 sm:p-3">
-            <div class="flex items-center gap-2 mb-1">
-              {% if building_icon %}
-              <img src="{{ building_icon }}" alt="{{ b.type }}" class="w-5 h-5 object-contain drop-shadow" />
-              {% endif %}
-              <div class="font-semibold text-xs sm:text-sm leading-tight">{{ b.type }}</div>
+  <div class="castle-base-wrapper relative w-full rounded-xl overflow-hidden select-none"
+       style="aspect-ratio:1/1; max-height:680px; background:#1a3a0d;">
+
+    {# Background field image - the CoC-style grass base #}
+    <img src="/assets/theme1/ui/castle-base/base-field.svg"
+         alt="Castle Base" draggable="false"
+         class="absolute inset-0 w-full h-full object-cover pointer-events-none" />
+
+    {# 3×3 building overlay grid, positioned on the inner grass area (≈ 20%–80% of the base image) #}
+    <div class="absolute"
+         style="top:21%; left:21%; width:58%; height:58%;
+                display:grid; grid-template-columns:repeat(3,1fr); grid-template-rows:repeat(3,1fr); gap:2%;">
+      {% for slot in range(1, 10) %}
+        {% set is_open_slot = slot <= location.slot_count %}
+        {% if slot in occupied %}
+          {% set b = occupied[slot] %}
+          {% set building_icon = building_icon_map.get(b.type) %}
+          <div onclick="openBuildingPanel({{ b.id }})"
+               title="{{ b.type }} (Lv {{ b.level }})"
+               class="relative rounded-lg cursor-pointer transition-all group
+                      {% if b.is_destroyed %}outline outline-2 outline-red-500
+                      {% elif b.build_complete_at %}outline outline-2 outline-yellow-500
+                      {% else %}hover:outline hover:outline-2 hover:outline-blue-400{% endif %}
+                      overflow-hidden flex flex-col items-center justify-center"
+               style="background:rgba(0,0,0,0.18); backdrop-filter:blur(1px);">
+            {# Building icon – fills most of the cell #}
+            {% if building_icon %}
+            <img src="{{ building_icon }}" alt="{{ b.type }}"
+                 class="w-[55%] h-[55%] object-contain drop-shadow-lg pointer-events-none" />
+            {% else %}
+            <div class="text-2xl pointer-events-none">🏗</div>
+            {% endif %}
+            {# Status badge #}
+            <div class="absolute bottom-0 inset-x-0 text-center py-0.5 text-[9px] leading-tight
+                        {% if b.is_destroyed %}bg-red-900/80 text-red-200
+                        {% elif b.build_complete_at %}bg-yellow-900/80 text-yellow-200
+                        {% else %}bg-black/50 text-gray-200{% endif %}">
+              {% if b.is_destroyed %}Destroyed
+              {% elif b.build_complete_at %}<span class="countdown-label" data-complete="{{ b.build_complete_at }}">…</span>
+              {% else %}{{ b.type|truncate(12,true,'') }} Lv{{ b.level }}{% endif %}
             </div>
-            <div class="text-[11px] text-gray-200">Level {{ b.level }}</div>
+            {# Repair button overlay for destroyed buildings #}
             {% if b.is_destroyed %}
-              <span class="text-red-300 text-[11px] block">Destroyed</span>
-              <button onclick="event.stopPropagation(); repairBuilding({{ b.id }})"
-                      class="mt-2 text-xs bg-yellow-700 hover:bg-yellow-600 text-white px-2 py-1 rounded w-full">
-                Repair
-              </button>
-            {% elif b.build_complete_at %}
-              <span class="text-yellow-300 text-[11px] block">Building...</span>
-              <div class="text-[11px] text-yellow-100/80 mt-1" data-complete="{{ b.build_complete_at }}">
-                <span class="countdown-label">calculating...</span>
-              </div>
-            {% else %}
-              <span class="text-emerald-300 text-[11px] block">Active</span>
-              <span class="text-[10px] text-gray-300/90 block">click to manage</span>
+            <button onclick="event.stopPropagation(); repairBuilding({{ b.id }})"
+                    class="absolute inset-0 m-auto w-[80%] h-6 bg-yellow-700 hover:bg-yellow-600 text-white text-[9px] font-semibold rounded">
+              Repair
+            </button>
             {% endif %}
           </div>
-        </div>
-      {% else %}
-        <div class="relative min-h-[150px] sm:min-h-[170px] rounded-xl border {% if is_open_slot %}border-dashed border-emerald-700/60{% else %}border-slate-700/70{% endif %} overflow-hidden"
-             style="background-image: linear-gradient(to bottom, rgba(15,23,42,0.1), rgba(15,23,42,0.58)), url('/assets/theme1/map/terrain/grass.svg'); background-size: cover; background-position: center;">
-          <div class="absolute inset-0 bg-slate-950/35"></div>
-          <div class="absolute inset-0 flex flex-col items-center justify-center gap-2 p-2">
-            {% if is_open_slot %}
-              <span class="text-[11px] text-gray-200">Empty plot {{ slot }}</span>
-              <button onclick="openBuildModal({{ slot }})"
-                      class="text-xs bg-blue-700 hover:bg-blue-600 text-white px-3 py-1 rounded">Build</button>
-            {% else %}
-              <span class="text-[11px] text-gray-400">Locked plot {{ slot }}</span>
-            {% endif %}
+        {% else %}
+          {% if is_open_slot %}
+          <div onclick="openBuildModal({{ slot }})" title="Empty plot {{ slot }} — click to build"
+               class="relative rounded-lg cursor-pointer transition-all
+                      border border-dashed border-emerald-500/50 hover:border-emerald-400
+                      hover:bg-emerald-900/20 flex flex-col items-center justify-center gap-1"
+               style="background:rgba(0,0,0,0.08);">
+            <div class="text-emerald-400 text-lg">＋</div>
+            <div class="text-[9px] text-emerald-500/80">Build</div>
           </div>
-        </div>
-      {% endif %}
-    {% endfor %}
+          {% else %}
+          <div title="Locked plot {{ slot }}"
+               class="relative rounded-lg flex items-center justify-center"
+               style="background:rgba(0,0,0,0.05);">
+            <div class="text-[10px] text-gray-600">🔒</div>
+          </div>
+          {% endif %}
+        {% endif %}
+      {% endfor %}
+    </div>
   </div>
 </div>
 {% else %}
@@ -590,7 +609,8 @@ async function loadAmmo(buildingId, count) {
 function updateCountdowns() {
   document.querySelectorAll('[data-complete]').forEach((el) => {
     const rem = Math.ceil((new Date(el.dataset.complete) - Date.now()) / 1000);
-    const label = el.querySelector('.countdown-label');
+    // Support both: el IS the label, or el CONTAINS a .countdown-label child
+    const label = el.classList.contains('countdown-label') ? el : el.querySelector('.countdown-label');
     if (rem <= 0) {
       if (!didReload) {
         didReload = true;

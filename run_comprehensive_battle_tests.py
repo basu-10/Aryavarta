@@ -67,13 +67,15 @@ _MIXED_BARB   = [(r, c) for r in [0, 1] for c in _TEAM_A_COLS]                  
 _MIXED_ARCH   = [(r, c) for r in [2, 3] for c in _TEAM_A_COLS]                     # 8 cells
 
 # Quantity search ladder (geometric, roughly ×3 each step)
+# Extended into the billions range for Tier-10 Demon/Pegasus encounters
 _QTY_LADDER = [
     1, 3, 5, 10, 25, 50, 100, 250, 500,
     1_000, 5_000, 10_000, 50_000, 100_000,
-    1_000_000, 10_000_000,
+    1_000_000, 10_000_000, 50_000_000, 100_000_000,
+    500_000_000, 1_000_000_000, 2_000_000_000,
 ]
 
-STAR_RANGE = range(1, 7)
+STAR_RANGE = range(1, 11)
 
 
 # ---------------------------------------------------------------------------
@@ -148,7 +150,7 @@ def _ensure_seeded_all_stars(targets_per_star: int = 2, verbose: bool = False) -
     from db import models as m2
     from db.world_seeder import _random_monster_spec  # type: ignore[attr-defined]
 
-    for star in range(1, 7):
+    for star in range(1, 11):
         # Count how many active camps exist at this star level
         from db import get_db
         existing = get_db().execute(
@@ -165,7 +167,7 @@ def _ensure_seeded_all_stars(targets_per_star: int = 2, verbose: bool = False) -
                 print(f"  [seed] Created {needed} monster_camp(s) at star {star}")
 
     # Also ensure monster forts exist for each star level
-    for star in range(1, 7):
+    for star in range(1, 11):
         from db import get_db
         import config
         existing = get_db().execute(
@@ -265,8 +267,8 @@ def _render_table(
     sep = "-" * len(header)
 
     monster_range = {
-        1: "2-3", 2: "4-5", 3: "6-8",
-        4: "9-11", 5: "12-14", 6: "15-16",
+        1: "2-3",  2: "4-5",  3: "6-8",  4: "9-11",  5: "12-14",
+        6: "15-16", 7: "2-3",  8: "4-5",  9: "6-8",   10: "9-11",
     }
 
     print()
@@ -296,8 +298,9 @@ def _render_table(
     print()
     print("Notes:")
     print("  • qty = troops stacked per cell (hp and dmg both scale linearly)")
-    print("  • Barbarian: hp=10, dmg=1, def=0, range=1 | Archer: hp=6, dmg=2, def=0, range=2")
-    print("  • Monster Troll: hp=20, dmg=3, def=2  |  Wraith: hp=8, dmg=3, def=0, range=3")
+    print("  • Barbarian: hp=100, dmg=10, def=0, range=1 | Archer: hp=60, dmg=20, def=0, range=2")
+    print("  • Troll: hp=200, dmg=30, def=20 (stars 1-6) | Wraith: hp=80, dmg=30, def=0, range=3")
+    print("  • Demon: hp=400B, dmg=1.2B, def=1B (stars 7-10) | Pegasus: hp=250B, dmg=2B, range=3")
     print("  • Barb-only: 16 Barbarian cells  |  Archer-only: 16 Archer cells")
     print("  • Mixed: 8 Barbarian cells (rows 0-1) + 8 Archer cells (rows 2-3)")
     print()

@@ -12,27 +12,30 @@ import config
 from db import models as m
 
 
-# Monster types that appear in wild camps and unowned forts
-_MONSTER_TYPES = ["Troll", "Wraith"]
+# Monster types that appear in wild camps and unowned forts, keyed by star tier
+_MONSTER_TYPES = ["Troll", "Wraith"]  # legacy fallback
 
 
-def _random_star_level() -> int:
+def _random_star_level(minimum: int = 1) -> int:
     star_levels = list(config.MONSTER_STAR_SPAWN_WEIGHTS.keys())
     weights = list(config.MONSTER_STAR_SPAWN_WEIGHTS.values())
-    return random.choices(star_levels, weights=weights)[0]
+    result = random.choices(star_levels, weights=weights)[0]
+    return max(minimum, result)
 
 
 def _random_monster_spec(star_level: int) -> list[dict]:
     """
     Build a unit spec list for the given star level.
     Returns [{type, count}, ...] with total units matching the star level.
+    Monster types are drawn from config.MONSTER_STAR_TIER for the given star.
     """
     min_units, max_units = config.MONSTER_STAR_UNIT_RANGES[star_level]
     total = random.randint(min_units, max_units)
+    monster_types = config.MONSTER_STAR_TIER.get(star_level, _MONSTER_TYPES)
 
     spec: dict[str, int] = {}
     for _ in range(total):
-        mtype = random.choice(_MONSTER_TYPES)
+        mtype = random.choice(monster_types)
         spec[mtype] = spec.get(mtype, 0) + 1
 
     return [{"type": t, "count": c} for t, c in spec.items()]
@@ -66,7 +69,7 @@ def seed_world(num_forts: int = 15, num_camps: int = 10, force: bool = False) ->
 
     forts_created = 0
     for _ in range(forts_to_create):
-        star = _random_star_level()
+        star = _random_star_level(minimum=1)
         monster_data = _random_monster_spec(star)
         slot_count = random.choices(
             [4, 5, 6, 7, 8, 9, 10],
@@ -78,7 +81,7 @@ def seed_world(num_forts: int = 15, num_camps: int = 10, force: bool = False) ->
 
     camps_created = 0
     for _ in range(camps_to_create):
-        star = _random_star_level()
+        star = _random_star_level(minimum=1)
         unit_data = _random_monster_spec(star)
         x, y = m.find_empty_cell()
         m.create_monster_camp(x, y, unit_data, star)

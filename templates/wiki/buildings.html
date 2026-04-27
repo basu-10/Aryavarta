@@ -1,0 +1,145 @@
+{% extends "base.html" %}
+{% block title %}Buildings — BattleCells Wiki{% endblock %}
+
+{% block content %}
+
+{# ── Card macro ────────────────────────────────────────────────────────── #}
+{% macro render_card(b) %}
+<div class="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden flex flex-col">
+
+  <!-- Icon panel -->
+  <div class="h-28 bg-gray-800 border-b border-gray-700 flex items-center justify-center">
+    {% if b.icon %}
+      <img src="{{ b.icon }}" alt="{{ b.name }}" class="h-20 w-20 object-contain drop-shadow-lg" />
+    {% else %}
+      <span class="text-5xl select-none opacity-20">🏛</span>
+    {% endif %}
+  </div>
+
+  <!-- Info -->
+  <div class="p-4 flex flex-col gap-2 flex-1">
+    <h3 class="font-semibold text-sm">{{ b.name }}</h3>
+
+    <!-- Build cost -->
+    {% if b.build_cost %}
+    <div class="text-xs text-gray-400">
+      <span class="text-gray-500 uppercase tracking-wide text-[10px]">Build cost</span><br/>
+      {% for res, amt in b.build_cost.items() %}
+        <span class="text-white font-medium">{{ amt }}</span> {{ res }}{% if not loop.last %} · {% endif %}
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="text-xs text-gray-500 italic">Free</div>
+    {% endif %}
+
+    <!-- Build time -->
+    {% if b.build_time and b.build_time > 0 %}
+    <div class="text-xs text-gray-400">
+      <span class="text-gray-500 uppercase tracking-wide text-[10px]">Build time</span><br/>
+      <span class="text-white font-medium">{{ b.build_time }}s</span>
+    </div>
+    {% endif %}
+
+    <!-- Trains -->
+    {% if b.trains %}
+    <div class="text-xs text-gray-400">
+      <span class="text-gray-500 uppercase tracking-wide text-[10px]">Trains</span><br/>
+      <span class="text-white font-medium">{{ b.trains }}</span>
+      {% if b.training_seconds %}
+        <span class="text-gray-500">({{ b.training_seconds }}s/unit)</span>
+      {% endif %}
+    </div>
+    {% endif %}
+
+    <!-- Ammo type -->
+    {% if b.ammo %}
+    <div class="text-xs text-gray-400">
+      <span class="text-gray-500 uppercase tracking-wide text-[10px]">Ammo</span><br/>
+      <span class="text-white font-medium">{{ b.ammo | replace('_', ' ') | title }}</span>
+    </div>
+    {% endif %}
+
+    <!-- Upgrade cost -->
+    {% if b.upgrade_cost %}
+    <div class="text-xs text-gray-400">
+      <span class="text-gray-500 uppercase tracking-wide text-[10px]">Upgrade (base)</span><br/>
+      {% for res, amt in b.upgrade_cost.items() %}
+        <span class="text-white font-medium">{{ amt }}</span> {{ res }}{% if not loop.last %} · {% endif %}
+      {% endfor %}
+    </div>
+    {% endif %}
+
+  </div>
+</div>
+{% endmacro %}
+
+<div class="space-y-10">
+
+  <!-- Breadcrumb + Header -->
+  <div>
+    <nav class="text-xs text-gray-500 flex items-center gap-1 mb-3">
+      <a href="{{ url_for('wiki.wiki_index') }}" class="hover:text-white transition-colors">Wiki</a>
+      <span>/</span>
+      <span class="text-gray-300">Buildings</span>
+    </nav>
+    <h1 class="text-3xl font-bold tracking-tight">🏗 Buildings</h1>
+    <p class="text-gray-400 text-sm mt-2">
+      Build costs, production, and upgrade paths for every structure in BattleCells.
+    </p>
+  </div>
+
+  <!-- Resource Buildings -->
+  {% set resource_names = ['Farm', 'Lumber Mill', 'Merchant', 'Mine'] %}
+  <section>
+    <h2 class="text-xs font-semibold uppercase tracking-widest text-gray-500 mb-4 border-b border-gray-800 pb-1">
+      Resource Production
+    </h2>
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      {% for b in buildings if b.name in resource_names %}
+        {{ render_card(b) }}
+      {% endfor %}
+    </div>
+  </section>
+
+  <!-- Military Buildings -->
+  {% set military_names = ['Garrison', 'Stable'] %}
+  <section>
+    <h2 class="text-xs font-semibold uppercase tracking-widest text-gray-500 mb-4 border-b border-gray-800 pb-1">
+      Military
+    </h2>
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      {% for b in buildings if b.name in military_names %}
+        {{ render_card(b) }}
+      {% endfor %}
+    </div>
+  </section>
+
+  <!-- Defence Buildings -->
+  {% set defence_names = ['Cannon', 'Archer Tower'] %}
+  <section>
+    <h2 class="text-xs font-semibold uppercase tracking-widest text-gray-500 mb-4 border-b border-gray-800 pb-1">
+      Defence
+    </h2>
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      {% for b in buildings if b.name in defence_names %}
+        {{ render_card(b) }}
+      {% endfor %}
+    </div>
+  </section>
+
+  <!-- Special -->
+  {% set special_names = ['Command Centre'] %}
+  <section>
+    <h2 class="text-xs font-semibold uppercase tracking-widest text-gray-500 mb-4 border-b border-gray-800 pb-1">
+      Special
+    </h2>
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      {% for b in buildings if b.name in special_names %}
+        {{ render_card(b) }}
+      {% endfor %}
+    </div>
+  </section>
+
+</div>
+{% endblock %}
+

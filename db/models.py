@@ -87,8 +87,18 @@ def deduct_player_resources(player_id: int, food: float = 0, timber: float = 0,
 
 
 def set_player_clan(player_id: int, clan_id: Optional[int]) -> None:
+    """Legacy helper — prefer create_clan / leave_clan / resolve_application for full clan support."""
     db = get_db()
-    db.execute("UPDATE player SET clan_id=? WHERE id=?", (clan_id, player_id))
+    if clan_id is None:
+        db.execute(
+            "UPDATE player SET clan_id=NULL, clan_role=NULL, clan_joined_at=NULL WHERE id=?",
+            (player_id,),
+        )
+    else:
+        db.execute(
+            "UPDATE player SET clan_id=?, clan_joined_at=datetime('now') WHERE id=?",
+            (clan_id, player_id),
+        )
     db.commit()
 
 
@@ -681,12 +691,21 @@ def get_recent_resolved_missions(player_id: int, limit: int = 10) -> list[dict]:
 
 # ── Clan ─────────────────────────────────────────────────────────────── #
 
+# Role hierarchy — higher index = higher rank
+_CLAN_ROLE_RANK = {"member": 0, "elder": 1, "co-leader": 2, "leader": 3}
+
+CLAN_CREATION_COST = {"food": 1000, "timber": 1000, "gold": 1000, "metal": 1000}
+
+
 def create_clan(name: str, leader_id: int) -> int:
     db = get_db()
     cur = db.execute("INSERT INTO clan (name, leader_id) VALUES (?,?)", (name, leader_id))
-    db.commit()
     clan_id = cur.lastrowid
-    set_player_clan(leader_id, clan_id)
+    db.execute(
+        "UPDATE player SET clan_id=?, clan_role='leader', clan_joined_at=datetime('now') WHERE id=?",
+        (clan_id, leader_id),
+    )
+    db.commit()
     return clan_id
 
 
@@ -699,22 +718,151 @@ def get_clan_by_name(name: str) -> Optional[dict]:
 
 
 def get_all_clans() -> list[dict]:
-    return [dict(r) for r in get_db().execute("SELECT * FROM clan ORDER BY name").fetchall()]
+    rows = get_db().execute(
+        """SELECT c.*, COUNT(p.id) AS member_count
+           FROM clan c LEFT JOIN player p ON p.clan_id=c.id
+           GROUP BY c.id ORDER BY c.name"""
+    ).fetchall()
+    return [dict(r) for r in rows]
+
+
+def get_clan_with_member_count(clan_id: int) -> Optional[dict]:
+    return _row(get_db().execute(
+        """SELECT c.*, COUNT(p.id) AS member_count
+           FROM clan c LEFT JOIN player p ON p.clan_id=c.id
+           WHERE c.id=? GROUP BY c.id""",
+        (clan_id,),
+    ).fetchone())
 
 
 def get_clan_members(clan_id: int) -> list[dict]:
     return [dict(r) for r in get_db().execute(
-        "SELECT id, username, role FROM player WHERE clan_id=?", (clan_id,)
+        "SELECT id, username, clan_role FROM player WHERE clan_id=? ORDER BY clan_role, username",
+        (clan_id,),
     ).fetchall()]
+
+
+def set_clan_description(clan_id: int, description: str) -> None:
+    db = get_db()
+    db.execute("UPDATE clan SET description=? WHERE id=?", (description, clan_id))
+    db.commit()
+
+
+def set_clan_member_role(clan_id: int, target_id: int, new_role: str) -> None:
+    """Update a member's clan_role. If promoting to leader, demote old leader to co-leader."""
+    db = get_db()
+    if new_role == "leader":
+        # Demote current leader to co-leader
+        db.execute(
+            "UPDATE player SET clan_role='co-leader' WHERE clan_id=? AND clan_role='leader'",
+            (clan_id,),
+        )
+        db.execute("UPDATE clan SET leader_id=? WHERE id=?", (target_id, clan_id))
+    db.execute(
+        "UPDATE player SET clan_role=? WHERE id=? AND clan_id=?",
+        (new_role, target_id, clan_id),
+    )
+    db.commit()
+
+
+def remove_clan_member(clan_id: int, player_id: int) -> None:
+    """Kick a player from a clan."""
+    db = get_db()
+    db.execute(
+        "UPDATE player SET clan_id=NULL, clan_role=NULL, clan_joined_at=NULL WHERE id=? AND clan_id=?",
+        (player_id, clan_id),
+    )
+    db.commit()
+
+
+def leave_clan(player_id: int) -> None:
+    db = get_db()
+    db.execute(
+        "UPDATE player SET clan_id=NULL, clan_role=NULL, clan_joined_at=NULL WHERE id=?",
+        (player_id,),
+    )
+    db.commit()
 
 
 def disband_clan(clan_id: int) -> None:
     db = get_db()
-    db.execute("UPDATE player SET clan_id=NULL WHERE clan_id=?", (clan_id,))
+    db.execute(
+        "UPDATE player SET clan_id=NULL, clan_role=NULL, clan_joined_at=NULL WHERE clan_id=?",
+        (clan_id,),
+    )
+    db.execute("DELETE FROM clan_application WHERE clan_id=?", (clan_id,))
     db.execute("DELETE FROM clan_message WHERE clan_id=?", (clan_id,))
     db.execute("DELETE FROM clan WHERE id=?", (clan_id,))
     db.commit()
 
+
+# ── Clan applications ──────────────────────────────────────────────── #
+
+def apply_to_clan(clan_id: int, player_id: int) -> tuple[bool, str]:
+    """Player applies to join a clan. Returns (ok, error_message)."""
+    db = get_db()
+    existing = db.execute(
+        "SELECT status FROM clan_application WHERE clan_id=? AND player_id=?",
+        (clan_id, player_id),
+    ).fetchone()
+    if existing:
+        if existing["status"] == "pending":
+            return False, "Application already pending"
+        # Allow re-application after rejection
+        db.execute(
+            "UPDATE clan_application SET status='pending', applied_at=datetime('now'), resolved_at=NULL, resolved_by=NULL WHERE clan_id=? AND player_id=?",
+            (clan_id, player_id),
+        )
+    else:
+        db.execute(
+            "INSERT INTO clan_application (clan_id, player_id) VALUES (?,?)",
+            (clan_id, player_id),
+        )
+    db.commit()
+    return True, ""
+
+
+def get_pending_applications(clan_id: int) -> list[dict]:
+    rows = get_db().execute(
+        """SELECT ca.id, ca.player_id, ca.applied_at, p.username
+           FROM clan_application ca JOIN player p ON ca.player_id=p.id
+           WHERE ca.clan_id=? AND ca.status='pending'
+           ORDER BY ca.applied_at""",
+        (clan_id,),
+    ).fetchall()
+    return [dict(r) for r in rows]
+
+
+def resolve_application(app_id: int, resolver_id: int, accept: bool) -> tuple[bool, str]:
+    """Accept or reject an application. If accepted, add player to clan."""
+    db = get_db()
+    row = _row(db.execute("SELECT * FROM clan_application WHERE id=?", (app_id,)).fetchone())
+    if not row:
+        return False, "Application not found"
+    if row["status"] != "pending":
+        return False, "Application already resolved"
+    status = "accepted" if accept else "rejected"
+    db.execute(
+        "UPDATE clan_application SET status=?, resolved_at=datetime('now'), resolved_by=? WHERE id=?",
+        (status, resolver_id, app_id),
+    )
+    if accept:
+        db.execute(
+            "UPDATE player SET clan_id=?, clan_role='member', clan_joined_at=datetime('now') WHERE id=?",
+            (row["clan_id"], row["player_id"]),
+        )
+    db.commit()
+    return True, ""
+
+
+def get_player_application(clan_id: int, player_id: int) -> Optional[dict]:
+    return _row(get_db().execute(
+        "SELECT * FROM clan_application WHERE clan_id=? AND player_id=?",
+        (clan_id, player_id),
+    ).fetchone())
+
+
+# ── Clan chat ────────────────────────────────────────────────────────── #
 
 def add_clan_message(clan_id: int, sender_id: int, message: str) -> None:
     db = get_db()
@@ -725,14 +873,119 @@ def add_clan_message(clan_id: int, sender_id: int, message: str) -> None:
     db.commit()
 
 
-def get_clan_messages(clan_id: int, limit: int = 60) -> list[dict]:
+def get_clan_messages(clan_id: int, since_iso: Optional[str] = None, limit: int = 80) -> list[dict]:
+    """Return messages for a clan, optionally only those sent after the player joined."""
+    if since_iso:
+        rows = get_db().execute(
+            """SELECT cm.id, cm.message, cm.sent_at, p.username
+               FROM clan_message cm JOIN player p ON cm.sender_id=p.id
+               WHERE cm.clan_id=? AND cm.sent_at >= ?
+               ORDER BY cm.sent_at DESC LIMIT ?""",
+            (clan_id, since_iso, limit),
+        ).fetchall()
+    else:
+        rows = get_db().execute(
+            """SELECT cm.id, cm.message, cm.sent_at, p.username
+               FROM clan_message cm JOIN player p ON cm.sender_id=p.id
+               WHERE cm.clan_id=? ORDER BY cm.sent_at DESC LIMIT ?""",
+            (clan_id, limit),
+        ).fetchall()
+    return [dict(r) for r in reversed(rows)]
+
+
+# ── Clan recruitment DM ───────────────────────────────────────────────── #
+
+def send_recruit_dm(sender_id: int, recipient_id: int, clan_id: int, message: str) -> int:
+    db = get_db()
+    cur = db.execute(
+        "INSERT INTO dm_message (sender_id, recipient_id, message, is_recruit, recruit_clan_id) VALUES (?,?,?,1,?)",
+        (sender_id, recipient_id, message, clan_id),
+    )
+    db.commit()
+    return cur.lastrowid
+
+
+# ── World chat ───────────────────────────────────────────────────────── #
+
+def add_world_message(sender_id: int, message: str) -> None:
+    db = get_db()
+    db.execute(
+        "INSERT INTO world_message (sender_id, message) VALUES (?,?)",
+        (sender_id, message),
+    )
+    db.commit()
+
+
+def get_world_messages(limit: int = 60) -> list[dict]:
     rows = get_db().execute(
-        """SELECT cm.id, cm.message, cm.sent_at, p.username
-           FROM clan_message cm JOIN player p ON cm.sender_id=p.id
-           WHERE cm.clan_id=? ORDER BY cm.sent_at DESC LIMIT ?""",
-        (clan_id, limit),
+        """SELECT wm.id, wm.message, wm.sent_at, p.username, p.id AS sender_id,
+                  c.id AS castle_id, c.grid_x, c.grid_y
+           FROM world_message wm
+           JOIN player p ON wm.sender_id=p.id
+           LEFT JOIN castle c ON c.player_id=p.id
+           ORDER BY wm.sent_at DESC LIMIT ?""",
+        (limit,),
     ).fetchall()
     return [dict(r) for r in reversed(rows)]
+
+
+# ── Direct messages ──────────────────────────────────────────────────── #
+
+def send_dm(sender_id: int, recipient_id: int, message: str) -> int:
+    db = get_db()
+    cur = db.execute(
+        "INSERT INTO dm_message (sender_id, recipient_id, message) VALUES (?,?,?)",
+        (sender_id, recipient_id, message),
+    )
+    db.commit()
+    return cur.lastrowid
+
+
+def get_dm_conversation(player_a: int, player_b: int, limit: int = 80) -> list[dict]:
+    rows = get_db().execute(
+        """SELECT dm.id, dm.message, dm.sent_at, dm.read_at,
+                  p.username AS sender_username, dm.sender_id, dm.recipient_id
+           FROM dm_message dm JOIN player p ON dm.sender_id=p.id
+           WHERE (dm.sender_id=? AND dm.recipient_id=?)
+              OR (dm.sender_id=? AND dm.recipient_id=?)
+           ORDER BY dm.sent_at DESC LIMIT ?""",
+        (player_a, player_b, player_b, player_a, limit),
+    ).fetchall()
+    return [dict(r) for r in reversed(rows)]
+
+
+def mark_dms_read(reader_id: int, sender_id: int) -> None:
+    """Mark all messages from sender_id to reader_id as read."""
+    db = get_db()
+    db.execute(
+        "UPDATE dm_message SET read_at=? WHERE recipient_id=? AND sender_id=? AND read_at IS NULL",
+        (_now_iso(), reader_id, sender_id),
+    )
+    db.commit()
+
+
+def get_dm_inbox(player_id: int) -> list[dict]:
+    """Return one row per conversation partner, newest message first."""
+    rows = get_db().execute(
+        """SELECT p.id AS partner_id, p.username AS partner_username,
+                  MAX(dm.sent_at) AS last_at,
+                  SUM(CASE WHEN dm.recipient_id=? AND dm.read_at IS NULL THEN 1 ELSE 0 END) AS unread
+           FROM dm_message dm
+           JOIN player p ON p.id = CASE WHEN dm.sender_id=? THEN dm.recipient_id ELSE dm.sender_id END
+           WHERE dm.sender_id=? OR dm.recipient_id=?
+           GROUP BY p.id
+           ORDER BY last_at DESC""",
+        (player_id, player_id, player_id, player_id),
+    ).fetchall()
+    return [dict(r) for r in rows]
+
+
+def get_dm_unread_count(player_id: int) -> int:
+    row = get_db().execute(
+        "SELECT COUNT(*) AS cnt FROM dm_message WHERE recipient_id=? AND read_at IS NULL",
+        (player_id,),
+    ).fetchone()
+    return row["cnt"] if row else 0
 
 
 # ── World map ────────────────────────────────────────────────────────── #

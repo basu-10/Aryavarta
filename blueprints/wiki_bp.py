@@ -1,16 +1,16 @@
 """
-blueprints/wiki_bp.py — Troopedia: game wiki pages for every troop type.
+blueprints/wiki_bp.py — Game Wiki: landing page, troops compendium, and buildings reference.
 """
 
 from __future__ import annotations
 
 import math
 
-from flask import Blueprint, render_template, abort
+from flask import Blueprint, render_template, abort, url_for
 from db import get_db
 import config
 
-wiki_bp = Blueprint("wiki", __name__, url_prefix="/troopedia")
+wiki_bp = Blueprint("wiki", __name__, url_prefix="/wiki")
 
 
 def _slug(name: str) -> str:
@@ -77,14 +77,18 @@ def _fallback_lore_notes(troop_name: str) -> tuple[str | None, str | None]:
         "Hussar": "Fast cavalry from the Stable. Charges at twice normal speed, punching through lines.",
         "Cannon": "Heavy defensive emplacement. Stationary but deals massive damage at great range.",
         "Archer Tower": "Fortified arrow platform. Defends locations with sustained ranged fire.",
+        "Demon": "Ancient terror of the abyss. Nigh-impenetrable hide turns aside all but the most overwhelming numbers.",
+        "Pegasus": "Winged glass-cannon from the outer realms. No armour — pure devastation delivered from range.",
     }
     notes_map: dict[str, str | None] = {
-        "Troll": "Monster unit. Naturally spawns in forts and monster camps.",
-        "Wraith": "Monster unit. Naturally spawns in forts and monster camps.",
+        "Troll": "Monster unit. Naturally spawns in forts and monster camps (stars 1–6).",
+        "Wraith": "Monster unit. Naturally spawns in forts and monster camps (stars 1–6).",
         "Longbowman": "Produced by the Garrison building.",
         "Hussar": "Produced by the Stable building.",
         "Cannon": "Spawned into battle from the Cannon building. Stationary (speed 0).",
         "Archer Tower": "Spawned into battle from the Archer Tower building. Stationary (speed 0).",
+        "Demon": "Tier-10 monster (stars 7–10). Def=1 billion blocks all damage until ~100M+ troops per cell are fielded.",
+        "Pegasus": "Tier-10 monster (stars 7–10). Zero defence but 2 billion damage — kills unarmoured attackers in seconds.",
     }
     return lore_map.get(troop_name), notes_map.get(troop_name)
 
@@ -143,7 +147,12 @@ def _fallback_level_one_rows() -> list[dict]:
 
 
 @wiki_bp.route("/")
-def troopedia_index():
+def wiki_index():
+    return render_template("wiki/index.html")
+
+
+@wiki_bp.route("/troops")
+def troops_index():
     db = get_db()
     # One row per troop — level-1 stats only
     rows = [dict(r) for r in db.execute(
@@ -166,10 +175,41 @@ def troopedia_index():
     for t in troops:
         categories.setdefault(t["category_label"], []).append(t)
 
-    return render_template("wiki/troopedia.html", troops=troops, categories=categories)
+    return render_template("wiki/troops.html", troops=troops, categories=categories)
 
 
-@wiki_bp.route("/<slug>")
+@wiki_bp.route("/buildings")
+def buildings_index():
+    from config import (
+        BUILDING_BUILD_COST, BUILDING_BUILD_TIME,
+        ARMY_BUILDINGS, BUILDING_UPGRADE_COST, DEFENCE_BUILDING_AMMO,
+    )
+    _BUILDING_ICONS: dict[str, str] = {
+        "Farm":           "/assets/theme1/buildings/resource/farm.svg",
+        "Lumber Mill":    "/assets/theme1/buildings/resource/lumber-mill.svg",
+        "Merchant":       "/assets/theme1/buildings/resource/merchant.svg",
+        "Mine":           "/assets/theme1/buildings/resource/mine.svg",
+        "Garrison":       "/assets/theme1/buildings/military/garrison.svg",
+        "Stable":         "/assets/theme1/buildings/military/stable.svg",
+        "Cannon":         "/assets/theme1/buildings/defense/cannon.svg",
+        "Archer Tower":   "/assets/theme1/buildings/defense/archer-tower.svg",
+    }
+    buildings = []
+    for name, cost in BUILDING_BUILD_COST.items():
+        buildings.append({
+            "name":             name,
+            "build_cost":       cost,
+            "build_time":       BUILDING_BUILD_TIME.get(name, 0),
+            "upgrade_cost":     BUILDING_UPGRADE_COST.get(name, {}),
+            "trains":           ARMY_BUILDINGS.get(name, {}).get("unit_type"),
+            "training_seconds": ARMY_BUILDINGS.get(name, {}).get("training_seconds"),
+            "ammo":             DEFENCE_BUILDING_AMMO.get(name),
+            "icon":             _BUILDING_ICONS.get(name),
+        })
+    return render_template("wiki/buildings.html", buildings=buildings)
+
+
+@wiki_bp.route("/troops/<slug>")
 def troop_detail(slug: str):
     db = get_db()
     # Resolve slug back to troop_type
@@ -209,4 +249,5 @@ def troop_detail(slug: str):
         image=_troop_image_path(troop_name),
         category_label=_category_label(base["category"]),
         category_color=_category_color(base["category"]),
+        back_url=url_for("wiki.troops_index"),
     )

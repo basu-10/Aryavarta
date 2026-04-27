@@ -1,12 +1,14 @@
 {% extends "base.html" %}
-{% block title %}{{ troop_name }} — Troopedia — BattleCells{% endblock %}
+{% block title %}{{ troop_name }} — Troops — BattleCells Wiki{% endblock %}
 
 {% block content %}
 <div class="space-y-8 max-w-3xl">
 
   <!-- Breadcrumb -->
   <nav class="text-xs text-gray-500 flex items-center gap-1">
-    <a href="{{ url_for('wiki.troopedia_index') }}" class="hover:text-white transition-colors">Troopedia</a>
+    <a href="{{ url_for('wiki.wiki_index') }}" class="hover:text-white transition-colors">Wiki</a>
+    <span>/</span>
+    <a href="{{ back_url }}" class="hover:text-white transition-colors">Troops</a>
     <span>/</span>
     <span class="text-gray-300">{{ troop_name }}</span>
   </nav>
@@ -86,6 +88,54 @@
       {% endfor %}
     </div>
   </div>
+
+  <!-- ── Tier-10 threat callout (Demon / Pegasus only) ────────────── -->
+  {% if troop_name in ('Demon', 'Pegasus') %}
+  <div class="rounded-xl border border-red-900/60 bg-red-950/30 px-5 py-4 space-y-3">
+    <h2 class="text-xs font-semibold uppercase tracking-widest text-red-400">⚠ Tier-10 Threat — Stars 7–10</h2>
+    <p class="text-sm text-gray-300 leading-relaxed">
+      {% if troop_name == 'Demon' %}
+      The Demon's <span class="text-red-300 font-semibold">1 billion defense</span> absorbs all damage
+      until each attacker cell stacks enough troops for their combined damage to exceed it.
+      A Barbarian (dmg&nbsp;10/troop) needs <span class="text-white font-semibold">&gt;100&nbsp;million per cell</span> just to pierce.
+      Archers (dmg&nbsp;20) break through at ~50&nbsp;million per cell.
+      Expect to field <span class="text-yellow-300 font-semibold">500M–1&nbsp;000M total troops</span> across all 16 cells.
+      {% else %}
+      The Pegasus carries <span class="text-red-300 font-semibold">zero defense</span> — pure glass cannon.
+      Its <span class="text-red-300 font-semibold">2 billion damage per tick</span> obliterates lightly-stacked cells instantly.
+      Overwhelm it fast with massed Archers before it tears through your lines.
+      Expect to field <span class="text-yellow-300 font-semibold">500M–1&nbsp;000M total troops</span> to reliably win.
+      {% endif %}
+    </p>
+    <div class="grid grid-cols-3 gap-3 text-sm">
+      <div class="bg-gray-900/60 rounded-lg px-3 py-2 text-center">
+        <p class="text-xs text-gray-500 mb-0.5">Min qty to pierce DEF</p>
+        {% if troop_name == 'Demon' %}
+        <p class="font-bold text-orange-300">Barb: 100M/cell</p>
+        <p class="text-xs text-gray-400 mt-0.5">Archer: 50M/cell</p>
+        {% else %}
+        <p class="font-bold text-green-300">0 (no DEF)</p>
+        <p class="text-xs text-gray-400 mt-0.5">Any qty deals dmg</p>
+        {% endif %}
+      </div>
+      <div class="bg-gray-900/60 rounded-lg px-3 py-2 text-center">
+        <p class="text-xs text-gray-500 mb-0.5">Reliable win threshold</p>
+        <p class="font-bold text-yellow-300">500M–1B troops</p>
+        <p class="text-xs text-gray-400 mt-0.5">across 16 cells</p>
+      </div>
+      <div class="bg-gray-900/60 rounded-lg px-3 py-2 text-center">
+        <p class="text-xs text-gray-500 mb-0.5">Best formation</p>
+        {% if troop_name == 'Demon' %}
+        <p class="font-bold text-sky-300">Archer-only</p>
+        <p class="text-xs text-gray-400 mt-0.5">lowest qty needed</p>
+        {% else %}
+        <p class="font-bold text-sky-300">Archer-only</p>
+        <p class="text-xs text-gray-400 mt-0.5">kill it before it acts</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+  {% endif %}
 
   <!-- ── Training cost (Level 1) ───────────────────────────────────── -->
   <div>
@@ -167,8 +217,8 @@
 
   <!-- Back link -->
   <div>
-    <a href="{{ url_for('wiki.troopedia_index') }}"
-       class="text-sm text-gray-500 hover:text-white transition-colors">← Back to Troopedia</a>
+    <a href="{{ back_url }}"
+       class="text-sm text-gray-500 hover:text-white transition-colors">← Back to Troops</a>
   </div>
 
 </div>
