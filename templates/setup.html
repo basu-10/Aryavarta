@@ -17,9 +17,9 @@
   </div>
 
   <!-- â”€â”€ BATTLEFIELD GRID â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ -->
-  <div class="overflow-x-auto">
-    <div class="inline-block">
-
+  <!-- Battlefield — rotates 90° on mobile so long axis is vertical -->
+  <div class="battlefield-container">
+    <div class="battlefield-rotatable">
 
       <!-- Grid: CSS-styled cells, no SVG background -->
       <div class="rounded-lg border border-gray-700 overflow-hidden">
@@ -29,7 +29,7 @@
               <div
                 @click="toggleCell(r - 1, c - 1)"
                 :class="cellClass(r - 1, c - 1)"
-                class="battle-cell w-20 h-20 cursor-pointer flex flex-col items-center justify-center select-none"
+                class="battle-cell w-16 h-16 sm:w-20 sm:h-20 cursor-pointer flex flex-col items-center justify-center select-none"
               >
                 <!-- Neutral zone -->
                 <template x-if="isNeutral(c - 1)">
@@ -54,7 +54,7 @@
                             x-text="typeAbbrev(getUnit(r - 1, c - 1).type)"></span>
                     </template>
                     <span class="text-xs leading-none font-semibold text-yellow-200"
-                          x-text="'Ã—' + fmtQty(getUnit(r - 1, c - 1).quantity || 1)"></span>
+                          x-text="'×' + fmtQty(getUnit(r - 1, c - 1).quantity || 1)"></span>
                   </div>
                 </template>
               </div>
@@ -63,6 +63,12 @@
         </template>
       </div>
 
+    </div>
+    <!-- Legend -->
+    <div class="flex gap-4 mt-3 text-xs text-gray-500">
+      <div class="flex items-center gap-1"><div class="w-3 h-3 rounded bc-cell-a border border-gray-600"></div> Team A</div>
+      <div class="flex items-center gap-1"><div class="w-3 h-3 rounded bc-cell-b border border-gray-600"></div> Team B</div>
+      <div class="flex items-center gap-1"><div class="w-3 h-3 rounded bc-cell-neutral border border-gray-600"></div> No-man's land</div>
     </div>
   </div>
 

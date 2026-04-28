@@ -148,3 +148,40 @@
     padding-bottom: env(safe-area-inset-bottom);
   }
 }
+
+/* ════════════════════════════════════════════════════════════════════════
+   Battlefield — mobile portrait rotation
+   The grid is 9 cols × 4 rows (landscape).  On small screens we rotate it
+   90° so the long axis runs vertically, making better use of portrait space.
+   ════════════════════════════════════════════════════════════════════════ */
+
+/* The outer container reserves vertical space equal to the grid's natural width */
+.battlefield-container {
+  width: 100%;
+}
+
+.battlefield-rotatable {
+  display: inline-block;
+}
+
+/* On screens narrower than 640 px (Tailwind's sm breakpoint) rotate 90°    */
+/* The grid is roughly 9 × 64px = 576px wide, 4 × 64px = 256px tall.        */
+/* After rotation: rendered height ≈ 576px, rendered width ≈ 256px           */
+@media (max-width: 639px) {
+  .battlefield-container {
+    /* Reserve the height that the rotated grid will occupy                   */
+    height: calc(9 * 4rem + 2px); /* 9 columns × cell-height + border        */
+    overflow: visible;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .battlefield-rotatable {
+    transform-origin: top left;
+    transform: rotate(90deg) translateX(0);
+    /* After rotation, push it right so it sits centred inside the container */
+    margin-top: 0;
+    margin-left: calc(4 * 4rem);   /* = 4 columns × cell-width               */
+  }
+}
