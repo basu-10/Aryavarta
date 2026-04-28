@@ -2,7 +2,10 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="theme-color" content="#030712" />
   <title>{% block title %}BattleCells{% endblock %}</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
@@ -23,29 +26,6 @@
 </head>
 <body class="bg-gray-950 text-gray-100 {% block body_class %}min-h-screen{% endblock %} flex flex-col">
 
-  <nav class="bg-gray-900 border-b border-gray-800 px-6 py-3 flex items-center gap-6 flex-wrap">
-    <span class="font-bold text-lg tracking-wide text-white">⚔ BattleCells</span>
-
-    {% if session.get('player_id') %}
-      <a href="{{ url_for('world.world_map') }}"   class="text-gray-400 hover:text-white text-sm transition-colors">World</a>
-      <a href="{{ url_for('fort.castle_page') }}"  class="text-gray-400 hover:text-white text-sm transition-colors">Castle</a>
-      <a href="{{ url_for('clan.clan_page') }}"    class="text-gray-400 hover:text-white text-sm transition-colors">Clan</a>
-      <a href="{{ url_for('battle.setup') }}"      class="text-gray-400 hover:text-white text-sm transition-colors">Simulate</a>
-      <a href="{{ url_for('auth.battles') }}"      class="text-gray-400 hover:text-white text-sm transition-colors">Battles</a>
-      <a href="{{ url_for('wiki.wiki_index') }}" class="text-gray-400 hover:text-white text-sm transition-colors">Wiki</a>
-      {% if nav_is_admin %}
-      <a href="{{ url_for('admin.dashboard') }}" class="text-amber-400 hover:text-amber-300 text-sm transition-colors">Admin Dashboard</a>
-      <a href="{{ url_for('admin.test_run_page') }}" class="text-amber-400 hover:text-amber-300 text-sm transition-colors">Test Run</a>
-      {% endif %}
-      <span class="ml-auto text-gray-500 text-xs">{{ session.get('username') }}</span>
-      <a href="{{ url_for('auth.logout') }}"       class="text-red-400 hover:text-red-300 text-sm">Logout</a>
-    {% else %}
-      <a href="{{ url_for('wiki.wiki_index') }}" class="text-gray-400 hover:text-white text-sm transition-colors">Wiki</a>
-      <a href="{{ url_for('auth.login') }}"    class="ml-auto text-gray-400 hover:text-white text-sm">Login</a>
-      <a href="{{ url_for('auth.register') }}" class="text-gray-400 hover:text-white text-sm">Register</a>
-    {% endif %}
-  </nav>
-
   {% with messages = get_flashed_messages(with_categories=true) %}
     {% if messages %}
       <div class="max-w-5xl mx-auto w-full px-4 pt-4">
@@ -59,19 +39,17 @@
     {% endif %}
   {% endwith %}
 
-  <main class="flex-1 {% block main_class %}px-4 py-8 max-w-5xl mx-auto{% endblock %} w-full">
+  <main class="flex-1 {% block main_class %}px-4 py-6 max-w-5xl mx-auto{% endblock %} w-full bottom-nav-clearance">
     {% block content %}{% endblock %}
   </main>
 
-  {% block footer %}<footer class="text-center text-xs text-gray-600 py-4">
-    BattleCells — Multiplayer World
-  </footer>{% endblock %}
+  {% block footer %}{% endblock %}
 
   {% if session.get('player_id') %}
   {# ── Floating Chat Button ─────────────────────────────────────────── #}
   <button id="chat-fab"
           onclick="toggleChatPanel()"
-      class="fixed bottom-6 right-6 z-50 w-14 h-14 rounded-full bg-blue-600 hover:bg-blue-500 active:bg-blue-700 shadow-2xl flex items-center justify-center text-2xl select-none"
+      class="fixed bottom-20 right-4 z-50 w-14 h-14 rounded-full bg-blue-600 hover:bg-blue-500 active:bg-blue-700 shadow-2xl flex items-center justify-center text-2xl select-none"
           aria-label="Chat">
     💬
     <span id="chat-fab-badge"
@@ -80,8 +58,8 @@
 
   {# ── Floating Chat Panel ──────────────────────────────────────────── #}
   <div id="chat-panel"
-       class="fixed bottom-24 right-6 z-40 bg-gray-900 border border-gray-700 rounded-2xl shadow-2xl flex-col"
-       style="width:360px;max-width:calc(100vw - 24px);height:480px;max-height:calc(100dvh - 140px)">
+       class="fixed bottom-36 right-4 z-40 bg-gray-900 border border-gray-700 rounded-2xl shadow-2xl flex-col"
+       style="width:360px;max-width:calc(100vw - 1.5rem);height:460px;max-height:calc(100dvh - 200px)">
     {# Header #}
     <div class="flex items-center justify-between px-4 py-3 border-b border-gray-700 rounded-t-2xl shrink-0">
       <span class="font-semibold text-sm text-gray-200">💬 Chat</span>
@@ -459,12 +437,167 @@
   function showToast(text) {
     const el = document.createElement('div');
     el.textContent = text;
-    el.className = 'fixed bottom-24 left-1/2 -translate-x-1/2 z-[9999] bg-gray-800 border border-gray-600 text-gray-100 text-sm px-5 py-2.5 rounded-xl shadow-xl pointer-events-none';
+    el.className = 'fixed bottom-20 left-1/2 -translate-x-1/2 z-[9999] bg-gray-800 border border-gray-600 text-gray-100 text-sm px-5 py-2.5 rounded-xl shadow-xl pointer-events-none';
     document.body.appendChild(el);
     setTimeout(() => el.remove(), 3500);
   }
   </script>
   {% endif %}
+
+  {# ════════════════════════════════════════════════════════════════════
+     Bottom Navigation Bar
+     ════════════════════════════════════════════════════════════════════ #}
+  <nav id="bottom-nav"
+       class="fixed bottom-0 left-0 right-0 z-50 bg-gray-900 border-t border-gray-800"
+       x-data="{ moreOpen: false }">
+
+    {% if session.get('player_id') %}
+
+    {# ── 5-tab bar ─────────────────────────────────────────────────── #}
+    <div class="flex items-stretch h-16 bottom-nav-inset">
+
+      <a href="{{ url_for('world.world_map') }}" data-nav-path="/world"
+         class="nav-tab flex flex-col items-center justify-center flex-1 gap-0.5 text-gray-400 hover:text-blue-300 transition-colors active:scale-95">
+        <span class="text-2xl leading-none">🌍</span>
+        <span class="text-[10px] font-medium tracking-wide">World</span>
+      </a>
+
+      <a href="{{ url_for('fort.castle_page') }}" data-nav-path="/castle"
+         class="nav-tab flex flex-col items-center justify-center flex-1 gap-0.5 text-gray-400 hover:text-blue-300 transition-colors active:scale-95">
+        <span class="text-2xl leading-none">🏰</span>
+        <span class="text-[10px] font-medium tracking-wide">Castle</span>
+      </a>
+
+      <a href="{{ url_for('clan.clan_page') }}" data-nav-path="/clan"
+         class="nav-tab flex flex-col items-center justify-center flex-1 gap-0.5 text-gray-400 hover:text-blue-300 transition-colors active:scale-95">
+        <span class="text-2xl leading-none">⚔️</span>
+        <span class="text-[10px] font-medium tracking-wide">Clan</span>
+      </a>
+
+      <a href="{{ url_for('battle.setup') }}" data-nav-path="/setup"
+         class="nav-tab flex flex-col items-center justify-center flex-1 gap-0.5 text-gray-400 hover:text-blue-300 transition-colors active:scale-95">
+        <span class="text-2xl leading-none">⚡</span>
+        <span class="text-[10px] font-medium tracking-wide">Battle</span>
+      </a>
+
+      <button @click="moreOpen = !moreOpen"
+              :class="moreOpen ? 'text-blue-400' : 'text-gray-400'"
+              class="nav-tab flex flex-col items-center justify-center flex-1 gap-0.5 hover:text-blue-300 transition-colors active:scale-95">
+        <span class="text-2xl leading-none font-bold">···</span>
+        <span class="text-[10px] font-medium tracking-wide">More</span>
+      </button>
+
+    </div>
+
+    {# ── Backdrop ──────────────────────────────────────────────────── #}
+    <div x-show="moreOpen"
+         x-transition:enter="transition ease-out duration-200"
+         x-transition:enter-start="opacity-0"
+         x-transition:enter-end="opacity-100"
+         x-transition:leave="transition ease-in duration-150"
+         x-transition:leave-start="opacity-100"
+         x-transition:leave-end="opacity-0"
+         @click="moreOpen = false"
+         class="fixed inset-0 bg-black/60 z-40"
+         style="display:none"></div>
+
+    {# ── More flyout sheet ─────────────────────────────────────────── #}
+    <div x-show="moreOpen"
+         x-transition:enter="transition ease-out duration-200"
+         x-transition:enter-start="opacity-0 translate-y-4"
+         x-transition:enter-end="opacity-100 translate-y-0"
+         x-transition:leave="transition ease-in duration-150"
+         x-transition:leave-start="opacity-100 translate-y-0"
+         x-transition:leave-end="opacity-0 translate-y-4"
+         class="fixed left-0 right-0 z-50 bg-gray-900 border-t border-gray-700 rounded-t-2xl shadow-2xl"
+         style="bottom:4rem;display:none">
+
+      <div class="flex justify-center pt-2 pb-1">
+        <div class="w-10 h-1 rounded-full bg-gray-600"></div>
+      </div>
+
+      <div class="px-4 py-2 flex items-center gap-2 border-b border-gray-800">
+        <span class="text-sm font-semibold text-gray-300">{{ session.get('username') }}</span>
+        <span class="ml-auto text-xs text-gray-500">BattleCells</span>
+      </div>
+
+      <div class="py-1">
+        <a href="{{ url_for('auth.battles') }}" @click="moreOpen = false"
+           class="flex items-center gap-3 px-5 py-3.5 text-gray-200 hover:bg-gray-800 active:bg-gray-700 transition-colors">
+          <span class="text-xl w-7 text-center">📜</span>
+          <span class="text-sm font-medium">Battle History</span>
+        </a>
+        <a href="{{ url_for('wiki.wiki_index') }}" @click="moreOpen = false"
+           class="flex items-center gap-3 px-5 py-3.5 text-gray-200 hover:bg-gray-800 active:bg-gray-700 transition-colors">
+          <span class="text-xl w-7 text-center">📖</span>
+          <span class="text-sm font-medium">Wiki</span>
+        </a>
+        {% if nav_is_admin %}
+        <div class="mx-5 border-t border-gray-800 my-1"></div>
+        <a href="{{ url_for('admin.dashboard') }}" @click="moreOpen = false"
+           class="flex items-center gap-3 px-5 py-3.5 text-amber-400 hover:bg-gray-800 active:bg-gray-700 transition-colors">
+          <span class="text-xl w-7 text-center">⚙️</span>
+          <span class="text-sm font-medium">Admin Dashboard</span>
+        </a>
+        <a href="{{ url_for('admin.test_run_page') }}" @click="moreOpen = false"
+           class="flex items-center gap-3 px-5 py-3.5 text-amber-400 hover:bg-gray-800 active:bg-gray-700 transition-colors">
+          <span class="text-xl w-7 text-center">🧪</span>
+          <span class="text-sm font-medium">Test Run</span>
+        </a>
+        {% endif %}
+        <div class="mx-5 border-t border-gray-800 my-1"></div>
+        <a href="{{ url_for('auth.logout') }}" @click="moreOpen = false"
+           class="flex items-center gap-3 px-5 py-3.5 text-red-400 hover:bg-gray-800 active:bg-gray-700 transition-colors">
+          <span class="text-xl w-7 text-center">🚪</span>
+          <span class="text-sm font-medium">Logout</span>
+        </a>
+      </div>
+      <div class="bottom-nav-inset"></div>
+    </div>
+
+    {% else %}
+
+    {# ── Unauthenticated bar ────────────────────────────────────────── #}
+    <div class="flex items-stretch h-16 bottom-nav-inset">
+
+      <a href="{{ url_for('wiki.wiki_index') }}" data-nav-path="/wiki"
+         class="nav-tab flex flex-col items-center justify-center flex-1 gap-0.5 text-gray-400 hover:text-blue-300 transition-colors active:scale-95">
+        <span class="text-2xl leading-none">📖</span>
+        <span class="text-[10px] font-medium tracking-wide">Wiki</span>
+      </a>
+
+      <div class="w-px bg-gray-800 my-3"></div>
+
+      <a href="{{ url_for('auth.login') }}" data-nav-path="/login"
+         class="nav-tab flex flex-col items-center justify-center flex-1 gap-0.5 text-gray-400 hover:text-blue-300 transition-colors active:scale-95">
+        <span class="text-2xl leading-none">🔑</span>
+        <span class="text-[10px] font-medium tracking-wide">Login</span>
+      </a>
+
+      <a href="{{ url_for('auth.register') }}" data-nav-path="/register"
+         class="nav-tab flex flex-col items-center justify-center flex-1 gap-0.5 text-gray-400 hover:text-blue-300 transition-colors active:scale-95">
+        <span class="text-2xl leading-none">✨</span>
+        <span class="text-[10px] font-medium tracking-wide">Register</span>
+      </a>
+
+    </div>
+
+    {% endif %}
+  </nav>
+
+  {# ── Active nav tab highlighting ──────────────────────────────────── #}
+  <script>
+  (function () {
+    const path = window.location.pathname;
+    document.querySelectorAll('[data-nav-path]').forEach(el => {
+      const p = el.dataset.navPath;
+      if (path === p || path.startsWith(p + '/')) {
+        el.classList.remove('text-gray-400');
+        el.classList.add('text-blue-400');
+      }
+    });
+  })();
+  </script>
 
 </body>
 </html>

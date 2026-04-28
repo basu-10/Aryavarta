@@ -109,3 +109,42 @@
 /* ── Floating chat panel ─────────────────────────────────────────────── */
 #chat-panel { display: none; }
 #chat-panel.flex { display: flex; }
+
+/* ════════════════════════════════════════════════════════════════════════
+   Bottom Navigation Bar — safe-area + clearance
+   ════════════════════════════════════════════════════════════════════════ */
+
+/* Page content must clear the fixed bottom nav (4rem = 64px base + safe area) */
+.bottom-nav-clearance {
+  padding-bottom: calc(4rem + env(safe-area-inset-bottom, 0px) + 1rem);
+}
+
+/* Bottom nav bar height with iOS home-indicator inset */
+.bottom-nav-inset {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/* Active bottom-nav tab indicator dot */
+.nav-tab[data-nav-path].text-blue-400::after {
+  content: '';
+  display: block;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: #60a5fa;
+  margin: 2px auto 0;
+}
+
+/* Prevent text selection on nav taps */
+#bottom-nav {
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+}
+
+/* ── PWA / mobile overrides ─────────────────────────────────────────── */
+@supports (padding-bottom: env(safe-area-inset-bottom)) {
+  #bottom-nav {
+    /* extend bg behind home indicator on iPhone */
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+}
