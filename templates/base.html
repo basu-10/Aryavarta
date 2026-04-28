@@ -599,5 +599,266 @@
   })();
   </script>
 
+  {% if session.get('player_id') %}
+  {# ════════════════════════════════════════════════════════════════════
+     Tutorial FAB (? button) — always visible when logged in
+     ════════════════════════════════════════════════════════════════════ #}
+  <button id="tutorial-fab"
+          onclick="openTutorial()"
+          class="fixed bottom-20 left-4 z-50 w-14 h-14 rounded-full bg-amber-500 hover:bg-amber-400 active:bg-amber-600 shadow-2xl flex items-center justify-center text-2xl font-bold text-white select-none"
+          aria-label="Help / Tutorial">
+    ?
+  </button>
+
+  {# ════════════════════════════════════════════════════════════════════
+     Tutorial Modal
+     ════════════════════════════════════════════════════════════════════ #}
+  <div id="tutorial-overlay"
+       class="fixed inset-0 z-[9998] bg-black/75 flex items-end sm:items-center justify-center p-0 sm:p-4"
+       style="display:none!important">
+    <div id="tutorial-modal"
+         class="relative bg-gray-900 border border-gray-700 rounded-t-2xl sm:rounded-2xl shadow-2xl w-full sm:max-w-lg max-h-[85dvh] flex flex-col">
+
+      {# Header #}
+      <div class="flex items-center justify-between px-5 py-4 border-b border-gray-700 shrink-0">
+        <div class="flex items-center gap-2">
+          <span class="text-xl">📖</span>
+          <span class="font-bold text-base text-gray-100">Getting Started</span>
+        </div>
+        <button onclick="closeTutorial()" class="text-gray-400 hover:text-white text-2xl leading-none">&times;</button>
+      </div>
+
+      {# Step indicators #}
+      <div class="flex items-center justify-center gap-2 px-5 py-3 shrink-0">
+        <button onclick="goToStep(0)" id="tut-dot-0" class="w-2.5 h-2.5 rounded-full bg-amber-400 transition-colors" aria-label="Step 1"></button>
+        <button onclick="goToStep(1)" id="tut-dot-1" class="w-2.5 h-2.5 rounded-full bg-gray-600 transition-colors" aria-label="Step 2"></button>
+        <button onclick="goToStep(2)" id="tut-dot-2" class="w-2.5 h-2.5 rounded-full bg-gray-600 transition-colors" aria-label="Step 3"></button>
+        <button onclick="goToStep(3)" id="tut-dot-3" class="w-2.5 h-2.5 rounded-full bg-gray-600 transition-colors" aria-label="Step 4"></button>
+      </div>
+
+      {# Scrollable content area #}
+      <div class="flex-1 overflow-y-auto px-5 pb-4 min-h-0">
+
+        {# ── Step 0: Starter Pack ── #}
+        <div class="tutorial-step" id="tut-step-0">
+          <div class="text-center mb-4">
+            <span class="text-5xl">🎁</span>
+            <h2 class="text-lg font-bold text-white mt-2">Welcome to BattleCells!</h2>
+            <p class="text-sm text-gray-400 mt-1">You've received a <span class="text-amber-400 font-semibold">Starter Pack</span> to kick off your conquest.</p>
+          </div>
+          <div class="grid grid-cols-2 gap-3">
+            <div class="bg-gray-800 rounded-xl p-3 flex items-center gap-3">
+              <span class="text-2xl">🌾</span>
+              <div>
+                <div class="text-xs text-gray-400">Food</div>
+                <div class="font-bold text-green-400 text-lg">1,000</div>
+              </div>
+            </div>
+            <div class="bg-gray-800 rounded-xl p-3 flex items-center gap-3">
+              <span class="text-2xl">🪵</span>
+              <div>
+                <div class="text-xs text-gray-400">Timber</div>
+                <div class="font-bold text-yellow-400 text-lg">350</div>
+              </div>
+            </div>
+            <div class="bg-gray-800 rounded-xl p-3 flex items-center gap-3">
+              <span class="text-2xl">💰</span>
+              <div>
+                <div class="text-xs text-gray-400">Gold</div>
+                <div class="font-bold text-amber-400 text-lg">1,800</div>
+              </div>
+            </div>
+            <div class="bg-gray-800 rounded-xl p-3 flex items-center gap-3">
+              <span class="text-2xl">⚙️</span>
+              <div>
+                <div class="text-xs text-gray-400">Metal</div>
+                <div class="font-bold text-gray-300 text-lg">500</div>
+              </div>
+            </div>
+          </div>
+          <p class="text-xs text-gray-500 mt-3 text-center">This is enough to build all resource buildings <em>and</em> train your first army.</p>
+        </div>
+
+        {# ── Step 1: Resource Buildings ── #}
+        <div class="tutorial-step hidden" id="tut-step-1">
+          <div class="text-center mb-4">
+            <span class="text-5xl">🏗️</span>
+            <h2 class="text-lg font-bold text-white mt-2">Build Resource Buildings</h2>
+            <p class="text-sm text-gray-400 mt-1">Go to your <span class="text-blue-400 font-semibold">Castle</span> and fill your building slots with resource generators.</p>
+          </div>
+          <div class="space-y-2">
+            <div class="flex items-center gap-3 bg-gray-800 rounded-xl px-4 py-3">
+              <span class="text-xl w-8 text-center">🌾</span>
+              <div class="flex-1">
+                <div class="font-semibold text-sm text-white">Farm</div>
+                <div class="text-xs text-gray-400">Produces Food over time</div>
+              </div>
+              <div class="text-xs text-gray-500">50🌾 30🪵</div>
+            </div>
+            <div class="flex items-center gap-3 bg-gray-800 rounded-xl px-4 py-3">
+              <span class="text-xl w-8 text-center">🌲</span>
+              <div class="flex-1">
+                <div class="font-semibold text-sm text-white">Lumber Mill</div>
+                <div class="text-xs text-gray-400">Produces Timber over time</div>
+              </div>
+              <div class="text-xs text-gray-500">50🪵 30💰</div>
+            </div>
+            <div class="flex items-center gap-3 bg-gray-800 rounded-xl px-4 py-3">
+              <span class="text-xl w-8 text-center">🏪</span>
+              <div class="flex-1">
+                <div class="font-semibold text-sm text-white">Merchant</div>
+                <div class="text-xs text-gray-400">Produces Gold over time</div>
+              </div>
+              <div class="text-xs text-gray-500">80💰 20⚙️</div>
+            </div>
+            <div class="flex items-center gap-3 bg-gray-800 rounded-xl px-4 py-3">
+              <span class="text-xl w-8 text-center">⛏️</span>
+              <div class="flex-1">
+                <div class="font-semibold text-sm text-white">Mine</div>
+                <div class="text-xs text-gray-400">Produces Metal over time</div>
+              </div>
+              <div class="text-xs text-gray-500">50⚙️ 40💰</div>
+            </div>
+          </div>
+          <p class="text-xs text-gray-500 mt-3 text-center">Keep collecting from your buildings regularly — resources are stored until you claim them.</p>
+        </div>
+
+        {# ── Step 2: Train Troops ── #}
+        <div class="tutorial-step hidden" id="tut-step-2">
+          <div class="text-center mb-4">
+            <span class="text-5xl">⚔️</span>
+            <h2 class="text-lg font-bold text-white mt-2">Train Your Army</h2>
+            <p class="text-sm text-gray-400 mt-1">Build army buildings, then queue up troops to train.</p>
+          </div>
+          <div class="space-y-2 mb-4">
+            <div class="flex items-center gap-3 bg-gray-800 rounded-xl px-4 py-3">
+              <span class="text-xl w-8 text-center">🏹</span>
+              <div class="flex-1">
+                <div class="font-semibold text-sm text-white">Garrison → Longbowman</div>
+                <div class="text-xs text-gray-400">Long-range infantry — cost: 100💰 50⚙️ to build</div>
+              </div>
+            </div>
+            <div class="flex items-center gap-3 bg-gray-800 rounded-xl px-4 py-3">
+              <span class="text-xl w-8 text-center">🐴</span>
+              <div class="flex-1">
+                <div class="font-semibold text-sm text-white">Stable → Hussar</div>
+                <div class="text-xs text-gray-400">Fast cavalry — cost: 120💰 60⚙️ 20🪵 to build</div>
+              </div>
+            </div>
+          </div>
+          <div class="bg-amber-900/40 border border-amber-700/50 rounded-xl px-4 py-3">
+            <p class="text-xs text-amber-300">💡 Your starter resources can cover <strong>20 Longbowmen</strong> and <strong>15 Hussars</strong> — enough for your first fort attack!</p>
+          </div>
+        </div>
+
+        {# ── Step 3: Attack Forts ── #}
+        <div class="tutorial-step hidden" id="tut-step-3">
+          <div class="text-center mb-4">
+            <span class="text-5xl">🗺️</span>
+            <h2 class="text-lg font-bold text-white mt-2">Attack Monster Forts</h2>
+            <p class="text-sm text-gray-400 mt-1">Head to the <span class="text-blue-400 font-semibold">World Map</span> and find a ⭐ (star-1) monster fort nearby.</p>
+          </div>
+          <div class="space-y-3">
+            <div class="flex items-start gap-3">
+              <span class="mt-0.5 flex-shrink-0 w-6 h-6 rounded-full bg-orange-600 flex items-center justify-center text-xs font-bold">1</span>
+              <p class="text-sm text-gray-300">Tap a 🟠 orange fort on the map to open its details.</p>
+            </div>
+            <div class="flex items-start gap-3">
+              <span class="mt-0.5 flex-shrink-0 w-6 h-6 rounded-full bg-orange-600 flex items-center justify-center text-xs font-bold">2</span>
+              <p class="text-sm text-gray-300">Select <strong>Attack</strong>, choose your troops, and dispatch.</p>
+            </div>
+            <div class="flex items-start gap-3">
+              <span class="mt-0.5 flex-shrink-0 w-6 h-6 rounded-full bg-orange-600 flex items-center justify-center text-xs font-bold">3</span>
+              <p class="text-sm text-gray-300">Win the battle and the fort becomes yours — build more resource buildings there!</p>
+            </div>
+          </div>
+          <div class="mt-4 bg-blue-900/40 border border-blue-700/50 rounded-xl px-4 py-3">
+            <p class="text-xs text-blue-300">🏆 Forts give you extra building slots, boosting your resource production and troop capacity.</p>
+          </div>
+        </div>
+
+      </div>{# end scrollable content #}
+
+      {# Footer nav #}
+      <div class="flex items-center justify-between px-5 py-4 border-t border-gray-700 shrink-0 gap-3">
+        <button id="tut-btn-prev"
+                onclick="tutStep(-1)"
+                class="px-4 py-2 rounded-lg bg-gray-800 hover:bg-gray-700 text-sm text-gray-300 font-medium disabled:opacity-40 disabled:pointer-events-none"
+                disabled>
+          ← Back
+        </button>
+        <span id="tut-counter" class="text-xs text-gray-500">1 / 4</span>
+        <button id="tut-btn-next"
+                onclick="tutStep(1)"
+                class="px-4 py-2 rounded-lg bg-amber-500 hover:bg-amber-400 text-sm text-white font-semibold">
+          Next →
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+  // ═══════════════════════════════════════════════════════════════════
+  // Tutorial System
+  // ═══════════════════════════════════════════════════════════════════
+  const _TUTORIAL_STEPS = 4;
+  let _tutCurrentStep = 0;
+
+  function openTutorial() {
+    goToStep(0);
+    document.getElementById('tutorial-overlay').style.removeProperty('display');
+    document.getElementById('tutorial-overlay').style.display = 'flex';
+  }
+
+  function closeTutorial() {
+    document.getElementById('tutorial-overlay').style.display = 'none';
+    // Mark as seen in DB (fire-and-forget)
+    fetch('/api/tutorial/seen', {method: 'POST'}).catch(() => {});
+  }
+
+  function goToStep(step) {
+    // Hide all steps
+    document.querySelectorAll('.tutorial-step').forEach((el, i) => {
+      el.classList.toggle('hidden', i !== step);
+    });
+    // Update dots
+    for (let i = 0; i < _TUTORIAL_STEPS; i++) {
+      const dot = document.getElementById(`tut-dot-${i}`);
+      if (dot) dot.className = i === step
+        ? 'w-2.5 h-2.5 rounded-full bg-amber-400 transition-colors'
+        : 'w-2.5 h-2.5 rounded-full bg-gray-600 transition-colors';
+    }
+    // Update counter
+    document.getElementById('tut-counter').textContent = `${step + 1} / ${_TUTORIAL_STEPS}`;
+    // Update buttons
+    document.getElementById('tut-btn-prev').disabled = (step === 0);
+    const nextBtn = document.getElementById('tut-btn-next');
+    if (step === _TUTORIAL_STEPS - 1) {
+      nextBtn.textContent = 'Let\'s go! 🚀';
+      nextBtn.onclick = closeTutorial;
+    } else {
+      nextBtn.textContent = 'Next →';
+      nextBtn.onclick = () => tutStep(1);
+    }
+    _tutCurrentStep = step;
+  }
+
+  function tutStep(delta) {
+    const next = Math.max(0, Math.min(_TUTORIAL_STEPS - 1, _tutCurrentStep + delta));
+    goToStep(next);
+  }
+
+  // Close on overlay backdrop click
+  document.getElementById('tutorial-overlay').addEventListener('click', function(e) {
+    if (e.target === this) closeTutorial();
+  });
+
+  // Auto-open for new players
+  {% if show_tutorial %}
+  window.addEventListener('load', () => setTimeout(openTutorial, 400));
+  {% endif %}
+  </script>
+  {% endif %}
+
 </body>
 </html>

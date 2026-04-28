@@ -260,7 +260,10 @@ BUILDING_UPGRADE_COST: dict[str, dict] = {
 MONSTER_CAMP_LOOT = {"gold": 50, "metal": 30}
 
 # Starting player resources on registration
-PLAYER_START_RESOURCES = {"food": 200.0, "timber": 200.0, "gold": 100.0, "metal": 100.0}
+# Starter pack — enough to place all 4 resource buildings (Farm, Lumber Mill,
+# Merchant, Mine), both army buildings (Garrison, Stable), and train a
+# comfortable first army (≈20 Longbowmen + 15 Hussars) to defeat a star-1 fort.
+PLAYER_START_RESOURCES = {"food": 1000.0, "timber": 350.0, "gold": 1800.0, "metal": 500.0}
 
 # Phase ordering labels (for logging)
 PHASES = [

@@ -102,6 +102,12 @@ def set_player_clan(player_id: int, clan_id: Optional[int]) -> None:
     db.commit()
 
 
+def mark_tutorial_seen(player_id: int) -> None:
+    db = get_db()
+    db.execute("UPDATE player SET tutorial_seen=1 WHERE id=?", (player_id,))
+    db.commit()
+
+
 def set_player_role(player_id: int, role: str) -> None:
     db = get_db()
     db.execute("UPDATE player SET role=? WHERE id=?", (role, player_id))

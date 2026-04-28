@@ -23,6 +23,7 @@ CREATE TABLE IF NOT EXISTS player (
         -- 'leader'|'co-leader'|'elder'|'member'
         clan_joined_at TEXT,
         -- UTC ISO, for chat history cutoff
+        tutorial_seen INTEGER NOT NULL DEFAULT 0,
         created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 CREATE TABLE IF NOT EXISTS castle (

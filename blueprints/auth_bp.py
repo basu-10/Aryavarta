@@ -198,6 +198,13 @@ def battles():
     )
 
 
+@auth_bp.route("/api/tutorial/seen", methods=["POST"])
+@login_required
+def mark_tutorial_seen():
+    m.mark_tutorial_seen(session["player_id"])
+    return "", 204
+
+
 @auth_bp.route("/profile")
 @login_required
 def profile_legacy_redirect():
