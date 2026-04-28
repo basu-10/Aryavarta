@@ -685,6 +685,71 @@ def api_send_recruitment(target_id: int):
     return jsonify({"ok": True})
 
 
+# ── Friends API ───────────────────────────────────────────────────────── #
+
+@world_bp.route("/api/friends")
+@login_required
+def api_get_friends():
+    player_id = session["player_id"]
+    friends = m.get_friends(player_id)
+    # Attach castle location for map jumping
+    result = []
+    for f in friends:
+        castle = m.get_castle_by_player(f["id"])
+        result.append({
+            "id": f["id"],
+            "username": f["username"],
+            "castle_id": castle["id"] if castle else None,
+            "castle_x": castle["grid_x"] if castle else None,
+            "castle_y": castle["grid_y"] if castle else None,
+        })
+    return jsonify({"friends": result})
+
+
+@world_bp.route("/api/friends/pending")
+@login_required
+def api_friend_requests():
+    player_id = session["player_id"]
+    reqs = m.get_pending_friend_requests(player_id)
+    return jsonify({"requests": reqs})
+
+
+@world_bp.route("/api/friends/<int:other_id>", methods=["POST"])
+@login_required
+def api_add_friend(other_id: int):
+    player_id = session["player_id"]
+    ok, msg = m.send_friend_request(player_id, other_id)
+    if not ok:
+        return jsonify({"ok": False, "error": msg}), 400
+    return jsonify({"ok": True, "message": msg})
+
+
+@world_bp.route("/api/friends/<int:other_id>/accept", methods=["POST"])
+@login_required
+def api_accept_friend(other_id: int):
+    player_id = session["player_id"]
+    ok, msg = m.accept_friend_request(player_id, other_id)
+    if not ok:
+        return jsonify({"ok": False, "error": msg}), 400
+    return jsonify({"ok": True, "message": msg})
+
+
+@world_bp.route("/api/friends/<int:other_id>", methods=["DELETE"])
+@login_required
+def api_remove_friend(other_id: int):
+    player_id = session["player_id"]
+    m.remove_friend(player_id, other_id)
+    return jsonify({"ok": True})
+
+
+@world_bp.route("/api/friends/<int:other_id>/status")
+@login_required
+def api_friend_status(other_id: int):
+    player_id = session["player_id"]
+    status = m.get_friendship_status(player_id, other_id)
+    return jsonify({"status": status})
+
+
 def _resolve_one_mission(mission: dict) -> dict:
     attacker_units  = _build_attacker_units(mission["formation"])
     defender_spec   = _get_defender_spec(mission)

@@ -12,10 +12,27 @@
       World Map
       <span class="text-xs font-normal text-gray-400 hidden sm:inline">(click any entity to interact)</span>
     </h1>
-    <label class="flex items-center gap-2 text-sm text-gray-300 cursor-pointer select-none ml-auto">
-      <input type="checkbox" id="toggle-labels" class="w-4 h-4 accent-blue-500" />
-      <span class="text-xs">Names &amp; stars</span>
-    </label>
+    {# ── View option buttons ── #}
+    <div class="flex items-center gap-1 ml-auto flex-wrap">
+      <button id="btn-zoom-all" type="button" onclick="toggleZoomAll()"
+              class="px-2 py-1 text-xs rounded bg-gray-800 border border-gray-700 hover:bg-gray-700 text-gray-200"
+              title="Zoom to fit all entities / restore zoom">⊡ Zoom All</button>
+      <button id="btn-show-mine" type="button" onclick="toggleFilter('own')"
+              class="px-2 py-1 text-xs rounded bg-gray-800 border border-gray-700 hover:bg-gray-700 text-gray-200"
+              title="Highlight my forts &amp; castle">🏰 Mine</button>
+      <div class="relative" id="friends-dropdown-wrap">
+        <button id="btn-friends" type="button" onclick="toggleFriendsMenu()"
+                class="px-2 py-1 text-xs rounded bg-gray-800 border border-gray-700 hover:bg-gray-700 text-gray-200"
+                title="Highlight a friend's entities">👥 Friends ▾</button>
+        <div id="friends-menu" class="hidden absolute right-0 top-full mt-1 z-30 bg-gray-900 border border-gray-700 rounded-lg shadow-2xl py-1 min-w-[160px] max-h-60 overflow-y-auto">
+          <div id="friends-list-inner" class="text-xs text-gray-300"><span class="px-3 py-2 block text-gray-500">Loading…</span></div>
+        </div>
+      </div>
+      <label class="flex items-center gap-2 text-sm text-gray-300 cursor-pointer select-none">
+        <input type="checkbox" id="toggle-labels" class="w-4 h-4 accent-blue-500" />
+        <span class="text-xs">Names &amp; stars</span>
+      </label>
+    </div>
   </div>
 
   {# ── Map shell — fills remaining height ───────────────────────────── #}
@@ -119,6 +136,9 @@ let entityMap = {};
 let showLabels = false;
 let legendOpen = true;
 let popupAnchor = { x: 12, y: 12 };
+let _viewFilter  = null;   // null | 'own' | {type:'friend', id:NUMBER}
+let _zoomAllMode = false;
+let _friends     = [];
 
 // Default zoom is 1.0 = 52 px cells (2× the legacy 26 px baseline).
 // Slider range 50–200 maps to 26 px – 104 px.  Reset always returns to 1.0.
@@ -198,7 +218,6 @@ function rebuildGrid() {
   const grid = document.getElementById('world-grid');
   const parts = [];
   const size = cellPx();
-  const iconSize = Math.max(12, Math.round(size * 0.54));
 
   for (let y = 0; y < WORLD_H; y++) {
     for (let x = 0; x < WORLD_W; x++) {
@@ -237,8 +256,18 @@ function rebuildGrid() {
 
       const iconPath = LOCATION_ICON[item.type] || '';
       const icon = iconPath
-        ? `<img src="${iconPath}" alt="${item.type}" style="width:${iconSize}px;height:${iconSize}px;display:inline-block;vertical-align:middle;filter:drop-shadow(0 0 1px rgba(0,0,0,.7));" />`
+        ? `<img src="${iconPath}" alt="${item.type}" style="position:absolute;top:4%;left:4%;width:92%;height:92%;object-fit:contain;filter:drop-shadow(0 0 2px rgba(0,0,0,.8));pointer-events:none;" />`
         : '';
+
+      // Highlight ring for view filter
+      let highlightStyle = '';
+      if (_viewFilter === 'own' && item.owner_id === PLAYER_ID) {
+        highlightStyle = 'box-shadow:0 0 0 2px #22d3ee,inset 0 0 0 1px rgba(255,255,255,.12);';
+      } else if (_viewFilter && _viewFilter.type === 'friend' && item.owner_id === _viewFilter.id) {
+        highlightStyle = 'box-shadow:0 0 0 2px #f59e0b,inset 0 0 0 1px rgba(255,255,255,.12);';
+      } else {
+        highlightStyle = 'box-shadow:inset 0 0 0 1px rgba(255,255,255,.12);';
+      }
       const tooltipFull = label + (starStr ? ' ' + starStr : '');
 
       // Label overlay text (shown when toggle is on)
@@ -251,8 +280,7 @@ function rebuildGrid() {
 
       parts.push(
         `<div data-type="${item.type}" data-id="${item.id}"` +
-        ` style="${cellStyle(bg)}font-size:${Math.max(10, Math.round(size * 0.52))}px;line-height:${size}px;` +
-        `text-align:center;cursor:pointer;border-radius:2px;position:relative;box-shadow:inset 0 0 0 1px rgba(255,255,255,.12);"` +
+        ` style="${cellStyle(bg)}cursor:pointer;border-radius:2px;position:relative;${highlightStyle}"` +
         ` title="${tooltipFull}">${icon}${labelHtml}</div>`
       );
     }
@@ -329,8 +357,123 @@ async function loadMap() {
   buildGrid(data.items || []);
 }
 
+async function loadFriends() {
+  try {
+    const res = await fetch('/api/friends');
+    const data = await res.json();
+    _friends = data.friends || [];
+    renderFriendsList();
+  } catch (_) {}
+}
+
+function renderFriendsList() {
+  const inner = document.getElementById('friends-list-inner');
+  if (!inner) return;
+  if (_friends.length === 0) {
+    inner.innerHTML = '<span class="px-3 py-2 block text-gray-500">No friends yet</span>';
+    return;
+  }
+  inner.innerHTML = _friends.map(f =>
+    `<button type="button" onclick="setFriendFilter(${f.id}, '${escHtml(f.username)}')" ` +
+    `class="w-full text-left px-3 py-1.5 hover:bg-gray-800 text-xs text-gray-200">${escHtml(f.username)}</button>`
+  ).join('');
+}
+
+function escHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function toggleFriendsMenu() {
+  const menu = document.getElementById('friends-menu');
+  menu.classList.toggle('hidden');
+  if (!menu.classList.contains('hidden')) loadFriends();
+}
+
+document.addEventListener('click', e => {
+  const wrap = document.getElementById('friends-dropdown-wrap');
+  if (wrap && !wrap.contains(e.target)) {
+    document.getElementById('friends-menu').classList.add('hidden');
+  }
+});
+
+function setFriendFilter(friendId, friendName) {
+  document.getElementById('friends-menu').classList.add('hidden');
+  if (_viewFilter && _viewFilter.type === 'friend' && _viewFilter.id === friendId) {
+    // Toggle off
+    _viewFilter = null;
+    document.getElementById('btn-friends').textContent = '👥 Friends ▾';
+    document.getElementById('btn-friends').classList.remove('bg-yellow-700','border-yellow-500','text-yellow-100');
+    document.getElementById('btn-friends').classList.add('bg-gray-800','border-gray-700','text-gray-200');
+  } else {
+    _viewFilter = { type: 'friend', id: friendId };
+    document.getElementById('btn-friends').textContent = `👥 ${friendName} ✕`;
+    document.getElementById('btn-friends').classList.add('bg-yellow-700','border-yellow-500','text-yellow-100');
+    document.getElementById('btn-friends').classList.remove('bg-gray-800','border-gray-700','text-gray-200');
+    // Clear 'own' filter
+    document.getElementById('btn-show-mine').classList.remove('bg-cyan-700','border-cyan-500','text-cyan-100');
+    document.getElementById('btn-show-mine').classList.add('bg-gray-800','border-gray-700','text-gray-200');
+  }
+  // Scroll to first matching entity
+  if (_viewFilter && _viewFilter.type === 'friend') {
+    const match = Object.values(entityMap).find(it => it.owner_id === friendId);
+    if (match) scrollGridToCell(match.grid_x, match.grid_y);
+  }
+  rebuildGrid();
+}
+
+function toggleFilter(mode) {
+  if (_viewFilter === mode) {
+    _viewFilter = null;
+    document.getElementById('btn-show-mine').classList.remove('bg-cyan-700','border-cyan-500','text-cyan-100');
+    document.getElementById('btn-show-mine').classList.add('bg-gray-800','border-gray-700','text-gray-200');
+  } else {
+    _viewFilter = mode;
+    document.getElementById('btn-show-mine').classList.add('bg-cyan-700','border-cyan-500','text-cyan-100');
+    document.getElementById('btn-show-mine').classList.remove('bg-gray-800','border-gray-700','text-gray-200');
+    // Clear friend filter
+    _viewFilter = mode;
+    document.getElementById('btn-friends').textContent = '👥 Friends ▾';
+    document.getElementById('btn-friends').classList.remove('bg-yellow-700','border-yellow-500','text-yellow-100');
+    document.getElementById('btn-friends').classList.add('bg-gray-800','border-gray-700','text-gray-200');
+    // Scroll to own castle
+    const mine = Object.values(entityMap).find(it => it.owner_id === PLAYER_ID && it.type === 'castle');
+    if (mine) scrollGridToCell(mine.grid_x, mine.grid_y);
+  }
+  rebuildGrid();
+}
+
+function toggleZoomAll() {
+  if (_zoomAllMode) {
+    // Restore
+    _zoomAllMode = false;
+    document.getElementById('btn-zoom-all').textContent = '⊡ Zoom All';
+    setZoom(1.0);
+    return;
+  }
+  const entities = Object.values(entityMap);
+  if (entities.length === 0) return;
+  const xs = entities.map(e => e.grid_x);
+  const ys = entities.map(e => e.grid_y);
+  const minX = Math.min(...xs), maxX = Math.max(...xs);
+  const minY = Math.min(...ys), maxY = Math.max(...ys);
+  const spanX = Math.max(1, maxX - minX + 2);
+  const spanY = Math.max(1, maxY - minY + 2);
+  const shell = document.getElementById('world-map-shell');
+  const fitZoomX = shell.clientWidth  / (spanX * 52);
+  const fitZoomY = shell.clientHeight / (spanY * 52);
+  const fitZoom  = Math.min(fitZoomX, fitZoomY, ZOOM_MAX);
+  _zoomAllMode = true;
+  document.getElementById('btn-zoom-all').textContent = '↩ Restore';
+  setZoom(fitZoom);
+  // After grid redraws, scroll to the centroid
+  requestAnimationFrame(() => {
+    scrollGridToCell(Math.round((minX + maxX) / 2), Math.round((minY + maxY) / 2));
+  });
+}
+
 applyZoom();
 loadMap();
+loadFriends();
 setInterval(loadMap, 10000);
 
 // ── Scroll helpers ─────────────────────────────────────────────────── //

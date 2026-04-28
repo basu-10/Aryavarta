@@ -1289,3 +1289,98 @@ def delete_player(player_id: int) -> bool:
     db.execute("DELETE FROM player WHERE id=?", (player_id,))
     db.commit()
     return True
+
+
+# ── Friends / Social ──────────────────────────────────────────────────── #
+
+def send_friend_request(requester_id: int, receiver_id: int) -> tuple[bool, str]:
+    """Send a friend request. Idempotent if already sent. Returns (ok, message)."""
+    if requester_id == receiver_id:
+        return False, "Cannot friend yourself"
+    db = get_db()
+    # Check for any existing relationship in either direction
+    row = db.execute(
+        """SELECT id, status FROM friendship
+           WHERE (requester_id=? AND receiver_id=?) OR (requester_id=? AND receiver_id=?)""",
+        (requester_id, receiver_id, receiver_id, requester_id),
+    ).fetchone()
+    if row:
+        if row["status"] == "accepted":
+            return False, "Already friends"
+        return False, "Friend request already pending"
+    db.execute(
+        "INSERT INTO friendship (requester_id, receiver_id, status) VALUES (?,?,'pending')",
+        (requester_id, receiver_id),
+    )
+    db.commit()
+    return True, "Friend request sent"
+
+
+def accept_friend_request(receiver_id: int, requester_id: int) -> tuple[bool, str]:
+    """Accept an incoming friend request."""
+    db = get_db()
+    row = db.execute(
+        "SELECT id FROM friendship WHERE requester_id=? AND receiver_id=? AND status='pending'",
+        (requester_id, receiver_id),
+    ).fetchone()
+    if not row:
+        return False, "No pending request found"
+    db.execute("UPDATE friendship SET status='accepted' WHERE id=?", (row["id"],))
+    db.commit()
+    return True, "Friend request accepted"
+
+
+def remove_friend(player_id: int, other_id: int) -> bool:
+    """Remove a friendship (or pending request) in either direction."""
+    db = get_db()
+    db.execute(
+        """DELETE FROM friendship
+           WHERE (requester_id=? AND receiver_id=?) OR (requester_id=? AND receiver_id=?)""",
+        (player_id, other_id, other_id, player_id),
+    )
+    db.commit()
+    return True
+
+
+def get_friends(player_id: int) -> list[dict]:
+    """Return accepted friends as list of {id, username}."""
+    rows = get_db().execute(
+        """SELECT p.id, p.username FROM friendship f
+           JOIN player p ON p.id = CASE
+               WHEN f.requester_id=? THEN f.receiver_id
+               ELSE f.requester_id
+           END
+           WHERE (f.requester_id=? OR f.receiver_id=?) AND f.status='accepted'
+           ORDER BY p.username""",
+        (player_id, player_id, player_id),
+    ).fetchall()
+    return [dict(r) for r in rows]
+
+
+def get_pending_friend_requests(player_id: int) -> list[dict]:
+    """Incoming pending requests for this player."""
+    rows = get_db().execute(
+        """SELECT f.id, p.id AS requester_id, p.username AS requester_name, f.created_at
+           FROM friendship f JOIN player p ON p.id=f.requester_id
+           WHERE f.receiver_id=? AND f.status='pending'
+           ORDER BY f.created_at""",
+        (player_id,),
+    ).fetchall()
+    return [dict(r) for r in rows]
+
+
+def get_friendship_status(player_id: int, other_id: int) -> str:
+    """Return 'none' | 'pending_sent' | 'pending_received' | 'accepted'."""
+    row = get_db().execute(
+        """SELECT requester_id, status FROM friendship
+           WHERE (requester_id=? AND receiver_id=?) OR (requester_id=? AND receiver_id=?)""",
+        (player_id, other_id, other_id, player_id),
+    ).fetchone()
+    if not row:
+        return "none"
+    if row["status"] == "accepted":
+        return "accepted"
+    if row["requester_id"] == player_id:
+        return "pending_sent"
+    return "pending_received"
+

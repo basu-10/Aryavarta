@@ -191,6 +191,10 @@
             class="w-full text-left px-4 py-2 text-sm text-gray-200 hover:bg-gray-700 flex items-center gap-2">
       📣 Send Recruitment
     </button>
+    <button type="button" onclick="ctxAddFriend()" id="ctx-add-friend-btn"
+            class="w-full text-left px-4 py-2 text-sm text-gray-200 hover:bg-gray-700 flex items-center gap-2">
+      👥 Add Friend
+    </button>
   </div>
 
   <script>
@@ -409,6 +413,19 @@
     if (res.ok) {
       showToast(`Recruitment message sent to ${name}!`);
       openDmPanel(id, name);
+    }
+  }
+
+  async function ctxAddFriend() {
+    if (!_ctxPlayer) return;
+    const { id, name } = _ctxPlayer;
+    closeCtxMenu();
+    const res = await fetch(`/api/friends/${id}`, {method: 'POST'});
+    const data = await res.json();
+    if (data.ok) {
+      showToast(`Friend request sent to ${name}!`);
+    } else {
+      showToast(data.error || 'Could not send request');
     }
   }
 

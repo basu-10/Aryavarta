@@ -163,6 +163,19 @@ CREATE TABLE IF NOT EXISTS building_ammo (
     count INTEGER NOT NULL DEFAULT 0,
     PRIMARY KEY (building_id, ammo_type)
 );
+-- ── Friends ─────────────────────────────────────────────────────────── --
+-- A friendship is symmetric: one row per ordered pair (a < b).
+-- status: 'pending' (requester→receiver), 'accepted'
+CREATE TABLE IF NOT EXISTS friendship (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    requester_id INTEGER NOT NULL REFERENCES player(id) ON DELETE CASCADE,
+    receiver_id  INTEGER NOT NULL REFERENCES player(id) ON DELETE CASCADE,
+    status TEXT NOT NULL DEFAULT 'pending', -- 'pending' | 'accepted'
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    UNIQUE(requester_id, receiver_id)
+);
+CREATE INDEX IF NOT EXISTS idx_friendship_receiver ON friendship (receiver_id);
+
 -- ── Developer Reference Tables ──────────────────────────────────────── --
 -- Read-only lookup tables that document every level's costs and stats.
 -- Populated by `flask seed-ref`. Not used by live game logic.
