@@ -119,6 +119,14 @@
   padding-bottom: calc(4rem + env(safe-area-inset-bottom, 0px) + 1rem);
 }
 
+/* On desktop (sm+): no bottom nav, but fixed top nav needs clearance instead */
+@media (min-width: 640px) {
+  .bottom-nav-clearance {
+    padding-bottom: 1.5rem !important;
+    padding-top: 3.5rem !important; /* height of #desktop-nav */
+  }
+}
+
 /* Bottom nav bar height with iOS home-indicator inset */
 .bottom-nav-inset {
   padding-bottom: env(safe-area-inset-bottom, 0px);
@@ -133,6 +141,12 @@
   border-radius: 50%;
   background: #60a5fa;
   margin: 2px auto 0;
+}
+
+/* Desktop nav active link */
+#desktop-nav .desktop-nav-link.text-blue-400 {
+  background: rgba(59, 130, 246, 0.12);
+  color: #93c5fd;
 }
 
 /* Prevent text selection on nav taps */
@@ -169,19 +183,29 @@
 /* After rotation: rendered height ≈ 576px, rendered width ≈ 256px           */
 @media (max-width: 639px) {
   .battlefield-container {
-    /* Reserve the height that the rotated grid will occupy                   */
-    height: calc(9 * 4rem + 2px); /* 9 columns × cell-height + border        */
+    /* Reserve the height the rotated grid will occupy + room for the legend  */
+    height: calc(9 * 4rem + 2.5rem);
     overflow: visible;
     display: flex;
     flex-direction: column;
-    align-items: center;
+    /* flex-start: item always begins at x=0, so margin-left gives exact offset */
+    /* (center caused off-screen positioning when viewport < 576px)             */
+    align-items: flex-start;
   }
 
   .battlefield-rotatable {
     transform-origin: top left;
-    transform: rotate(90deg) translateX(0);
-    /* After rotation, push it right so it sits centred inside the container */
+    transform: rotate(90deg);
     margin-top: 0;
-    margin-left: calc(4 * 4rem);   /* = 4 columns × cell-width               */
+    /* Shift right by the grid's portrait height (4 rows × 4rem) so that after  */
+    /* rotating clockwise the visual left edge lands exactly at x=0             */
+    margin-left: calc(4 * 4rem);
+  }
+
+  /* CSS transform doesn't move the layout box, so the legend's natural y is    */
+  /* grid layout-height (4×4rem = 256px), not the visual height (9×4rem = 576px). */
+  /* Add the difference (5×4rem) plus the original mt-3 (0.75rem) to push it down */
+  .battlefield-container > div:last-child {
+    margin-top: calc(5 * 4rem + 0.75rem);
   }
 }

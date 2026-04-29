@@ -23,20 +23,19 @@
 
   <!-- Step 1: Understand Your Starting Position -->
   <section class="space-y-4">
-    <h2 class="text-2xl font-bold text-indigo-300">Step 1: Understand Your Starting Position</h2>
+    <h2 class="text-2xl font-bold text-indigo-300">Step 1: Your Starter Pack</h2>
     <div class="bg-gray-900 border border-gray-800 rounded-lg p-6 space-y-3">
       <p class="text-gray-300">
-        When you log in, you're at your <strong>castle</strong> (blue dot on the map). You start with:
+        When you register, you receive a <span class="text-amber-400 font-semibold">Starter Pack</span> — enough to build all resource buildings, both army buildings, and train a comfortable first army.
       </p>
       <ul class="space-y-2 text-gray-300 ml-4">
-        <li class="flex gap-2"><span class="text-amber-400">🌾</span> 200 Food</li>
-        <li class="flex gap-2"><span class="text-amber-600">🪵</span> 200 Timber</li>
-        <li class="flex gap-2"><span class="text-yellow-400">💛</span> 100 Gold</li>
-        <li class="flex gap-2"><span class="text-slate-300">⚙️</span> 100 Metal</li>
+        <li class="flex gap-2"><span class="text-amber-400">🌾</span> 1,000 Food</li>
+        <li class="flex gap-2"><span class="text-amber-600">🪵</span> 350 Timber</li>
+        <li class="flex gap-2"><span class="text-yellow-400">💰</span> 1,800 Gold</li>
+        <li class="flex gap-2"><span class="text-slate-300">⚙️</span> 500 Metal</li>
       </ul>
       <p class="text-gray-300 mt-4">
-        Your castle can hold up to 9 buildings in slots (arranged in a 3×3 grid). One slot is occupied 
-        by the <strong>Command Centre</strong>, which is automatic and required.
+        Your <strong>castle</strong> appears as a blue dot on the world map. It holds a variable number of building slots (4–10, depending on your castle size). Slot 0 is always occupied by the <strong>Command Centre</strong> — this cannot be removed.
       </p>
     </div>
   </section>
@@ -56,22 +55,20 @@
           <div>
             <h3 class="font-bold">Farm (Resource Building)</h3>
             <div class="text-sm text-gray-400 space-y-1 mt-2">
-              <p><strong>Cost:</strong> 50 Timber, 50 Gold</p>
-              <p><strong>Build time:</strong> 30 seconds</p>
-              <p><strong>Production:</strong> 0.05 Food/second (level 1)</p>
+              <p><strong>Cost:</strong> 50 🌾 Food, 30 🪵 Timber</p>
+              <p><strong>Production:</strong> 0.05 🌾 Food/second (level 1, doubles per level)</p>
               <p><strong>Max level:</strong> 10</p>
             </div>
           </div>
         </div>
       </div>
       <p class="text-gray-300">
-        <strong>How to build:</strong> Navigate to your castle (tab shows "Castle"). Click on an empty 
-        slot and select "Farm". Confirm the build. The farm will take 30 seconds to complete.
+        <strong>How to build:</strong> Navigate to your castle (bottom nav → 🏰 Castle). Click on an empty 
+        slot and select "Farm". The build completes quickly. Resources accumulate over time until you collect them.
       </p>
       <div class="bg-blue-900/20 border border-blue-800 rounded p-4 text-sm text-blue-200">
-        💡 <strong>Tip:</strong> Build time is wasted waiting. For your first farm, it's fine to wait. 
-        But keep in mind that you can queue multiple buildings or build multiple buildings at once 
-        (if you have enough resources).
+        💡 <strong>Tip:</strong> Fill as many slots as possible with resource buildings right away. Each building
+        you place generates resources continuously — the more you have, the faster your economy grows.
       </div>
     </div>
   </section>
@@ -88,32 +85,32 @@
           <img src="/assets/theme1/buildings/resource/lumber_mill.svg" alt="Lumber" class="h-6 w-6" />
           Lumber Mill
         </h4>
-        <p class="text-gray-400 text-sm"><strong>Cost:</strong> 50 Food, 50 Gold</p>
-        <p class="text-gray-400 text-sm"><strong>Produces:</strong> Timber (0.05/s)</p>
+        <p class="text-gray-400 text-sm"><strong>Cost:</strong> 50 🪵 Timber, 30 💰 Gold</p>
+        <p class="text-gray-400 text-sm"><strong>Produces:</strong> 🪵 Timber (0.05/s)</p>
       </div>
       <div class="bg-gray-900 border border-gray-800 rounded-lg p-4 space-y-2">
         <h4 class="font-bold text-yellow-600 flex gap-2 items-center">
           <img src="/assets/theme1/buildings/resource/merchant.svg" alt="Merchant" class="h-6 w-6" />
           Merchant
         </h4>
-        <p class="text-gray-400 text-sm"><strong>Cost:</strong> 50 Food, 50 Timber</p>
-        <p class="text-gray-400 text-sm"><strong>Produces:</strong> Gold (0.05/s)</p>
+        <p class="text-gray-400 text-sm"><strong>Cost:</strong> 80 💰 Gold, 20 ⚙️ Metal</p>
+        <p class="text-gray-400 text-sm"><strong>Produces:</strong> 💰 Gold (0.05/s)</p>
       </div>
       <div class="bg-gray-900 border border-gray-800 rounded-lg p-4 space-y-2">
         <h4 class="font-bold text-slate-400 flex gap-2 items-center">
           <img src="/assets/theme1/buildings/resource/mine.svg" alt="Mine" class="h-6 w-6" />
           Mine
         </h4>
-        <p class="text-gray-400 text-sm"><strong>Cost:</strong> 50 Food, 50 Timber</p>
-        <p class="text-gray-400 text-sm"><strong>Produces:</strong> Metal (0.05/s)</p>
+        <p class="text-gray-400 text-sm"><strong>Cost:</strong> 50 ⚙️ Metal, 40 💰 Gold</p>
+        <p class="text-gray-400 text-sm"><strong>Produces:</strong> ⚙️ Metal (0.05/s)</p>
       </div>
       <div class="bg-gray-900 border border-gray-800 rounded-lg p-4 space-y-2">
         <h4 class="font-bold text-orange-600 flex gap-2 items-center">
           <img src="/assets/theme1/buildings/resource/farm.svg" alt="Farm 2" class="h-6 w-6" />
-          Farm 2
+          Farm (second one)
         </h4>
-        <p class="text-gray-400 text-sm"><strong>Cost:</strong> 50 Timber, 50 Gold</p>
-        <p class="text-gray-400 text-sm"><strong>Produces:</strong> Food (0.05/s)</p>
+        <p class="text-gray-400 text-sm"><strong>Cost:</strong> 50 🌾 Food, 30 🪵 Timber</p>
+        <p class="text-gray-400 text-sm"><strong>Produces:</strong> 🌾 Food (0.05/s)</p>
       </div>
     </div>
     <p class="text-gray-300 mt-4">
@@ -132,29 +129,29 @@
       <div class="bg-gray-900 border border-gray-800 rounded-lg p-4 space-y-2">
         <h4 class="font-bold text-orange-400 flex gap-2 items-center">
           <img src="/assets/theme1/buildings/military/garrison.svg" alt="Garrison" class="h-6 w-6" />
-          Garrison (Barracks)
+          Garrison
         </h4>
-        <p class="text-gray-400 text-sm"><strong>Cost:</strong> 100 Timber, 100 Gold, 50 Metal</p>
-        <p class="text-gray-400 text-sm"><strong>Produces:</strong> Longbowman (60s each)</p>
-        <p class="text-gray-400 text-sm"><strong>Training Cost:</strong> 25 Food, 10 Gold</p>
+        <p class="text-gray-400 text-sm"><strong>Build cost:</strong> 100 💰 Gold, 50 ⚙️ Metal</p>
+        <p class="text-gray-400 text-sm"><strong>Trains:</strong> Longbowman</p>
+        <p class="text-gray-400 text-sm"><strong>Per unit cost:</strong> 20 🌾 Food, 10 🪵 Timber, 30 💰 Gold</p>
       </div>
       <div class="bg-gray-900 border border-gray-800 rounded-lg p-4 space-y-2">
         <h4 class="font-bold text-yellow-400 flex gap-2 items-center">
           <img src="/assets/theme1/buildings/military/stable.svg" alt="Stable" class="h-6 w-6" />
           Stable
         </h4>
-        <p class="text-gray-400 text-sm"><strong>Cost:</strong> 100 Food, 100 Timber, 50 Metal</p>
-        <p class="text-gray-400 text-sm"><strong>Produces:</strong> Hussar (90s each)</p>
-        <p class="text-gray-400 text-sm"><strong>Training Cost:</strong> 30 Food, 15 Gold</p>
+        <p class="text-gray-400 text-sm"><strong>Build cost:</strong> 120 💰 Gold, 60 ⚙️ Metal, 20 🪵 Timber</p>
+        <p class="text-gray-400 text-sm"><strong>Trains:</strong> Hussar</p>
+        <p class="text-gray-400 text-sm"><strong>Per unit cost:</strong> 30 🌾 Food, 50 💰 Gold, 20 ⚙️ Metal</p>
       </div>
     </div>
     <p class="text-gray-300 mt-4">
-      <strong>How to train:</strong> Build a Garrison or Stable at your castle. Once built, 
-      click on it to see the training queue. Select "Queue Longbowman" or "Queue Hussar". 
-      The unit will start training immediately and complete in 60–90 seconds.
+      <strong>How to train:</strong> Build a Garrison or Stable at your castle. Click on the building
+      to open the training queue, then queue up as many units as you need. Each unit trains one at a time.
     </p>
     <div class="bg-blue-900/20 border border-blue-800 rounded p-4 text-sm text-blue-200">
-      💡 <strong>Tip:</strong> Start with 5–10 Longbowmen (ranged). They're cheaper and good for learning.
+      💡 <strong>Tip:</strong> Your starter pack covers roughly 20 Longbowmen + 15 Hussars — that's
+      comfortably enough to defeat a 1-star (★) monster fort. Train a mix for best results.
     </div>
   </section>
 

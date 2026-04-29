@@ -26,6 +26,83 @@
 </head>
 <body class="bg-gray-950 text-gray-100 {% block body_class %}min-h-screen{% endblock %} flex flex-col">
 
+  {# ════════════════════════════════════════════════════════════════════
+     Desktop Top Navigation — hidden on mobile, shown on sm+
+     ════════════════════════════════════════════════════════════════════ #}
+  <header id="desktop-nav"
+          class="hidden sm:flex fixed top-0 left-0 right-0 z-[60] h-14 bg-gray-900 border-b border-gray-800 items-center gap-1 px-4">
+
+    {# Brand #}
+    <a href="{{ url_for('world.world_map') if session.get('player_id') else url_for('wiki.wiki_index') }}"
+       class="font-bold text-white text-sm mr-3 shrink-0 hover:text-blue-300 transition-colors">
+      ⚔ BattleCells
+    </a>
+
+    {% if session.get('player_id') %}
+    {# Primary nav links #}
+    <a href="{{ url_for('world.world_map') }}" data-nav-path="/world"
+       class="desktop-nav-link px-3 py-1.5 rounded text-sm text-gray-300 hover:text-white hover:bg-gray-800 transition-colors">
+      🌍 World
+    </a>
+    <a href="{{ url_for('fort.castle_page') }}" data-nav-path="/castle"
+       class="desktop-nav-link px-3 py-1.5 rounded text-sm text-gray-300 hover:text-white hover:bg-gray-800 transition-colors">
+      🏰 Castle
+    </a>
+    <a href="{{ url_for('clan.clan_page') }}" data-nav-path="/clan"
+       class="desktop-nav-link px-3 py-1.5 rounded text-sm text-gray-300 hover:text-white hover:bg-gray-800 transition-colors">
+      ⚔️ Clan
+    </a>
+    <a href="{{ url_for('battle.setup') }}" data-nav-path="/setup"
+       class="desktop-nav-link px-3 py-1.5 rounded text-sm text-gray-300 hover:text-white hover:bg-gray-800 transition-colors">
+      ⚡ Battle
+    </a>
+
+    <div class="flex-1"></div>
+
+    {# Secondary actions — right side #}
+    <a href="{{ url_for('auth.battles') }}" data-nav-path="/battles"
+       class="desktop-nav-link px-3 py-1.5 rounded text-sm text-gray-400 hover:text-white hover:bg-gray-800 transition-colors">
+      📜 History
+    </a>
+    <a href="{{ url_for('wiki.wiki_index') }}" data-nav-path="/wiki"
+       class="desktop-nav-link px-3 py-1.5 rounded text-sm text-gray-400 hover:text-white hover:bg-gray-800 transition-colors">
+      📖 Wiki
+    </a>
+    <button onclick="openTutorial()"
+            class="px-3 py-1.5 rounded text-sm text-amber-400 hover:text-amber-300 hover:bg-gray-800 transition-colors"
+            title="Getting Started">
+      ? Help
+    </button>
+    {% if nav_is_admin %}
+    <a href="{{ url_for('admin.dashboard') }}"
+       class="px-3 py-1.5 rounded text-sm text-amber-500 hover:text-amber-400 hover:bg-gray-800 transition-colors">
+      ⚙️ Admin
+    </a>
+    {% endif %}
+    <div class="w-px h-6 bg-gray-700 mx-1"></div>
+    <span class="text-xs text-gray-500 px-1">{{ session.get('username') }}</span>
+    <a href="{{ url_for('auth.logout') }}"
+       class="px-3 py-1.5 rounded text-sm text-red-400 hover:text-red-300 hover:bg-gray-800 transition-colors">
+      Logout
+    </a>
+
+    {% else %}
+    <div class="flex-1"></div>
+    <a href="{{ url_for('wiki.wiki_index') }}"
+       class="desktop-nav-link px-3 py-1.5 rounded text-sm text-gray-400 hover:text-white hover:bg-gray-800 transition-colors">
+      📖 Wiki
+    </a>
+    <a href="{{ url_for('auth.login') }}"
+       class="px-3 py-1.5 rounded text-sm text-gray-300 hover:text-white hover:bg-gray-800 transition-colors">
+      Login
+    </a>
+    <a href="{{ url_for('auth.register') }}"
+       class="px-3 py-1.5 rounded text-sm bg-blue-600 hover:bg-blue-500 text-white transition-colors">
+      Register
+    </a>
+    {% endif %}
+  </header>
+
   {% with messages = get_flashed_messages(with_categories=true) %}
     {% if messages %}
       <div class="max-w-5xl mx-auto w-full px-4 pt-4">
@@ -448,7 +525,7 @@
      Bottom Navigation Bar
      ════════════════════════════════════════════════════════════════════ #}
   <nav id="bottom-nav"
-       class="fixed bottom-0 left-0 right-0 z-50 bg-gray-900 border-t border-gray-800"
+       class="sm:hidden fixed bottom-0 left-0 right-0 z-50 bg-gray-900 border-t border-gray-800"
        x-data="{ moreOpen: false }">
 
     {% if session.get('player_id') %}
@@ -532,6 +609,11 @@
           <span class="text-xl w-7 text-center">📖</span>
           <span class="text-sm font-medium">Wiki</span>
         </a>
+        <button type="button" @click="moreOpen = false; openTutorial()"
+                class="w-full flex items-center gap-3 px-5 py-3.5 text-amber-400 hover:bg-gray-800 active:bg-gray-700 transition-colors">
+          <span class="text-xl w-7 text-center font-bold">?</span>
+          <span class="text-sm font-medium">Getting Started</span>
+        </button>
         {% if nav_is_admin %}
         <div class="mx-5 border-t border-gray-800 my-1"></div>
         <a href="{{ url_for('admin.dashboard') }}" @click="moreOpen = false"
@@ -589,6 +671,7 @@
   <script>
   (function () {
     const path = window.location.pathname;
+    // Mobile bottom nav
     document.querySelectorAll('[data-nav-path]').forEach(el => {
       const p = el.dataset.navPath;
       if (path === p || path.startsWith(p + '/')) {
@@ -601,17 +684,7 @@
 
   {% if session.get('player_id') %}
   {# ════════════════════════════════════════════════════════════════════
-     Tutorial FAB (? button) — always visible when logged in
-     ════════════════════════════════════════════════════════════════════ #}
-  <button id="tutorial-fab"
-          onclick="openTutorial()"
-          class="fixed bottom-20 left-4 z-50 w-14 h-14 rounded-full bg-amber-500 hover:bg-amber-400 active:bg-amber-600 shadow-2xl flex items-center justify-center text-2xl font-bold text-white select-none"
-          aria-label="Help / Tutorial">
-    ?
-  </button>
-
-  {# ════════════════════════════════════════════════════════════════════
-     Tutorial Modal
+     Tutorial Modal (triggered from More menu on mobile, desktop nav on large screens)
      ════════════════════════════════════════════════════════════════════ #}
   <div id="tutorial-overlay"
        class="fixed inset-0 z-[9998] bg-black/75 flex items-end sm:items-center justify-center p-0 sm:p-4"
