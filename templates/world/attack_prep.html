@@ -1,0 +1,735 @@
+{% extends "base.html" %}
+{% block title %}Attack — BattleCells{% endblock %}
+
+{% block content %}
+<div x-data="attackPrep()" x-init="init()" class="space-y-6 pb-12">
+
+  <!-- ── Header ─────────────────────────────────────────────────────── -->
+  <div class="flex items-center gap-3 flex-wrap">
+    <a href="{{ url_for('world.world_map') }}"
+       class="text-sm text-gray-400 hover:text-white transition-colors shrink-0">
+      ← World Map
+    </a>
+    <div class="h-5 w-px bg-gray-700 shrink-0"></div>
+    <div>
+      <h1 class="text-xl font-bold leading-tight">
+        ⚔️ Attack:
+        {% if target_type == 'monster_camp' %}👾{% else %}🏯{% endif %}
+        {{ target_label }}
+        {% if target_stars %}
+          <span class="text-yellow-400 text-base ml-1">{{ '★' * target_stars }}</span>
+        {% endif %}
+      </h1>
+      <p class="text-xs text-gray-500 mt-0.5">
+        Select a formation below, then click Attack.
+      </p>
+    </div>
+  </div>
+
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+    <!-- ═══════════════════════════════════════════════════════════════
+         LEFT COLUMN — Available troops + origin selector
+         ═══════════════════════════════════════════════════════════════ -->
+    <div class="lg:col-span-1 space-y-4">
+
+      <!-- My Available Troops -->
+      <div class="bg-gray-900 border border-gray-800 rounded-lg p-4">
+        <h2 class="text-sm font-semibold text-gray-300 mb-3 flex items-center gap-2">
+          <span class="text-lg">🛡</span> Available Troops
+        </h2>
+
+        {% if origins %}
+          {% for origin in origins %}
+          <div class="mb-4 last:mb-0">
+            <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
+              {{ origin.label }}
+            </p>
+            {% if origin.troops %}
+              <div class="space-y-1">
+                {% for troop in origin.troops %}
+                <div class="flex items-center justify-between text-sm">
+                  <span class="text-gray-300">{{ troop.unit_type }}</span>
+                  <span class="font-mono text-yellow-300 font-semibold">
+                    ×{{ troop.quantity | format_qty if troop.quantity is defined else troop.quantity }}
+                  </span>
+                </div>
+                {% endfor %}
+              </div>
+            {% else %}
+              <p class="text-xs text-gray-600 italic">No troops stationed here</p>
+            {% endif %}
+          </div>
+          {% endfor %}
+        {% else %}
+          <p class="text-xs text-yellow-500">No castle or forts available. Build your base first.</p>
+        {% endif %}
+      </div>
+
+      <!-- Attack From selector -->
+      <div class="bg-gray-900 border border-gray-800 rounded-lg p-4">
+        <label class="text-sm font-semibold text-gray-300 mb-2 block">
+          🏰 Attack From
+        </label>
+        {% if origins %}
+          <select x-model="selectedOriginKey"
+                  class="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2 text-sm text-white focus:outline-none focus:border-blue-500">
+            {% for origin in origins %}
+            <option value="{{ origin.type }}:{{ origin.id }}">{{ origin.label }}</option>
+            {% endfor %}
+          </select>
+        {% else %}
+          <p class="text-xs text-yellow-500">No valid origin.</p>
+        {% endif %}
+      </div>
+
+      <!-- Attack Button (also here for mobile convenience) -->
+      <div class="bg-gray-900 border border-gray-800 rounded-lg p-4">
+        <div x-show="statusMsg"
+             x-text="statusMsg"
+             :class="statusError ? 'text-red-400' : 'text-yellow-300'"
+             class="text-sm mb-3"></div>
+        <template x-if="currentFormationLabel">
+          <p class="text-xs text-blue-400 mb-2">
+            Formation: <span x-text="currentFormationLabel" class="font-semibold"></span>
+          </p>
+        </template>
+        <button @click="sendAttack()"
+                :disabled="!hasFormation || !selectedOriginKey || attacking"
+                class="w-full bg-red-700 hover:bg-red-600 disabled:opacity-40 disabled:cursor-not-allowed text-white font-bold py-3 rounded-lg text-sm transition-colors">
+          <span x-show="!attacking">⚔️ Launch Attack!</span>
+          <span x-show="attacking">Dispatching…</span>
+        </button>
+        <template x-if="!hasFormation">
+          <p class="text-xs text-gray-600 mt-2 text-center">Select a formation above first.</p>
+        </template>
+      </div>
+
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════════
+         RIGHT COLUMN — Formation picker + builder
+         ═══════════════════════════════════════════════════════════════ -->
+    <div class="lg:col-span-2 space-y-6">
+
+      <!-- ── Saved Formations ──────────────────────────────────────── -->
+      <div class="bg-gray-900 border border-gray-800 rounded-lg p-4">
+        <h2 class="text-sm font-semibold text-gray-300 mb-3 flex items-center gap-2">
+          <span class="text-lg">📋</span> Saved Formations
+          <span class="text-xs text-gray-600 font-normal">(click to select)</span>
+        </h2>
+
+        <template x-if="presetsData.length === 0">
+          <p class="text-xs text-gray-600 italic py-4 text-center">
+            No saved formations yet. Build one below or visit
+            <a href="/setup" class="underline text-blue-400">Setup</a> to create one.
+          </p>
+        </template>
+
+        <template x-if="presetsData.length > 0">
+          <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+            <template x-for="preset in presetsData" :key="preset.name">
+              <div @click="selectPreset(preset)"
+                   :class="isPresetSelected(preset.name)
+                     ? 'ring-2 ring-blue-500 border-blue-500 bg-blue-950/30'
+                     : 'border-gray-700 hover:border-blue-400 hover:bg-gray-800/60'"
+                   class="border rounded-lg p-3 cursor-pointer transition-all">
+
+                <!-- Name -->
+                <h3 class="font-semibold text-sm text-white truncate mb-2" x-text="preset.name"></h3>
+
+                <!-- Mini Team A battlefield (grid_rows × team_a_cols) -->
+                <div class="rounded overflow-hidden border border-gray-600/50 w-full">
+                  <template x-for="mr in GRID_ROWS" :key="mr">
+                    <div class="flex">
+                      <template x-for="mc in TEAM_A_COLS" :key="mc">
+                        <div class="flex-1 border-r border-b border-black/20"
+                             :style="miniCellStyle(preset, mr - 1, mc)"
+                             style="height: 13px;"></div>
+                      </template>
+                    </div>
+                  </template>
+                </div>
+
+                <!-- Footer -->
+                <div class="mt-1.5 flex items-center justify-between text-xs">
+                  <span class="text-blue-400"
+                        x-text="(preset.army_a ? preset.army_a.length : 0) + ' cell' + ((preset.army_a && preset.army_a.length !== 1) ? 's' : '')"></span>
+                  <template x-if="isPresetSelected(preset.name)">
+                    <span class="text-green-400 font-semibold">✓ Selected</span>
+                  </template>
+                </div>
+              </div>
+            </template>
+          </div>
+        </template>
+      </div>
+
+      <!-- ── Build a New Formation ──────────────────────────────────── -->
+      <div class="bg-gray-900 border border-gray-800 rounded-lg p-4">
+        <h2 class="text-sm font-semibold text-gray-300 mb-1 flex items-center gap-2">
+          <span class="text-lg">🔧</span> Build a New Formation
+        </h2>
+        <p class="text-xs text-gray-500 mb-3">
+          Click any cell to place troops. Only your side (Team A) is shown.
+        </p>
+
+        <!-- 4×4 Team A grid -->
+        <div class="inline-block rounded-lg border border-gray-700 overflow-hidden">
+          <template x-for="r in GRID_ROWS" :key="r">
+            <div class="flex">
+              <template x-for="c in TEAM_A_COLS" :key="c">
+                <div @click="toggleBuilderCell(r - 1, c)"
+                     :class="builderCellClass(r - 1, c)"
+                     class="bc-cell-a w-14 h-14 sm:w-16 sm:h-16 cursor-pointer flex flex-col items-center justify-center border-r border-b border-black/20 select-none transition-all">
+
+                  <template x-if="!getBuilderUnit(r - 1, c)">
+                    <span class="text-white/30 text-2xl leading-none pointer-events-none">+</span>
+                  </template>
+
+                  <template x-if="getBuilderUnit(r - 1, c)">
+                    <div class="flex flex-col items-center gap-0.5 pointer-events-none">
+                      <template x-if="troopIcon(getBuilderUnit(r-1, c).type)">
+                        <img :src="troopVisual(getBuilderUnit(r-1, c).type, 'idle')"
+                             :alt="getBuilderUnit(r-1, c).type"
+                             class="w-7 h-7 object-contain drop-shadow" />
+                      </template>
+                      <template x-if="!troopIcon(getBuilderUnit(r-1, c).type)">
+                        <span class="text-sm font-bold leading-none"
+                              x-text="typeAbbrev(getBuilderUnit(r-1, c).type)"></span>
+                      </template>
+                      <span class="text-xs leading-none font-semibold text-yellow-200"
+                            x-text="'×' + fmtQty(getBuilderUnit(r-1, c).quantity)"></span>
+                    </div>
+                  </template>
+
+                </div>
+              </template>
+            </div>
+          </template>
+        </div>
+
+        <!-- Builder actions -->
+        <div class="mt-4 space-y-3">
+
+          <!-- Use builder formation directly for attack -->
+          <div class="flex items-center gap-3 flex-wrap">
+            <button @click="useBuilderFormation()"
+                    :disabled="builderIsEmpty"
+                    :class="usingBuilder
+                      ? 'bg-blue-700 ring-2 ring-blue-400'
+                      : 'bg-gray-700 hover:bg-gray-600'"
+                    class="disabled:opacity-40 disabled:cursor-not-allowed text-white text-sm px-4 py-2 rounded transition-colors">
+              <span x-show="!usingBuilder">Use This Formation</span>
+              <span x-show="usingBuilder">✓ Using This Formation</span>
+            </button>
+            <button @click="clearBuilder()"
+                    :disabled="builderIsEmpty"
+                    class="disabled:opacity-40 disabled:cursor-not-allowed text-xs text-gray-500 hover:text-red-400 px-2 py-1 transition-colors">
+              Clear all
+            </button>
+          </div>
+
+          <!-- Save as named preset -->
+          <div class="flex gap-2 items-center flex-wrap">
+            <input type="text"
+                   x-model="newPresetName"
+                   placeholder="Formation name…"
+                   class="bg-gray-800 border border-gray-700 rounded px-3 py-1.5 text-sm text-white w-48 focus:outline-none focus:border-indigo-500" />
+            <button @click="saveBuilderAsPreset()"
+                    :disabled="!newPresetName.trim() || builderIsEmpty || builderSaving"
+                    class="px-4 py-1.5 rounded bg-indigo-700 hover:bg-indigo-600 disabled:opacity-40 disabled:cursor-not-allowed text-sm transition-colors">
+              <span x-show="!builderSaving">Save Formation</span>
+              <span x-show="builderSaving">Saving…</span>
+            </button>
+            <span x-show="builderSaveMsg"
+                  x-text="builderSaveMsg"
+                  :class="builderSaveError ? 'text-red-400' : 'text-green-400'"
+                  class="text-sm"></span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════════════
+       Troop picker modal (same UX as setup page)
+       ══════════════════════════════════════════════════════════════════ -->
+  <template x-if="showTroopModal">
+    <div class="fixed inset-0 bg-black/60 flex items-center justify-center z-50"
+         @click.self="closeTroopModal()">
+      <div class="bg-gray-900 border border-gray-700 rounded-xl shadow-2xl max-w-2xl w-full mx-4 flex flex-col max-h-[90vh]">
+
+        <!-- Modal header -->
+        <div class="border-b border-gray-700 px-6 py-4 flex items-center justify-between shrink-0">
+          <div>
+            <h2 class="font-semibold text-lg">
+              Cell (<span x-text="modalCell.r"></span>, <span x-text="modalCell.c"></span>)
+            </h2>
+            <p class="text-xs text-gray-400 mt-0.5">Team A deployment zone</p>
+          </div>
+          <button @click="closeTroopModal()" class="text-gray-500 hover:text-white text-xl leading-none px-1">✕</button>
+        </div>
+
+        <!-- Quantity / current troop -->
+        <div class="px-6 py-4 border-b border-gray-800 shrink-0">
+          <template x-if="modalCell.unit">
+            <div class="flex items-center gap-4 bg-gray-800 rounded-lg px-4 py-3">
+              <template x-if="troopIcon(modalCell.unit.type)">
+                <img :src="troopVisual(modalCell.unit.type, 'idle')"
+                     :alt="modalCell.unit.type"
+                     class="w-10 h-10 object-contain shrink-0" />
+              </template>
+              <template x-if="!troopIcon(modalCell.unit.type)">
+                <span class="text-2xl font-bold shrink-0" x-text="typeAbbrev(modalCell.unit.type)"></span>
+              </template>
+              <div class="flex-1 min-w-0">
+                <p class="font-semibold" x-text="modalCell.unit.type"></p>
+                <p class="text-xs text-gray-400">Select a different type below to replace</p>
+              </div>
+              <div class="flex items-center gap-2 shrink-0">
+                <label class="text-xs text-gray-400 whitespace-nowrap">Quantity</label>
+                <input type="text"
+                       x-model="modalQtyInput"
+                       @input.debounce.400ms="applyQtyUpdate()"
+                       @keydown.enter="applyQtyUpdate()"
+                       class="w-28 bg-gray-700 border border-gray-600 rounded px-2 py-1.5 text-sm text-right font-mono focus:outline-none focus:border-indigo-500"
+                       placeholder="e.g. 5M" />
+                <button @click="clearBuilderCell()"
+                        class="px-3 py-1.5 text-xs bg-red-900/50 hover:bg-red-800/70 border border-red-800/60 rounded text-red-300 whitespace-nowrap">
+                  Clear
+                </button>
+              </div>
+            </div>
+          </template>
+
+          <template x-if="!modalCell.unit">
+            <div class="flex items-center gap-3 flex-wrap">
+              <label class="text-sm text-gray-300 whitespace-nowrap">Quantity to place:</label>
+              <input type="text"
+                     x-model="modalQtyInput"
+                     @keydown.enter.prevent=""
+                     class="w-36 bg-gray-800 border border-gray-700 rounded px-3 py-1.5 text-sm font-mono focus:outline-none focus:border-indigo-500"
+                     placeholder="e.g. 1, 1k, 5M" />
+              <span class="text-xs text-gray-500">k = ×1,000 · M = ×1,000,000 · B = ×1,000,000,000</span>
+            </div>
+          </template>
+        </div>
+
+        <!-- Troop picker (scrollable) -->
+        <div class="px-6 py-4 overflow-y-auto flex-1">
+          <h3 class="text-xs font-semibold uppercase tracking-wider text-gray-500 mb-3"
+              x-text="modalCell.unit ? 'Change Troop Type (replaces current)' : 'Select Troop Type'"></h3>
+
+          <template x-for="[faction, factionLabel] in [['human', 'Human Units'], ['monster', 'Monster Units']]" :key="faction">
+            <div x-show="getCategoryTroops(faction, 'melee').length > 0 || getCategoryTroops(faction, 'ranged').length > 0"
+                 class="mb-6">
+              <h4 class="text-sm font-semibold text-gray-400 mb-3" x-text="factionLabel"></h4>
+              <div class="space-y-3">
+
+                <template x-if="getCategoryTroops(faction, 'melee').length > 0">
+                  <div>
+                    <h5 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Melee</h5>
+                    <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                      <template x-for="troop in getCategoryTroops(faction, 'melee')" :key="troop">
+                        <div @click="selectBuilderTroop(troop)"
+                             :class="modalCell.unit && modalCell.unit.type === troop
+                               ? 'border-indigo-500 bg-indigo-900/20'
+                               : 'border-gray-700 hover:border-gray-500'"
+                             class="bg-gray-800 border rounded-lg p-3 cursor-pointer transition-all">
+                          <div class="flex items-center gap-2">
+                            <img x-show="troopIcon(troop)" :src="troopVisual(troop, 'idle')" :alt="troop"
+                                 class="w-6 h-6 object-contain" />
+                            <div class="font-semibold text-sm" x-text="troop"></div>
+                          </div>
+                          <div class="text-xs text-gray-500 mt-2 grid grid-cols-2 gap-0.5">
+                            <span x-text="'HP: ' + fmtQty(UNIT_STATS[troop].hp)"></span>
+                            <span x-text="'DMG: ' + fmtQty(UNIT_STATS[troop].damage)"></span>
+                            <span x-text="'DEF: ' + fmtQty(UNIT_STATS[troop].defense)"></span>
+                            <span x-text="'SPD: ' + UNIT_STATS[troop].speed + 'x'"></span>
+                          </div>
+                        </div>
+                      </template>
+                    </div>
+                  </div>
+                </template>
+
+                <template x-if="getCategoryTroops(faction, 'ranged').length > 0">
+                  <div>
+                    <h5 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Ranged</h5>
+                    <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                      <template x-for="troop in getCategoryTroops(faction, 'ranged')" :key="troop">
+                        <div @click="selectBuilderTroop(troop)"
+                             :class="modalCell.unit && modalCell.unit.type === troop
+                               ? 'border-indigo-500 bg-indigo-900/20'
+                               : 'border-gray-700 hover:border-gray-500'"
+                             class="bg-gray-800 border rounded-lg p-3 cursor-pointer transition-all">
+                          <div class="flex items-center gap-2">
+                            <img x-show="troopIcon(troop)" :src="troopVisual(troop, 'idle')" :alt="troop"
+                                 class="w-6 h-6 object-contain" />
+                            <div class="font-semibold text-sm" x-text="troop"></div>
+                          </div>
+                          <div class="text-xs text-gray-500 mt-2 grid grid-cols-2 gap-0.5">
+                            <span x-text="'HP: ' + fmtQty(UNIT_STATS[troop].hp)"></span>
+                            <span x-text="'DMG: ' + fmtQty(UNIT_STATS[troop].damage)"></span>
+                            <span x-text="'DEF: ' + fmtQty(UNIT_STATS[troop].defense)"></span>
+                            <span x-text="'RNG: ' + UNIT_STATS[troop].range"></span>
+                          </div>
+                        </div>
+                      </template>
+                    </div>
+                  </div>
+                </template>
+
+              </div>
+            </div>
+          </template>
+        </div>
+
+        <!-- Modal footer -->
+        <div class="border-t border-gray-700 px-6 py-3 shrink-0 flex justify-end">
+          <button @click="closeTroopModal()"
+                  class="px-4 py-2 rounded bg-gray-700 hover:bg-gray-600 text-sm font-medium transition-colors">
+            Close
+          </button>
+        </div>
+
+      </div>
+    </div>
+  </template>
+
+</div>
+
+<script>
+const GRID_ROWS     = {{ grid_rows }};
+const TEAM_A_COLS   = {{ team_a_cols | tojson }};
+const UNIT_TYPES    = {{ unit_types | tojson }};
+const UNIT_STATS    = {{ unit_stats | tojson }};
+const UNIT_CLASSIFICATION = {{ unit_classification | tojson }};
+const TARGET_TYPE   = {{ target_type | tojson }};
+const TARGET_ID     = {{ target_id }};
+const PRESETS_DATA  = {{ presets | tojson }};
+const TROOP_ASSETS  = {
+  Archer: {
+    icon: '/assets/{{ active_theme }}/troops/human/map-icons/archer.svg',
+    animations: {
+      idle:   '/assets/{{ active_theme }}/troops/human/animations/archer/idle.gif',
+      walk:   '/assets/{{ active_theme }}/troops/human/animations/archer/walk.gif',
+      attack: '/assets/{{ active_theme }}/troops/human/animations/archer/attack.gif',
+      hurt:   '/assets/{{ active_theme }}/troops/human/animations/archer/hurt.gif',
+      death:  '/assets/{{ active_theme }}/troops/human/animations/archer/death.gif',
+    },
+  },
+  Barbarian: {
+    icon: '/assets/{{ active_theme }}/troops/human/map-icons/archer.svg',
+    animations: {
+      idle:   '/assets/{{ active_theme }}/troops/human/animations/barbarian/idle.gif',
+      walk:   '/assets/{{ active_theme }}/troops/human/animations/barbarian/walk.gif',
+      attack: '/assets/{{ active_theme }}/troops/human/animations/barbarian/attack.gif',
+      hurt:   '/assets/{{ active_theme }}/troops/human/animations/barbarian/hurt.gif',
+      death:  '/assets/{{ active_theme }}/troops/human/animations/barbarian/death.gif',
+    },
+  },
+  Longbowman: { icon: '/assets/{{ active_theme }}/troops/human/map-icons/longbowman.svg' },
+  Hussar:     { icon: '/assets/{{ active_theme }}/troops/human/map-icons/hussar.svg' },
+  Troll:      { icon: '/assets/{{ active_theme }}/troops/monster/map-icons/troll.svg' },
+  Wraith:     { icon: '/assets/{{ active_theme }}/troops/monster/map-icons/wraith.svg' },
+};
+
+function attackPrep() {
+  return {
+    // Presets
+    presetsData: PRESETS_DATA,
+    selectedPresetName: null,
+    selectedPresetData: null,
+
+    // Builder
+    builderMap: {},          // "r,c" → unit object
+    usingBuilder: false,
+    newPresetName: '',
+    builderSaving: false,
+    builderSaveMsg: '',
+    builderSaveError: false,
+
+    // Origin
+    selectedOriginKey: {{ (origins[0].type ~ ':' ~ origins[0].id) | tojson if origins else "''" }},
+
+    // UI state
+    attacking: false,
+    statusMsg: '',
+    statusError: false,
+
+    // Troop modal
+    showTroopModal: false,
+    modalCell: { r: null, c: null, unit: null },
+    modalQtyInput: '1',
+
+    // ── Init ──────────────────────────────────────────────────────────
+    init() { /* presetsData already set from const */ },
+
+    // ── Derived ───────────────────────────────────────────────────────
+    get hasFormation() {
+      if (this.usingBuilder) return Object.keys(this.builderMap).length > 0;
+      return this.selectedPresetData !== null;
+    },
+
+    get currentFormationLabel() {
+      if (this.usingBuilder && Object.keys(this.builderMap).length > 0) {
+        return 'Custom (unsaved)';
+      }
+      if (this.selectedPresetName) return this.selectedPresetName;
+      return null;
+    },
+
+    get builderIsEmpty() {
+      return Object.keys(this.builderMap).length === 0;
+    },
+
+    // ── Preset selection ──────────────────────────────────────────────
+    selectPreset(preset) {
+      this.selectedPresetName = preset.name;
+      this.selectedPresetData = preset;
+      this.usingBuilder = false;
+    },
+
+    isPresetSelected(name) {
+      return this.selectedPresetName === name && !this.usingBuilder;
+    },
+
+    miniCellStyle(preset, r, c) {
+      if (!preset._cellMap) {
+        preset._cellMap = {};
+        for (const u of (preset.army_a || [])) {
+          preset._cellMap[`${u.row},${u.col}`] = true;
+        }
+      }
+      const occupied = !!preset._cellMap[`${r},${c}`];
+      return occupied
+        ? 'background: rgba(59,130,246,0.85)'
+        : 'background: rgba(50,78,120,0.35)';
+    },
+
+    // ── Builder ───────────────────────────────────────────────────────
+    getBuilderUnit(r, c) {
+      return this.builderMap[`${r},${c}`] || null;
+    },
+
+    builderCellClass(r, c) {
+      const u = this.getBuilderUnit(r, c);
+      return u ? 'ring-1 ring-inset ring-white/30' : '';
+    },
+
+    toggleBuilderCell(r, c) {
+      const unit = this.getBuilderUnit(r, c);
+      this.modalCell = { r, c, unit: unit ? { ...unit } : null };
+      this.modalQtyInput = unit ? String(unit.quantity || 1) : '1';
+      this.showTroopModal = true;
+    },
+
+    useBuilderFormation() {
+      if (this.builderIsEmpty) return;
+      this.usingBuilder = true;
+      this.selectedPresetName = null;
+      this.selectedPresetData = null;
+    },
+
+    clearBuilder() {
+      this.builderMap = {};
+      if (this.usingBuilder) {
+        this.usingBuilder = false;
+      }
+    },
+
+    async saveBuilderAsPreset() {
+      const name = this.newPresetName.trim();
+      if (!name || this.builderIsEmpty) return;
+      this.builderSaving = true;
+      this.builderSaveMsg = '';
+      const army_a = Object.values(this.builderMap).map(u => ({
+        unit_id: u.unit_id, type: u.type, row: u.row, col: u.col, quantity: u.quantity,
+      }));
+      try {
+        const res = await fetch('/presets', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name, army_a, army_b: [] }),
+        });
+        const data = await res.json();
+        if (res.ok) {
+          this.builderSaveError = false;
+          this.builderSaveMsg = `"${name}" saved!`;
+          setTimeout(() => this.builderSaveMsg = '', 3000);
+          // Inject the new preset into the list and auto-select it
+          const newPreset = { name, army_a, army_b: [] };
+          const existingIdx = this.presetsData.findIndex(p => p.name === name);
+          if (existingIdx >= 0) {
+            this.presetsData[existingIdx] = newPreset;
+          } else {
+            this.presetsData.push(newPreset);
+          }
+          this.selectedPresetName = name;
+          this.selectedPresetData = newPreset;
+          this.usingBuilder = false;
+          this.newPresetName = '';
+        } else {
+          this.builderSaveError = true;
+          this.builderSaveMsg = data.error || 'Save failed';
+        }
+      } catch (e) {
+        this.builderSaveError = true;
+        this.builderSaveMsg = 'Network error: ' + e.message;
+      } finally {
+        this.builderSaving = false;
+      }
+    },
+
+    // ── Troop modal ───────────────────────────────────────────────────
+    selectBuilderTroop(troopName) {
+      const { r, c } = this.modalCell;
+      if (r === null) return;
+      const qty = this.parseQty(this.modalQtyInput);
+      const unit = {
+        unit_id: `A_${troopName}_${r}_${c}`,
+        team: 'A',
+        type: troopName,
+        row: r,
+        col: c,
+        quantity: qty,
+      };
+      this.builderMap = { ...this.builderMap, [`${r},${c}`]: unit };
+      this.modalCell = { ...this.modalCell, unit: { ...unit } };
+    },
+
+    applyQtyUpdate() {
+      const { r, c } = this.modalCell;
+      if (r === null || !this.builderMap[`${r},${c}`]) return;
+      const qty = this.parseQty(this.modalQtyInput);
+      const updated = { ...this.builderMap[`${r},${c}`], quantity: qty };
+      this.builderMap = { ...this.builderMap, [`${r},${c}`]: updated };
+      this.modalCell = { ...this.modalCell, unit: { ...updated } };
+    },
+
+    clearBuilderCell() {
+      const { r, c } = this.modalCell;
+      if (r === null) return;
+      const newMap = { ...this.builderMap };
+      delete newMap[`${r},${c}`];
+      this.builderMap = newMap;
+      this.modalCell = { ...this.modalCell, unit: null };
+      this.modalQtyInput = '1';
+    },
+
+    closeTroopModal() {
+      this.showTroopModal = false;
+      this.modalCell = { r: null, c: null, unit: null };
+      this.modalQtyInput = '1';
+    },
+
+    // ── Attack ────────────────────────────────────────────────────────
+    async sendAttack() {
+      if (!this.hasFormation || !this.selectedOriginKey || this.attacking) return;
+      const colonIdx = this.selectedOriginKey.indexOf(':');
+      const origin_type = this.selectedOriginKey.slice(0, colonIdx);
+      const origin_id   = parseInt(this.selectedOriginKey.slice(colonIdx + 1));
+
+      this.attacking = true;
+      this.statusMsg = 'Dispatching…';
+      this.statusError = false;
+
+      const body = {
+        target_type: TARGET_TYPE,
+        target_id:   TARGET_ID,
+        origin_type,
+        origin_id,
+      };
+
+      if (!this.usingBuilder && this.selectedPresetName) {
+        body.preset_name = this.selectedPresetName;
+      } else {
+        // Builder formation — send explicit placements
+        body.formation = Object.values(this.builderMap).map(u => ({
+          unit_type: u.type,
+          quantity:  u.quantity,
+          row:       u.row,
+          col:       u.col,
+        }));
+      }
+
+      try {
+        const res = await fetch('/api/attack', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body),
+        });
+        const data = await res.json();
+        if (data.ok) {
+          if (data.result && data.result.battle_id) {
+            window.location.href = '/results/' + data.result.battle_id;
+          } else {
+            this.statusMsg = `Dispatched — arrives in ${data.travel_seconds}s.`;
+            this.attacking = false;
+          }
+        } else {
+          this.statusError = true;
+          this.statusMsg = data.error || 'Attack failed';
+          this.attacking = false;
+        }
+      } catch (e) {
+        this.statusError = true;
+        this.statusMsg = 'Network error: ' + e.message;
+        this.attacking = false;
+      }
+    },
+
+    // ── Utilities (same as setup.html) ────────────────────────────────
+    parseQty(str) {
+      if (!str) return 1;
+      const s = String(str).trim().toLowerCase().replace(/,/g, '').replace(/\s/g, '');
+      const m = s.match(/^(\d+(?:\.\d+)?)([kmb]?)$/);
+      if (!m) return 1;
+      const n = parseFloat(m[1]);
+      if (m[2] === 'k') return Math.max(1, Math.floor(n * 1_000));
+      if (m[2] === 'm') return Math.max(1, Math.floor(n * 1_000_000));
+      if (m[2] === 'b') return Math.max(1, Math.floor(n * 1_000_000_000));
+      return Math.max(1, Math.floor(n));
+    },
+
+    fmtQty(n) {
+      if (!n || n < 1) return '0';
+      if (n >= 1_000_000_000) return (n / 1_000_000_000).toFixed(1).replace(/\.0$/, '') + 'B';
+      if (n >= 1_000_000)     return (n / 1_000_000).toFixed(1).replace(/\.0$/, '') + 'M';
+      if (n >= 1_000)         return (n / 1_000).toFixed(1).replace(/\.0$/, '') + 'k';
+      return String(n);
+    },
+
+    typeAbbrev(type) {
+      const map = {
+        Barbarian: 'B', Archer: 'AR', Troll: 'TR', Wraith: 'WR',
+        Longbowman: 'LB', Hussar: 'HS', Cannon: 'CN', 'Archer Tower': 'AT',
+        Demon: 'DM', Pegasus: 'PG',
+      };
+      return map[type] || type.replace(/[^A-Za-z]/g, '').slice(0, 3).toUpperCase();
+    },
+
+    troopIcon(type) {
+      return (TROOP_ASSETS[type] && TROOP_ASSETS[type].icon) || '';
+    },
+
+    troopVisual(type, action = 'idle') {
+      const asset = TROOP_ASSETS[type];
+      if (!asset) return '';
+      if (asset.animations && asset.animations[action]) return asset.animations[action];
+      return asset.icon || '';
+    },
+
+    getCategoryTroops(faction, type) {
+      return UNIT_TYPES.filter(name => {
+        const cls = UNIT_CLASSIFICATION[name];
+        return cls && cls.faction === faction && cls.type === type;
+      });
+    },
+  };
+}
+</script>
+{% endblock %}

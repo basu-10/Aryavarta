@@ -58,9 +58,19 @@ See `assets/assets_readme.md` for exact folder rules.
 - Entity markers: `/assets/theme1/map/locations/castle.svg`, `/assets/theme1/map/locations/fort.svg`, `/assets/theme1/map/locations/monster-camp.svg`.
 
 ### Interaction
-Clicking a cell fires an HTMX request to `GET /world/item/<type>/<id>`, which returns an HTML partial injected into the popup panel. The popup contains an attack button that mounts the Alpine `attackPanel()` component.
+Clicking a cell fires an HTMX request to `GET /world/item/<type>/<id>`, which returns an HTML partial injected into the popup panel. For forts and monster camps the popup shows an **Attack** link that navigates to the dedicated attack preparation page (`GET /attack/<target_type>/<target_id>`).
 
-When attacking from the popup, the selected preset name is sent to `POST /api/attack` as `preset_name`. The server loads that preset file and derives Team A formation from `army_a`, so the selected preset is the authoritative source for units sent.
+### Attack Preparation Page (`/attack/<target_type>/<target_id>`)
+
+A full-page pre-attack UI that replaces the old inline modal. It has three main sections:
+
+1. **Available Troops panel** — lists idle troops stationed at the player's castle and each owned fort. Includes an "Attack From" origin selector.
+2. **Saved Formations grid** — all presets are rendered as clickable cards. Each card shows a mini 4×4 battlefield (Team A side only). Clicking a card selects it. Presets created on `/setup` (both teams) and presets created on this page (Team A only) are both listed.
+3. **Build a New Formation** — an inline 4-row × 4-col Team A grid. Click any cell to open the troop-picker modal. The built formation can be used directly for the attack, or saved as a named preset (stored in `presets/<name>.json` with `army_b: []`).
+
+After selecting a formation (either a saved preset or a freshly built one) the player clicks **Launch Attack!** which calls `POST /api/attack` and immediately redirects to `/results/<battle_id>`.
+
+Alpine.js `attackPrep()` component manages all selection, builder, and attack dispatch logic client-side.
 
 The map JSON is refreshed every 10 seconds via a `setInterval` in `templates/world/map.html`.
 

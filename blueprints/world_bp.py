@@ -13,8 +13,8 @@ from datetime import datetime, timezone, timedelta
 from pathlib import Path
 
 from flask import (
-    Blueprint, current_app, jsonify, render_template,
-    request, session,
+    Blueprint, current_app, jsonify, redirect, render_template,
+    request, session, url_for,
 )
 
 from blueprints.auth_bp import login_required
@@ -24,6 +24,7 @@ from engine.unit import Unit
 from utils.battle_store import store_battle
 from utils.csv_writer import write_battle_csv
 from utils.serializer import build_tick_data
+from utils.troops_store import get_all_unit_stats
 from db.world_seeder import ensure_world_entities
 import config
 
@@ -76,6 +77,86 @@ def world_item_popup(item_type: str, item_id: int):
         ctx["item"] = camp
 
     return render_template("world/item_popup.html", **ctx)
+
+
+# ── Attack preparation page ──────────────────────────────────────────── #
+
+@world_bp.route("/attack/<target_type>/<int:target_id>")
+@login_required
+def attack_prep(target_type: str, target_id: int):
+    """Full-page attack preparation: pick a formation and launch."""
+    player_id = session["player_id"]
+
+    if target_type == "fort":
+        target = m.get_fort(target_id)
+        if target is None:
+            return "Fort not found", 404
+        if target.get("owner_id") == player_id:
+            return "Cannot attack your own fort", 403
+        target_label = (
+            f"{target['owner_name']}'s Fort" if target.get("owner_name")
+            else "Monster Fort" if target.get("owner_id") is None
+            else f"Fort #{target_id}"
+        )
+        target_stars = target.get("star_level", 0)
+    elif target_type == "monster_camp":
+        target = m.get_monster_camp(target_id)
+        if target is None or not target.get("is_active"):
+            return "Monster camp not found or already defeated", 404
+        target_label = "Monster Camp"
+        target_stars = target.get("star_level", 0)
+    else:
+        return "Invalid target type", 400
+
+    # Player origins with stationed troops
+    castle = m.get_castle_by_player(player_id)
+    forts_owned = m.get_forts_by_owner(player_id)
+    origins: list[dict] = []
+    if castle:
+        troops = m.get_troops_at("castle", castle["id"])
+        origins.append({
+            "type": "castle", "id": castle["id"], "label": "My Castle",
+            "troops": troops,
+        })
+    for fort in forts_owned:
+        troops = m.get_troops_at("fort", fort["id"])
+        origins.append({
+            "type": "fort", "id": fort["id"], "label": f"Fort #{fort['id']}",
+            "troops": troops,
+        })
+
+    # All saved presets
+    presets: list[dict] = []
+    for f in sorted(_PRESETS_DIR.glob("*.json")):
+        try:
+            presets.append(json.loads(f.read_text(encoding="utf-8")))
+        except Exception:
+            pass
+
+    all_stats = get_all_unit_stats()
+    unit_classification = dict(config.UNIT_CLASSIFICATION)
+    for unit_type in all_stats:
+        if unit_type not in unit_classification:
+            stats = all_stats[unit_type]
+            troop_type = "melee" if stats.get("range", 1) <= 1 else "ranged"
+            unit_classification[unit_type] = {"faction": "human", "type": troop_type}
+
+    return render_template(
+        "world/attack_prep.html",
+        target_type=target_type,
+        target_id=target_id,
+        target=target,
+        target_label=target_label,
+        target_stars=target_stars,
+        origins=origins,
+        presets=presets,
+        grid_rows=config.GRID_ROWS,
+        team_a_cols=config.TEAM_A_COLS,
+        unit_types=list(all_stats.keys()),
+        unit_stats=all_stats,
+        unit_classification=unit_classification,
+        active_theme=config.ACTIVE_THEME,
+    )
 
 
 # ── Player origins API ───────────────────────────────────────────────── #
