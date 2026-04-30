@@ -24,9 +24,27 @@ import db as database
 from utils.battle_store import init_store
 
 
+def _format_qty(n) -> str:
+    """Jinja2 filter: format large numbers as 1k / 1M / 1B."""
+    try:
+        n = int(n)
+    except (TypeError, ValueError):
+        return str(n)
+    if n < 1:
+        return "0"
+    if n >= 1_000_000_000:
+        return f"{n / 1_000_000_000:.1f}".rstrip("0").rstrip(".") + "B"
+    if n >= 1_000_000:
+        return f"{n / 1_000_000:.1f}".rstrip("0").rstrip(".") + "M"
+    if n >= 1_000:
+        return f"{n / 1_000:.1f}".rstrip("0").rstrip(".") + "k"
+    return str(n)
+
+
 def create_app(output_dir: str | None = None) -> Flask:
     """Application factory — testable and config-injectable."""
     app = Flask(__name__, template_folder="templates", static_folder="static")
+    app.jinja_env.filters["format_qty"] = _format_qty
 
     # Secret key (use env var in production)
     app.secret_key = os.environ.get("SECRET_KEY", secrets.token_hex(32))

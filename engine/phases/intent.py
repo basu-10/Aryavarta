@@ -28,11 +28,23 @@ def chebyshev(u1: "Unit", u2: "Unit") -> int:
 
 
 def enemies_in_range(unit: "Unit", all_units: list["Unit"]) -> list["Unit"]:
-    """Return living enemies within unit's attack range."""
+    """
+    Return living enemies within attack range that are directly in front
+    or diagonally in front of this unit.
+
+    "In front" means the enemy column is strictly ahead in the unit's
+    forward direction (forward_dir > 0 means higher col; < 0 means lower).
+    Purely sideways (same col, different row) and backward targets are
+    excluded — troops can never attack backwards.
+    """
     return [
         u
         for u in all_units
-        if u.team != unit.team and u.is_alive() and chebyshev(unit, u) <= unit.range
+        if u.team != unit.team
+        and u.is_alive()
+        and chebyshev(unit, u) <= unit.range
+        # Must be strictly ahead — col delta in forward direction >= 1
+        and (u.col - unit.col) * unit.forward_dir >= 1
     ]
 
 

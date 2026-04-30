@@ -143,9 +143,25 @@
                   <template x-for="mr in GRID_ROWS" :key="mr">
                     <div class="flex">
                       <template x-for="mc in TEAM_A_COLS" :key="mc">
-                        <div class="flex-1 border-r border-b border-black/20"
-                             :style="miniCellStyle(preset, mr - 1, mc)"
-                             style="height: 13px;"></div>
+                        <div class="flex-1 border-r border-b border-black/20 flex flex-col items-center justify-center"
+                             :class="miniGetUnit(preset, mr - 1, mc) ? 'bg-blue-900/50' : 'bg-gray-900/60'"
+                             style="height: 36px; min-width: 0;">
+                          <template x-if="miniGetUnit(preset, mr - 1, mc)">
+                            <div class="flex flex-col items-center gap-px pointer-events-none">
+                              <template x-if="troopIcon(miniGetUnit(preset, mr - 1, mc).type)">
+                                <img :src="troopVisual(miniGetUnit(preset, mr - 1, mc).type, 'idle')"
+                                     :alt="miniGetUnit(preset, mr - 1, mc).type"
+                                     class="w-5 h-5 object-contain" />
+                              </template>
+                              <template x-if="!troopIcon(miniGetUnit(preset, mr - 1, mc).type)">
+                                <span class="text-xs font-bold text-white leading-none"
+                                      x-text="typeAbbrev(miniGetUnit(preset, mr - 1, mc).type)"></span>
+                              </template>
+                              <span class="text-yellow-300 font-semibold leading-none" style="font-size:8px"
+                                    x-text="'×' + fmtQty(miniGetUnit(preset, mr - 1, mc).quantity || 1)"></span>
+                            </div>
+                          </template>
+                        </div>
                       </template>
                     </div>
                   </template>
@@ -508,6 +524,16 @@ function attackPrep() {
       return occupied
         ? 'background: rgba(59,130,246,0.85)'
         : 'background: rgba(50,78,120,0.35)';
+    },
+
+    miniGetUnit(preset, r, c) {
+      if (!preset._unitMap) {
+        preset._unitMap = {};
+        for (const u of (preset.army_a || [])) {
+          preset._unitMap[`${u.row},${u.col}`] = u;
+        }
+      }
+      return preset._unitMap[`${r},${c}`] || null;
     },
 
     // ── Builder ───────────────────────────────────────────────────────

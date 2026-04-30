@@ -67,13 +67,28 @@ The rolled star level is stored on the fort/camp row in `star_level`. The spawne
 
 ## Battle resolution
 
-The existing deterministic 6-phase battle engine (`engine/`) is used unchanged.
+The battle engine (`engine/`) is a deterministic 6-phase tick loop.
 
 - Attacker units are placed at random positions in Team A columns (0–3).
 - Defender units are placed at random positions in Team B columns (5–8).
 - Column 4 is no-man's-land.
 - The battle runs up to `MAX_TICKS = 200` ticks.
 - The result is stored via `utils/battle_store.py` (in-memory keyed by UUID).
+
+### Attack targeting rules
+
+Troops may only attack enemies that are **ahead of them** (in their forward direction). The attack arc is:
+
+| Priority | Target zone | Condition |
+|---|---|---|
+| 1 (preferred) | **Direct front** | Same row as attacker, ahead column, within attack range |
+| 2 (fallback) | **Diagonal front** | Adjacent row (±1), ahead column, within attack range |
+
+- **"Ahead"** means the enemy's column is strictly further in the unit's travel direction (right for Team A, left for Team B).
+- **Sideways** (same column, different row) and **backward** targets are never valid.
+- Within each priority tier the closest enemy is picked first; ties are broken alphabetically by unit ID.
+
+**Ranged kiting:** if a ranged unit (range > 1) has an enemy in the same row that is closer than its optimal range, the ranged unit retreats one cell instead of attacking.
 
 ### Outcomes
 

@@ -29,6 +29,24 @@ function tickViewer() {
       return this.currentSnap.units || [];
     },
 
+    /** Build a flat list of {type, tick, text, key} entries for the full tick log. */
+    get fullTickLog() {
+      const entries = [];
+      for (let t = 0; t < this.ticks.length; t++) {
+        const snap = this.ticks[t];
+        const log = (snap && snap.log) || [];
+        entries.push({ type: 'header', tick: t, text: `Tick ${t}`, key: `h-${t}` });
+        if (log.length === 0) {
+          entries.push({ type: 'event', tick: t, text: '(no events)', key: `e-${t}-empty` });
+        } else {
+          for (let i = 0; i < log.length; i++) {
+            entries.push({ type: 'event', tick: t, text: log[i], key: `e-${t}-${i}` });
+          }
+        }
+      }
+      return entries;
+    },
+
     // ── Lifecycle ─────────────────────────────────────────────────────── //
     init() {
       this.ticks = TICK_DATA;
@@ -36,6 +54,21 @@ function tickViewer() {
       this.winner = WINNER;
       this.GRID_ROWS = GRID_ROWS;
       this.GRID_COLS = GRID_COLS;
+      // Scroll log to current tick whenever currentTick changes
+      this.$watch('currentTick', () => this._scrollLogToTick());
+    },
+
+    _scrollLogToTick() {
+      this.$nextTick(() => {
+        const el = document.getElementById(`tick-log-${this.currentTick}`);
+        const container = this.$refs.tickLogScroll;
+        if (el && container) {
+          const elTop = el.offsetTop;
+          const elH = el.offsetHeight;
+          const cH = container.clientHeight;
+          container.scrollTop = elTop - cH / 2 + elH / 2;
+        }
+      });
     },
 
     // ── Navigation ────────────────────────────────────────────────────── //

@@ -17,10 +17,20 @@ if TYPE_CHECKING:
 
 
 def select_target(attacker: "Unit", candidates: list["Unit"]) -> "Unit | None":
-    """Pick the closest enemy from *candidates*. None if list is empty."""
+    """
+    Pick the best target from *candidates*.
+
+    Priority:
+    1. Direct-front targets (same row as attacker) — prefer closest.
+    2. Diagonal-front targets (different row, but still ahead) — prefer closest.
+
+    Within each group the tie-break is alphabetical unit_id.
+    """
     if not candidates:
         return None
-    return min(candidates, key=lambda e: (chebyshev(attacker, e), e.unit_id))
+    direct = [e for e in candidates if e.row == attacker.row]
+    pool = direct if direct else candidates
+    return min(pool, key=lambda e: (chebyshev(attacker, e), e.unit_id))
 
 
 def resolve_targeting(units: list["Unit"]) -> None:
