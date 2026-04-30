@@ -23,6 +23,30 @@
   </div>
 </div>
 
+<!-- ── Worlds ─────────────────────────────────────────────────────────── -->
+<section class="bg-gray-800 rounded p-4 mb-8">
+  <div class="flex items-center justify-between mb-3">
+    <h2 class="font-semibold">Worlds ({{ worlds|length }})</h2>
+    <a href="{{ url_for('admin.list_worlds') }}"
+       class="text-xs bg-blue-700 hover:bg-blue-600 text-white px-3 py-1 rounded">
+      Manage Worlds
+    </a>
+  </div>
+  {% if worlds %}
+  <div class="flex flex-wrap gap-2 text-xs">
+    {% for w in worlds %}
+    <span class="bg-gray-700 rounded px-3 py-1 {% if w.is_default %}ring ring-yellow-500{% endif %}">
+      <span class="font-semibold text-blue-300">{{ w.name }}</span>
+      <span class="text-gray-400 ml-1">{{ w.grid_width }}×{{ w.grid_height }}</span>
+      {% if w.is_default %}<span class="text-yellow-400 ml-1">(default)</span>{% endif %}
+    </span>
+    {% endfor %}
+  </div>
+  {% else %}
+  <p class="text-gray-500 text-xs">No worlds yet. <a href="{{ url_for('admin.list_worlds') }}" class="text-blue-400 underline">Create one</a>.</p>
+  {% endif %}
+</section>
+
 <!-- ── Theme Selector ────────────────────────────────────────────────── -->
 <section class="bg-gray-800 rounded p-4 mb-8">
   <h2 class="font-semibold mb-3">World Theme</h2>
@@ -49,7 +73,7 @@
 
 <!-- ── Create user ───────────────────────────────────────────────────── -->
 <section class="bg-gray-800 rounded p-4 mb-8"
-         x-data="{username:'', password:'', role:'player', msg:'', err:''}">
+         x-data="{username:'', password:'', role:'player', world_id:'{{ worlds[0].id if worlds else 0 }}', msg:'', err:''}">
   <h2 class="font-semibold mb-3">Create User</h2>
   <div class="flex flex-wrap gap-3 items-end">
     <div>
@@ -66,7 +90,18 @@
       <label class="block text-xs text-gray-400 mb-1">Role</label>
       <select x-model="role" class="bg-gray-700 border border-gray-600 rounded px-2 py-1 text-white">
         <option value="player">Player</option>
+        <option value="mod">Mod</option>
         <option value="admin">Admin</option>
+      </select>
+    </div>
+    <div>
+      <label class="block text-xs text-gray-400 mb-1">World</label>
+      <select x-model="world_id" class="bg-gray-700 border border-gray-600 rounded px-2 py-1 text-white">
+        {% for w in worlds %}
+        <option value="{{ w.id }}">{{ w.name }}</option>
+        {% else %}
+        <option value="0">(no worlds)</option>
+        {% endfor %}
       </select>
     </div>
     <button @click="createUser()"
@@ -80,9 +115,19 @@
 
 <!-- ── Spawn world entities ──────────────────────────────────────────── -->
 <section class="bg-gray-800 rounded p-4 mb-8"
-         x-data="{forts:5, camps:5, msg:''}">
+         x-data="{forts:5, camps:5, world_id:'{{ worlds[0].id if worlds else 0 }}', msg:''}">
   <h2 class="font-semibold mb-3">Spawn World Entities</h2>
-  <div class="flex gap-4 items-end">
+  <div class="flex flex-wrap gap-4 items-end">
+    <div>
+      <label class="block text-xs text-gray-400 mb-1">World</label>
+      <select x-model="world_id" class="bg-gray-700 border border-gray-600 rounded px-2 py-1 text-white">
+        {% for w in worlds %}
+        <option value="{{ w.id }}">{{ w.name }}</option>
+        {% else %}
+        <option value="0">(no worlds)</option>
+        {% endfor %}
+      </select>
+    </div>
     <div>
       <label class="block text-xs text-gray-400 mb-1">Forts</label>
       <input type="number" x-model.number="forts" min="0"
@@ -93,11 +138,39 @@
       <input type="number" x-model.number="camps" min="0"
              class="bg-gray-700 border border-gray-600 rounded px-2 py-1 w-20 text-white" />
     </div>
-    <button @click="spawnEntities(forts, camps).then(r => msg = `Spawned ${r.forts} forts, ${r.camps} camps.`)"
+    <button @click="spawnEntities(forts, camps, world_id).then(r => msg = `Spawned ${r.forts} forts, ${r.camps} camps.`)"
             class="bg-orange-700 hover:bg-orange-600 text-white text-sm px-4 py-2 rounded">
       Spawn
     </button>
     <span class="text-xs text-green-400" x-text="msg"></span>
+  </div>
+</section>
+
+<!-- ── Reset Password ─────────────────────────────────────────────────── -->
+<section class="bg-gray-800 rounded p-4 mb-8"
+         x-data="{player_id:'', new_password:'', msg:'', err:''}">
+  <h2 class="font-semibold mb-3">Reset Player Password</h2>
+  <div class="flex flex-wrap gap-3 items-end">
+    <div>
+      <label class="block text-xs text-gray-400 mb-1">Player</label>
+      <select x-model="player_id" class="bg-gray-700 border border-gray-600 rounded px-2 py-1 text-white">
+        <option value="">-- select --</option>
+        {% for p in players %}
+        <option value="{{ p.id }}">{{ p.username }} ({{ p.id }})</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div>
+      <label class="block text-xs text-gray-400 mb-1">New Password</label>
+      <input type="password" x-model="new_password" placeholder="new password"
+             class="bg-gray-700 border border-gray-600 rounded px-2 py-1 w-40 text-white" />
+    </div>
+    <button @click="resetPassword(player_id, new_password, $data)"
+            class="bg-yellow-700 hover:bg-yellow-600 text-white text-sm px-4 py-2 rounded">
+      Reset
+    </button>
+    <span class="text-xs text-green-400" x-text="msg"></span>
+    <span class="text-xs text-red-400"   x-text="err"></span>
   </div>
 </section>
 
@@ -160,8 +233,17 @@
                     class="text-xs bg-yellow-900 hover:bg-yellow-800 text-yellow-200 px-2 py-1 rounded">
               → Admin
             </button>
+            <button @click="postAction('/admin/promote-mod/{{ p.id }}')"
+                    class="text-xs bg-teal-900 hover:bg-teal-800 text-teal-200 px-2 py-1 rounded">
+              → Mod
+            </button>
             {% elif p.role == 'admin' %}
             <button @click="postAction('/admin/demote/{{ p.id }}')"
+                    class="text-xs bg-gray-700 hover:bg-gray-600 text-gray-200 px-2 py-1 rounded">
+              → Player
+            </button>
+            {% elif p.role == 'mod' %}
+            <button @click="postAction('/admin/demote-mod/{{ p.id }}')"
                     class="text-xs bg-gray-700 hover:bg-gray-600 text-gray-200 px-2 py-1 rounded">
               → Player
             </button>
@@ -214,8 +296,16 @@
 
               <!-- Troops panel -->
               <div class="bg-gray-800 rounded p-3"
-                   x-data="{unit_type:'{{ unit_types[0] }}', qty:10, msg:'', err:''}">
+                   x-data="{unit_type:'{{ unit_types[0] }}', qty:10, world_id:'{{ worlds[0].id if worlds else 0 }}', msg:'', err:''}">
                 <h3 class="text-xs font-semibold text-gray-400 uppercase mb-2">Add Troops (to Castle)</h3>
+                <select x-model="world_id"
+                        class="bg-gray-700 border border-gray-600 rounded px-2 py-1 text-xs text-white w-full mb-2">
+                  {% for w in worlds %}
+                  <option value="{{ w.id }}">{{ w.name }}</option>
+                  {% else %}
+                  <option value="0">(no worlds)</option>
+                  {% endfor %}
+                </select>
                 <select x-model="unit_type"
                         class="bg-gray-700 border border-gray-600 rounded px-2 py-1 text-xs text-white w-full mb-2">
                   {% for ut in unit_types %}
@@ -224,7 +314,7 @@
                 </select>
                 <input type="number" x-model.number="qty" min="1" placeholder="Quantity"
                        class="bg-gray-700 border border-gray-600 rounded px-2 py-1 text-xs text-white w-full mb-2" />
-                <button @click="addTroops({{ p.id }}, unit_type, qty)
+                <button @click="addTroops({{ p.id }}, unit_type, qty, world_id)
                                  .then(r => { if(r.ok){ msg='Added!'; err=''; } else { err=r.error; msg=''; } })"
                         class="bg-green-700 hover:bg-green-600 text-white text-xs px-3 py-1 rounded w-full">
                   Add Troops
@@ -235,8 +325,18 @@
 
               <!-- Grant Fort panel -->
               <div class="bg-gray-800 rounded p-3"
-                   x-data="{slots:6, fully_built:false, msg:'', err:''}">
+                   x-data="{slots:6, fully_built:false, world_id:'{{ worlds[0].id if worlds else 0 }}', msg:'', err:''}">
                 <h3 class="text-xs font-semibold text-gray-400 uppercase mb-2">Grant Fort</h3>
+                <div class="mb-2">
+                  <label class="block text-xs text-gray-400 mb-1">World</label>
+                  <select x-model="world_id" class="bg-gray-700 border border-gray-600 rounded px-2 py-1 text-xs text-white w-full">
+                    {% for w in worlds %}
+                    <option value="{{ w.id }}">{{ w.name }}</option>
+                    {% else %}
+                    <option value="0">(no worlds)</option>
+                    {% endfor %}
+                  </select>
+                </div>
                 <div class="mb-2">
                   <label class="block text-xs text-gray-400 mb-1">Slots (4–10)</label>
                   <input type="number" x-model.number="slots" min="4" max="10"
@@ -246,7 +346,7 @@
                   <input type="checkbox" x-model="fully_built" class="accent-orange-500" />
                   Fully built (all slots pre-constructed)
                 </label>
-                <button @click="grantFort({{ p.id }}, slots, fully_built)
+                <button @click="grantFort({{ p.id }}, slots, fully_built, world_id)
                                  .then(r => { if(r.ok){ msg='Fort #'+r.fort_id+' granted!'; err=''; } else { err=r.error; msg=''; } })"
                         class="bg-orange-700 hover:bg-orange-600 text-white text-xs px-3 py-1 rounded w-full">
                   Grant Fort
@@ -297,24 +397,38 @@ async function postAction(url) {
   if (j.ok) location.reload(); else alert(j.error || JSON.stringify(j));
 }
 
-async function spawnEntities(forts, camps) {
+async function spawnEntities(forts, camps, world_id) {
   const r = await fetch('/admin/spawn', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ forts, camps }),
+    body: JSON.stringify({ forts, camps, world_id }),
   });
   return r.json();
+}
+
+async function resetPassword(player_id, new_password, data) {
+  data.msg = ''; data.err = '';
+  if (!player_id) { data.err = 'Select a player.'; return; }
+  if (!new_password) { data.err = 'Enter a new password.'; return; }
+  const r = await fetch(`/admin/users/${player_id}/reset-password`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ password: new_password }),
+  });
+  const j = await r.json();
+  if (j.ok) { data.msg = 'Password reset.'; data.new_password = ''; }
+  else { data.err = j.error || 'Error.'; }
 }
 
 async function createUser() {
   // Reached via Alpine x-data on the create-user section
   const sec = document.querySelector('[x-data*="createUser"]')?.__x?.$data
            || Alpine.$data(document.querySelector('[x-data*="username"]'));
-  const { username, password, role } = sec;
+  const { username, password, role, world_id } = sec;
   const r = await fetch('/admin/users/create', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ username, password, role }),
+    body: JSON.stringify({ username, password, role, world_id: parseInt(world_id) || 0 }),
   });
   const j = await r.json();
   if (j.ok) {
@@ -357,20 +471,20 @@ async function editResources(pid, action, food, timber, gold, metal) {
   }
 }
 
-async function addTroops(pid, unit_type, qty) {
+async function addTroops(pid, unit_type, qty, world_id) {
   const r = await fetch(`/admin/users/${pid}/troops`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ unit_type, quantity: qty }),
+    body: JSON.stringify({ unit_type, quantity: qty, world_id: parseInt(world_id) || 0 }),
   });
   return r.json();
 }
 
-async function grantFort(pid, slot_count, fully_built) {
+async function grantFort(pid, slot_count, fully_built, world_id) {
   const r = await fetch(`/admin/users/${pid}/grant-fort`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ slot_count, fully_built }),
+    body: JSON.stringify({ slot_count, fully_built, world_id: parseInt(world_id) || 0 }),
   });
   return r.json();
 }

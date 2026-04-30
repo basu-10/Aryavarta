@@ -117,9 +117,9 @@ const BG = {
 };
 
 const LOCATION_ICON = {
-  castle: '/assets/theme1/map/locations/castle.svg',
-  fort: '/assets/theme1/map/locations/fort.svg',
-  monster_camp: '/assets/theme1/map/locations/monster-camp.svg',
+  castle: '/assets/{{ active_theme }}/map/locations/castle.svg',
+  fort: '/assets/{{ active_theme }}/map/locations/fort.svg',
+  monster_camp: '/assets/{{ active_theme }}/map/locations/monster-camp.svg',
 };
 
 // Terrain is rendered via the grid container background — no per-cell SVG tiles.
@@ -249,9 +249,17 @@ function rebuildGrid() {
           bg = BG.fort_monster; label = 'Monster Fort';
           starStr = item.star_level ? stars(item.star_level) : '';
         }
-      } else {
+      } else if (item.type === 'monster_camp') {
         bg = BG.camp; label = 'Monster Camp';
         starStr = item.star_level ? stars(item.star_level) : '';
+      } else if (item.type === 'decoration') {
+        // Decoration (tree/bush) — transparent, no label, non-interactive
+        parts.push(`<div style="${cellStyle('transparent')}"></div>`);
+        continue;
+      } else {
+        // Unknown entity type — render as empty
+        parts.push(`<div style="${cellStyle('transparent')}"></div>`);
+        continue;
       }
 
       const iconPath = LOCATION_ICON[item.type] || '';

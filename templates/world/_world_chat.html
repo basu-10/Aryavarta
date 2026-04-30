@@ -13,7 +13,29 @@
     <span class="text-gray-300 text-xs ml-1 break-words">{{ msg.message }}</span>
   </div>
   <span class="text-gray-600 text-[10px] mt-0.5 shrink-0">{{ msg.sent_at[11:16] }}</span>
+  {% if player and player.role in ('mod', 'admin') %}
+  <button type="button"
+          onclick="softDeleteChatMsg({{ msg.id }}, this)"
+          title="Delete message"
+          class="text-red-700 hover:text-red-400 text-[10px] mt-0.5 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+    ✕
+  </button>
+  {% endif %}
 </div>
 {% else %}
 <p class="text-gray-600 text-xs italic text-center">No messages yet. Say hello!</p>
 {% endfor %}
+
+<script>
+async function softDeleteChatMsg(msgId, btn) {
+  if (!confirm('Delete this message?')) return;
+  const r = await fetch(`/api/world/chat/${msgId}/delete`, { method: 'POST' });
+  const j = await r.json();
+  if (j.ok) {
+    btn.closest('div.group').remove();
+  } else {
+    alert(j.error || 'Could not delete message.');
+  }
+}
+</script>
+

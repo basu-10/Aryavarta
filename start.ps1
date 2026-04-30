@@ -13,7 +13,7 @@
 
 param(
     [switch]$Prod,
-    [int]$Port = 5000
+    [int]$Port = 7856
 )
 
 Set-StrictMode -Version Latest
@@ -37,7 +37,8 @@ $env:FLASK_APP = "app"
 if ($Prod) {
     Write-Host "Starting BattleCells World on port $Port (production mode)..." -ForegroundColor Cyan
     & ".venv\Scripts\flask.exe" --app app run --host 0.0.0.0 --port $Port
-} else {
+}
+else {
     $env:FLASK_DEBUG = "1"
     Write-Host "Starting BattleCells World on http://127.0.0.1:$Port (debug mode)..." -ForegroundColor Cyan
     Write-Host "Press Ctrl+C to stop." -ForegroundColor DarkGray

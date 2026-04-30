@@ -1,0 +1,148 @@
+{% extends "base.html" %}
+{% block title %}Worlds — Admin{% endblock %}
+{% block content %}
+<div class="flex items-center justify-between mb-6">
+  <h1 class="text-2xl font-bold">World Management</h1>
+  <a href="{{ url_for('admin.dashboard') }}"
+     class="text-xs text-gray-400 hover:text-white">← Dashboard</a>
+</div>
+
+<!-- ── Create world form ──────────────────────────────────────────────── -->
+<section class="bg-gray-800 rounded p-4 mb-8"
+         x-data="{name:'', grid_width: {{ default_w }}, grid_height: {{ default_h }}, num_forts:15, num_camps:10, msg:'', err:'', loading:false}">
+  <h2 class="font-semibold mb-3">Create New World</h2>
+  <div class="flex flex-wrap gap-3 items-end">
+    <div>
+      <label class="block text-xs text-gray-400 mb-1">World Name</label>
+      <input type="text" x-model="name" placeholder="e.g. Realm of Fire"
+             class="bg-gray-700 border border-gray-600 rounded px-2 py-1 w-44 text-white" />
+    </div>
+    <div>
+      <label class="block text-xs text-gray-400 mb-1">Width</label>
+      <input type="number" x-model.number="grid_width" min="20" max="500"
+             class="bg-gray-700 border border-gray-600 rounded px-2 py-1 w-20 text-white" />
+    </div>
+    <div>
+      <label class="block text-xs text-gray-400 mb-1">Height</label>
+      <input type="number" x-model.number="grid_height" min="20" max="500"
+             class="bg-gray-700 border border-gray-600 rounded px-2 py-1 w-20 text-white" />
+    </div>
+    <div>
+      <label class="block text-xs text-gray-400 mb-1">Forts</label>
+      <input type="number" x-model.number="num_forts" min="0"
+             class="bg-gray-700 border border-gray-600 rounded px-2 py-1 w-20 text-white" />
+    </div>
+    <div>
+      <label class="block text-xs text-gray-400 mb-1">Camps</label>
+      <input type="number" x-model.number="num_camps" min="0"
+             class="bg-gray-700 border border-gray-600 rounded px-2 py-1 w-20 text-white" />
+    </div>
+    <button @click="createWorld()"
+            :disabled="loading"
+            class="bg-green-700 hover:bg-green-600 disabled:opacity-50 text-white text-sm px-4 py-2 rounded">
+      <span x-show="!loading">Create & Generate</span>
+      <span x-show="loading">Generating…</span>
+    </button>
+    <span class="text-xs text-green-400" x-text="msg"></span>
+    <span class="text-xs text-red-400"   x-text="err"></span>
+  </div>
+</section>
+
+<!-- ── Worlds list ────────────────────────────────────────────────────── -->
+<section class="mb-8">
+  <h2 class="font-semibold mb-3">Existing Worlds</h2>
+  {% if worlds %}
+  <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+    {% for w in worlds %}
+    <div class="bg-gray-800 rounded p-4"
+         x-data="{deleting:false, msg:'', err:''}">
+      <div class="flex items-start justify-between mb-2">
+        <div>
+          <span class="font-semibold text-blue-300 text-lg">{{ w.name }}</span>
+          {% if w.is_default %}
+          <span class="ml-2 text-xs bg-yellow-800 text-yellow-300 rounded px-1 py-0.5">default</span>
+          {% endif %}
+        </div>
+        <span class="text-xs text-gray-500">#{{ w.id }}</span>
+      </div>
+      <div class="text-xs text-gray-400 mb-3 space-y-0.5">
+        <div>Grid: <span class="text-white">{{ w.grid_width }} × {{ w.grid_height }}</span></div>
+        <div>Forts: <span class="text-white">{{ w.num_forts }}</span>  Camps: <span class="text-white">{{ w.num_camps }}</span></div>
+        <div>Created: <span class="text-white">{{ w.created_at[:10] }}</span></div>
+      </div>
+      <div class="flex flex-wrap gap-2 text-xs">
+        <a href="{{ url_for('admin.view_world', world_id=w.id) }}"
+           class="bg-gray-700 hover:bg-gray-600 text-gray-200 px-2 py-1 rounded">View</a>
+        {% if not w.is_default %}
+        <button @click="setDefault({{ w.id }}).then(r => { if(r.ok) location.reload(); else err=r.error||'Error'; })"
+                class="bg-yellow-900 hover:bg-yellow-800 text-yellow-200 px-2 py-1 rounded">
+          Set Default
+        </button>
+        {% endif %}
+        <button @click="purgeChat({{ w.id }}).then(r => { if(r.ok) msg=`Purged ${r.purged} msgs`; else err=r.error||'Error'; })"
+                class="bg-gray-700 hover:bg-gray-600 text-gray-200 px-2 py-1 rounded">
+          Purge Deleted Chat
+        </button>
+        <button @click="deleteWorld({{ w.id }}, '{{ w.name }}')"
+                :disabled="deleting"
+                class="bg-red-900 hover:bg-red-800 text-red-200 px-2 py-1 rounded">
+          Delete
+        </button>
+      </div>
+      <div class="mt-1">
+        <span class="text-xs text-green-400" x-text="msg"></span>
+        <span class="text-xs text-red-400"   x-text="err"></span>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <p class="text-gray-500 text-sm">No worlds created yet.</p>
+  {% endif %}
+</section>
+
+<script>
+async function createWorld() {
+  const sec = Alpine.$data(document.querySelector('[x-data*="createWorld"]') ||
+                           document.querySelector('[x-data*="grid_width"]'));
+  sec.loading = true; sec.msg = ''; sec.err = '';
+  const r = await fetch('/admin/worlds', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      name: sec.name,
+      grid_width:  sec.grid_width,
+      grid_height: sec.grid_height,
+      num_forts:   sec.num_forts,
+      num_camps:   sec.num_camps,
+    }),
+  });
+  sec.loading = false;
+  const j = await r.json();
+  if (j.ok) {
+    sec.msg = `World created (id ${j.world_id}).`;
+    sec.name = '';
+    setTimeout(() => location.reload(), 1000);
+  } else {
+    sec.err = j.error || 'Unknown error';
+  }
+}
+
+async function setDefault(worldId) {
+  const r = await fetch(`/admin/worlds/${worldId}/set-default`, { method: 'POST' });
+  return r.json();
+}
+
+async function purgeChat(worldId) {
+  const r = await fetch(`/admin/worlds/${worldId}/purge-chat`, { method: 'POST' });
+  return r.json();
+}
+
+async function deleteWorld(worldId, name) {
+  if (!confirm(`Delete world "${name}" and ALL its entities (forts, camps, castles, chat)? Player accounts are preserved.`)) return;
+  const r = await fetch(`/admin/worlds/${worldId}/delete`, { method: 'POST' });
+  const j = await r.json();
+  if (j.ok) location.reload(); else alert(j.error || JSON.stringify(j));
+}
+</script>
+{% endblock %}

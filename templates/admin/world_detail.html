@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}World: {{ world.name }} — Admin{% endblock %}
+{% block content %}
+<div class="flex items-center justify-between mb-6">
+  <h1 class="text-2xl font-bold">{{ world.name }}</h1>
+  <a href="{{ url_for('admin.list_worlds') }}"
+     class="text-xs text-gray-400 hover:text-white">← Worlds</a>
+</div>
+
+<div class="grid md:grid-cols-3 gap-4 mb-8 text-sm">
+  <div class="bg-gray-800 rounded p-4">
+    <div class="text-xs text-gray-400 uppercase mb-1">Grid</div>
+    <div class="text-xl font-bold">{{ world.grid_width }} × {{ world.grid_height }}</div>
+  </div>
+  <div class="bg-gray-800 rounded p-4">
+    <div class="text-xs text-gray-400 uppercase mb-1">Monster Forts</div>
+    <div class="text-xl font-bold">{{ forts|length }}</div>
+  </div>
+  <div class="bg-gray-800 rounded p-4">
+    <div class="text-xs text-gray-400 uppercase mb-1">Active Camps</div>
+    <div class="text-xl font-bold">{{ camps|length }}</div>
+  </div>
+</div>
+
+<div class="bg-gray-800 rounded p-4 text-xs text-gray-400 mb-4">
+  <div>ID: {{ world.id }} &nbsp;|&nbsp; Default: {{ 'Yes' if world.is_default else 'No' }}</div>
+  <div>Created: {{ world.created_at }}</div>
+</div>
+{% endblock %}

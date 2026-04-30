@@ -1,6 +1,17 @@
 -- BattleCells World — SQLite Schema
 -- Circular FK (player.clan_id ↔ clan.leader_id) is handled at app layer.
 -- PRAGMA foreign_keys = ON is set per connection in db/__init__.py.
+-- ── World ────────────────────────────────────────────────────────────── --
+CREATE TABLE IF NOT EXISTS world (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT UNIQUE NOT NULL,
+    grid_width INTEGER NOT NULL DEFAULT 50,
+    grid_height INTEGER NOT NULL DEFAULT 50,
+    num_forts INTEGER NOT NULL DEFAULT 15,
+    num_camps INTEGER NOT NULL DEFAULT 10,
+    is_default INTEGER NOT NULL DEFAULT 0,
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
 CREATE TABLE IF NOT EXISTS clan (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT UNIQUE NOT NULL,
@@ -28,13 +39,16 @@ CREATE TABLE IF NOT EXISTS player (
 );
 CREATE TABLE IF NOT EXISTS castle (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    player_id INTEGER NOT NULL UNIQUE REFERENCES player(id),
+    world_id INTEGER NOT NULL REFERENCES world(id) ON DELETE CASCADE,
+    player_id INTEGER NOT NULL REFERENCES player(id),
     slot_count INTEGER NOT NULL,
     grid_x INTEGER NOT NULL,
-    grid_y INTEGER NOT NULL
+    grid_y INTEGER NOT NULL,
+    UNIQUE(world_id, player_id)
 );
 CREATE TABLE IF NOT EXISTS fort (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
+    world_id INTEGER NOT NULL REFERENCES world(id) ON DELETE CASCADE,
     owner_id INTEGER REFERENCES player(id) ON DELETE
     SET NULL,
         slot_count INTEGER NOT NULL,
@@ -62,6 +76,7 @@ CREATE TABLE IF NOT EXISTS building (
 );
 CREATE TABLE IF NOT EXISTS monster_camp (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
+    world_id INTEGER NOT NULL REFERENCES world(id) ON DELETE CASCADE,
     grid_x INTEGER NOT NULL,
     grid_y INTEGER NOT NULL,
     unit_data TEXT NOT NULL,
@@ -82,20 +97,22 @@ CREATE TABLE IF NOT EXISTS troop (
 );
 CREATE TABLE IF NOT EXISTS battle_mission (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    attacker_id INTEGER NOT NULL REFERENCES player(id),
-    target_type TEXT NOT NULL,
-    -- 'fort' | 'monster_camp'
-    target_id INTEGER NOT NULL,
-    formation TEXT NOT NULL,
-    -- JSON [{unit_type, quantity}]
-    origin_type TEXT NOT NULL,
-    -- 'castle' | 'fort'
-    origin_id INTEGER NOT NULL,
-    depart_time TEXT NOT NULL,
-    arrive_time TEXT NOT NULL,
-    resolved INTEGER NOT NULL DEFAULT 0,
-    result_battle_id TEXT,
-    winner TEXT -- 'attacker' | 'defender' | NULL
+    world_id INTEGER REFERENCES world(id) ON DELETE
+    SET NULL,
+        attacker_id INTEGER NOT NULL REFERENCES player(id),
+        target_type TEXT NOT NULL,
+        -- 'fort' | 'monster_camp'
+        target_id INTEGER NOT NULL,
+        formation TEXT NOT NULL,
+        -- JSON [{unit_type, quantity}]
+        origin_type TEXT NOT NULL,
+        -- 'castle' | 'fort'
+        origin_id INTEGER NOT NULL,
+        depart_time TEXT NOT NULL,
+        arrive_time TEXT NOT NULL,
+        resolved INTEGER NOT NULL DEFAULT 0,
+        result_battle_id TEXT,
+        winner TEXT -- 'attacker' | 'defender' | NULL
 );
 CREATE TABLE IF NOT EXISTS clan_message (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -117,9 +134,13 @@ CREATE TABLE IF NOT EXISTS clan_application (
 );
 CREATE TABLE IF NOT EXISTS world_message (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
+    world_id INTEGER NOT NULL REFERENCES world(id) ON DELETE CASCADE,
     sender_id INTEGER NOT NULL REFERENCES player(id),
     message TEXT NOT NULL,
-    sent_at TEXT NOT NULL DEFAULT (datetime('now'))
+    sent_at TEXT NOT NULL DEFAULT (datetime('now')),
+    deleted_by INTEGER REFERENCES player(id) ON DELETE
+    SET NULL,
+        deleted_at TEXT
 );
 CREATE TABLE IF NOT EXISTS dm_message (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -236,3 +257,18 @@ CREATE TABLE IF NOT EXISTS ref_troop_level (
     notes TEXT,
     UNIQUE(troop_type, level)
 );
+-- ── Map Decorations ──────────────────────────────────────────────────── --
+-- Visual-only entities placed on the world grid (trees, bushes).
+-- cluster_id groups trees into forests; NULL = standalone.
+CREATE TABLE IF NOT EXISTS map_decoration (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    world_id INTEGER NOT NULL REFERENCES world(id) ON DELETE CASCADE,
+    decoration_type TEXT NOT NULL,
+    -- 'tree' | 'bush'
+    grid_x INTEGER NOT NULL,
+    grid_y INTEGER NOT NULL,
+    display_scale REAL NOT NULL DEFAULT 1.0,
+    -- render size multiplier (0.5–2.0)
+    cluster_id INTEGER -- NULL = standalone; same int = same forest cluster
+);
+CREATE INDEX IF NOT EXISTS idx_map_decoration_world ON map_decoration (world_id);

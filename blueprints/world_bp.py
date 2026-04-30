@@ -17,7 +17,7 @@ from flask import (
     request, session, url_for,
 )
 
-from blueprints.auth_bp import login_required
+from blueprints.auth_bp import login_required, mod_required
 from db import models as m
 from engine.battle import Battle
 from engine.unit import Unit
@@ -40,10 +40,44 @@ _PRESETS_DIR = Path(__file__).parent.parent / "presets"
 @world_bp.route("/world")
 @login_required
 def world_map():
+    world_id = session.get("world_id")
+    if not world_id:
+        worlds = m.get_all_worlds()
+        if len(worlds) == 1:
+            session["world_id"] = worlds[0]["id"]
+            world_id = worlds[0]["id"]
+        elif len(worlds) > 1:
+            return redirect(url_for("world.select_world"))
+        else:
+            return render_template("world/no_worlds.html")
+    world = m.get_world(world_id)
+    if not world:
+        session.pop("world_id", None)
+        return redirect(url_for("world.world_map"))
     return render_template("world/map.html",
-                           world_w=config.WORLD_GRID_W,
-                           world_h=config.WORLD_GRID_H,
+                           world=world,
+                           world_w=world["grid_width"],
+                           world_h=world["grid_height"],
                            active_theme=config.ACTIVE_THEME)
+
+
+@world_bp.route("/world/select")
+@login_required
+def select_world():
+    worlds = m.get_all_worlds()
+    if len(worlds) == 1:
+        session["world_id"] = worlds[0]["id"]
+        return redirect(url_for("world.world_map"))
+    return render_template("world/select_world.html", worlds=worlds)
+
+
+@world_bp.route("/world/select", methods=["POST"])
+@login_required
+def select_world_post():
+    world_id = request.form.get("world_id", type=int)
+    if world_id and m.get_world(world_id):
+        session["world_id"] = world_id
+    return redirect(url_for("world.world_map"))
 
 
 @world_bp.route("/world/item/<item_type>/<int:item_id>")
@@ -181,11 +215,16 @@ def api_player_origins():
 @world_bp.route("/api/world/map")
 @login_required
 def api_world_map():
+    world_id = session.get("world_id", 0)
     # Auto-populate NPCs if below cap (cheap check)
-    m.ensure_npc_population()
+    world = m.get_world(world_id)
+    if world:
+        m.ensure_npc_population(world_id, world["grid_width"], world["grid_height"])
+    else:
+        m.ensure_npc_population()
     # Top up monster forts/camps if any were defeated
     ensure_world_entities()
-    return jsonify({"items": m.get_world_map_snapshot()})
+    return jsonify({"items": m.get_world_map_snapshot(world_id)})
 
 
 # ── NPC generation endpoint ───────────────────────────────────────────── #
@@ -300,6 +339,7 @@ def api_attack():
     mission_id = m.create_mission(
         player_id, target_type, target_id, formation,
         origin_type, origin_id, arrive_time,
+        world_id=session.get("world_id", 0),
     )
 
     # Resolve immediately and return result in the same response
@@ -679,9 +719,12 @@ _MAX_WORLD_MSG_LEN = 300
 @login_required
 def api_world_chat_get():
     """HTMX-polled endpoint — returns latest world chat messages as HTML partial."""
-    messages = m.get_world_messages(60)
+    world_id = session.get("world_id", 0)
+    messages = m.get_world_messages(world_id, 60)
     player_id = session["player_id"]
-    return render_template("world/_world_chat.html", messages=messages, player_id=player_id)
+    player = m.get_player_by_id(player_id)
+    return render_template("world/_world_chat.html", messages=messages,
+                           player_id=player_id, player=player)
 
 
 @world_bp.route("/api/world/chat", methods=["POST"])
@@ -691,7 +734,21 @@ def api_world_chat_post():
     msg = data.get("message", "").strip()[:_MAX_WORLD_MSG_LEN]
     if not msg:
         return jsonify({"error": "Empty message"}), 400
-    m.add_world_message(session["player_id"], msg)
+    world_id = session.get("world_id", 0)
+    m.add_world_message(session["player_id"], msg, world_id)
+    return jsonify({"ok": True})
+
+
+@world_bp.route("/api/world/chat/<int:msg_id>/delete", methods=["POST"])
+@login_required
+def api_world_chat_delete(msg_id: int):
+    """Soft-delete a world chat message. Mods and admins only."""
+    player = m.get_player_by_id(session["player_id"])
+    if not player or player["role"] not in ("mod", "admin"):
+        return jsonify({"error": "Forbidden"}), 403
+    ok = m.soft_delete_world_message(msg_id, session["player_id"])
+    if not ok:
+        return jsonify({"error": "Not found or already deleted"}), 404
     return jsonify({"ok": True})
 
 

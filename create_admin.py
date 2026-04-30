@@ -58,8 +58,8 @@ def main() -> None:
             print("    via the admin dashboard if desired.")
 
         print()
-        print(f"    Login at:  http://127.0.0.1:5000/login")
-        print(f"    Dashboard: http://127.0.0.1:5000/admin/")
+        print(f"    Login at:  http://127.0.0.1:7856/login")
+        print(f"    Dashboard: http://127.0.0.1:7856/admin/")
 
 
 if __name__ == "__main__":

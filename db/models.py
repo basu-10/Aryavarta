@@ -34,6 +34,54 @@ def _row(row) -> Optional[dict]:
     return dict(row) if row is not None else None
 
 
+# ── World ─────────────────────────────────────────────────────────────── #
+
+def create_world(name: str, grid_width: int, grid_height: int,
+                 num_forts: int, num_camps: int) -> int:
+    db = get_db()
+    cur = db.execute(
+        "INSERT INTO world (name, grid_width, grid_height, num_forts, num_camps) VALUES (?,?,?,?,?)",
+        (name, grid_width, grid_height, num_forts, num_camps),
+    )
+    db.commit()
+    return cur.lastrowid
+
+
+def get_world(world_id: int) -> Optional[dict]:
+    return _row(get_db().execute("SELECT * FROM world WHERE id=?", (world_id,)).fetchone())
+
+
+def get_all_worlds() -> list[dict]:
+    return [dict(r) for r in get_db().execute("SELECT * FROM world ORDER BY id").fetchall()]
+
+
+def get_default_world() -> Optional[dict]:
+    return _row(get_db().execute("SELECT * FROM world WHERE is_default=1 LIMIT 1").fetchone())
+
+
+def set_default_world(world_id: int) -> None:
+    db = get_db()
+    db.execute("UPDATE world SET is_default=0")
+    db.execute("UPDATE world SET is_default=1 WHERE id=?", (world_id,))
+    db.commit()
+
+
+def delete_world(world_id: int) -> bool:
+    """Delete a world and all its entities (CASCADE). Player accounts are preserved."""
+    db = get_db()
+    row = db.execute("SELECT id FROM world WHERE id=?", (world_id,)).fetchone()
+    if not row:
+        return False
+    db.execute("DELETE FROM world WHERE id=?", (world_id,))
+    db.commit()
+    return True
+
+
+def get_world_count() -> int:
+    row = get_db().execute("SELECT COUNT(*) AS cnt FROM world").fetchone()
+    return row["cnt"] if row else 0
+
+
 # ── Player ───────────────────────────────────────────────────────────── #
 
 def create_player(username: str, password_hash: str) -> int:
@@ -160,11 +208,12 @@ def revoke_remember_token_hash(token_hash: str) -> None:
 
 # ── Castle ───────────────────────────────────────────────────────────── #
 
-def create_castle(player_id: int, slot_count: int, grid_x: int, grid_y: int) -> int:
+def create_castle(player_id: int, slot_count: int, grid_x: int, grid_y: int,
+                  world_id: int = 0) -> int:
     db = get_db()
     cur = db.execute(
-        "INSERT INTO castle (player_id, slot_count, grid_x, grid_y) VALUES (?,?,?,?)",
-        (player_id, slot_count, grid_x, grid_y),
+        "INSERT INTO castle (world_id, player_id, slot_count, grid_x, grid_y) VALUES (?,?,?,?,?)",
+        (world_id, player_id, slot_count, grid_x, grid_y),
     )
     db.commit()
     castle_id = cur.lastrowid
@@ -172,7 +221,11 @@ def create_castle(player_id: int, slot_count: int, grid_x: int, grid_y: int) -> 
     return castle_id
 
 
-def get_castle_by_player(player_id: int) -> Optional[dict]:
+def get_castle_by_player(player_id: int, world_id: Optional[int] = None) -> Optional[dict]:
+    if world_id is not None:
+        return _row(get_db().execute(
+            "SELECT * FROM castle WHERE player_id=? AND world_id=?", (player_id, world_id)
+        ).fetchone())
     return _row(get_db().execute("SELECT * FROM castle WHERE player_id=?", (player_id,)).fetchone())
 
 
@@ -183,11 +236,11 @@ def get_castle_by_id(castle_id: int) -> Optional[dict]:
 # ── Fort ─────────────────────────────────────────────────────────────── #
 
 def create_fort(slot_count: int, grid_x: int, grid_y: int,
-                monster_data: list, star_level: int) -> int:
+                monster_data: list, star_level: int, world_id: int = 0) -> int:
     db = get_db()
     cur = db.execute(
-        "INSERT INTO fort (slot_count, grid_x, grid_y, monster_data, star_level) VALUES (?,?,?,?,?)",
-        (slot_count, grid_x, grid_y, json.dumps(monster_data), star_level),
+        "INSERT INTO fort (world_id, slot_count, grid_x, grid_y, monster_data, star_level) VALUES (?,?,?,?,?,?)",
+        (world_id, slot_count, grid_x, grid_y, json.dumps(monster_data), star_level),
     )
     db.commit()
     fort_id = cur.lastrowid
@@ -205,8 +258,11 @@ def get_fort(fort_id: int) -> Optional[dict]:
     return d
 
 
-def get_all_forts() -> list[dict]:
-    rows = get_db().execute("SELECT * FROM fort").fetchall()
+def get_all_forts(world_id: Optional[int] = None) -> list[dict]:
+    if world_id is not None:
+        rows = get_db().execute("SELECT * FROM fort WHERE world_id=?", (world_id,)).fetchall()
+    else:
+        rows = get_db().execute("SELECT * FROM fort").fetchall()
     result = []
     for r in rows:
         d = dict(r)
@@ -216,8 +272,13 @@ def get_all_forts() -> list[dict]:
     return result
 
 
-def get_forts_by_owner(player_id: int) -> list[dict]:
-    rows = get_db().execute("SELECT * FROM fort WHERE owner_id=?", (player_id,)).fetchall()
+def get_forts_by_owner(player_id: int, world_id: Optional[int] = None) -> list[dict]:
+    if world_id is not None:
+        rows = get_db().execute(
+            "SELECT * FROM fort WHERE owner_id=? AND world_id=?", (player_id, world_id)
+        ).fetchall()
+    else:
+        rows = get_db().execute("SELECT * FROM fort WHERE owner_id=?", (player_id,)).fetchall()
     result = []
     for r in rows:
         d = dict(r)
@@ -385,11 +446,12 @@ def get_location_pending_resources(location_type: str, location_id: int) -> dict
 
 # ── Monster camp ──────────────────────────────────────────────────────── #
 
-def create_monster_camp(grid_x: int, grid_y: int, unit_data: list, star_level: int) -> int:
+def create_monster_camp(grid_x: int, grid_y: int, unit_data: list, star_level: int,
+                        world_id: int = 0) -> int:
     db = get_db()
     cur = db.execute(
-        "INSERT INTO monster_camp (grid_x, grid_y, unit_data, star_level) VALUES (?,?,?,?)",
-        (grid_x, grid_y, json.dumps(unit_data), star_level),
+        "INSERT INTO monster_camp (world_id, grid_x, grid_y, unit_data, star_level) VALUES (?,?,?,?,?)",
+        (world_id, grid_x, grid_y, json.dumps(unit_data), star_level),
     )
     db.commit()
     return cur.lastrowid
@@ -404,8 +466,13 @@ def get_monster_camp(camp_id: int) -> Optional[dict]:
     return d
 
 
-def get_all_active_monster_camps() -> list[dict]:
-    rows = get_db().execute("SELECT * FROM monster_camp WHERE is_active=1").fetchall()
+def get_all_active_monster_camps(world_id: Optional[int] = None) -> list[dict]:
+    if world_id is not None:
+        rows = get_db().execute(
+            "SELECT * FROM monster_camp WHERE is_active=1 AND world_id=?", (world_id,)
+        ).fetchall()
+    else:
+        rows = get_db().execute("SELECT * FROM monster_camp WHERE is_active=1").fetchall()
     result = []
     for r in rows:
         d = dict(r)
@@ -657,14 +724,14 @@ def deduct_troop(owner_id: int, unit_type: str, quantity: int,
 
 def create_mission(attacker_id: int, target_type: str, target_id: int,
                    formation: list, origin_type: str, origin_id: int,
-                   arrive_time_iso: str) -> int:
+                   arrive_time_iso: str, world_id: int = 0) -> int:
     db = get_db()
     cur = db.execute(
         """INSERT INTO battle_mission
-           (attacker_id, target_type, target_id, formation, origin_type, origin_id,
+           (world_id, attacker_id, target_type, target_id, formation, origin_type, origin_id,
             depart_time, arrive_time)
-           VALUES (?,?,?,?,?,?,?,?)""",
-        (attacker_id, target_type, target_id, json.dumps(formation),
+           VALUES (?,?,?,?,?,?,?,?,?)""",
+        (world_id, attacker_id, target_type, target_id, json.dumps(formation),
          origin_type, origin_id, _now_iso(), arrive_time_iso),
     )
     db.commit()
@@ -953,26 +1020,54 @@ def send_recruit_dm(sender_id: int, recipient_id: int, clan_id: int, message: st
 
 # ── World chat ───────────────────────────────────────────────────────── #
 
-def add_world_message(sender_id: int, message: str) -> None:
+def add_world_message(sender_id: int, message: str, world_id: int = 0) -> None:
     db = get_db()
     db.execute(
-        "INSERT INTO world_message (sender_id, message) VALUES (?,?)",
-        (sender_id, message),
+        "INSERT INTO world_message (world_id, sender_id, message) VALUES (?,?,?)",
+        (world_id, sender_id, message),
     )
     db.commit()
 
 
-def get_world_messages(limit: int = 60) -> list[dict]:
+def get_world_messages(world_id: int = 0, limit: int = 60) -> list[dict]:
     rows = get_db().execute(
         """SELECT wm.id, wm.message, wm.sent_at, p.username, p.id AS sender_id,
-                  c.id AS castle_id, c.grid_x, c.grid_y
+                  c.id AS castle_id, c.grid_x, c.grid_y,
+                  wm.deleted_by, wm.deleted_at
            FROM world_message wm
            JOIN player p ON wm.sender_id=p.id
-           LEFT JOIN castle c ON c.player_id=p.id
+           LEFT JOIN castle c ON c.player_id=p.id AND c.world_id=wm.world_id
+           WHERE wm.world_id=? AND wm.deleted_at IS NULL
            ORDER BY wm.sent_at DESC LIMIT ?""",
-        (limit,),
+        (world_id, limit),
     ).fetchall()
     return [dict(r) for r in reversed(rows)]
+
+
+def soft_delete_world_message(msg_id: int, deleter_id: int) -> bool:
+    """Soft-delete a world chat message. Returns False if not found."""
+    db = get_db()
+    row = db.execute("SELECT id FROM world_message WHERE id=? AND deleted_at IS NULL",
+                     (msg_id,)).fetchone()
+    if not row:
+        return False
+    db.execute(
+        "UPDATE world_message SET deleted_by=?, deleted_at=? WHERE id=?",
+        (deleter_id, _now_iso(), msg_id),
+    )
+    db.commit()
+    return True
+
+
+def purge_deleted_world_messages(world_id: int) -> int:
+    """Hard-delete all soft-deleted messages in a world. Admin only. Returns count deleted."""
+    db = get_db()
+    cur = db.execute(
+        "DELETE FROM world_message WHERE world_id=? AND deleted_at IS NOT NULL",
+        (world_id,),
+    )
+    db.commit()
+    return cur.rowcount
 
 
 # ── Direct messages ──────────────────────────────────────────────────── #
@@ -1036,38 +1131,45 @@ def get_dm_unread_count(player_id: int) -> int:
 
 # ── World map ────────────────────────────────────────────────────────── #
 
-def get_occupied_world_cells() -> set[tuple[int, int]]:
+def get_occupied_world_cells(world_id: int = 0) -> set[tuple[int, int]]:
     db = get_db()
     occupied: set[tuple[int, int]] = set()
-    for r in db.execute("SELECT grid_x, grid_y FROM castle").fetchall():
+    for r in db.execute("SELECT grid_x, grid_y FROM castle WHERE world_id=?", (world_id,)).fetchall():
         occupied.add((r["grid_x"], r["grid_y"]))
-    for r in db.execute("SELECT grid_x, grid_y FROM fort").fetchall():
+    for r in db.execute("SELECT grid_x, grid_y FROM fort WHERE world_id=?", (world_id,)).fetchall():
         occupied.add((r["grid_x"], r["grid_y"]))
-    for r in db.execute("SELECT grid_x, grid_y FROM monster_camp WHERE is_active=1").fetchall():
+    for r in db.execute(
+        "SELECT grid_x, grid_y FROM monster_camp WHERE is_active=1 AND world_id=?", (world_id,)
+    ).fetchall():
         occupied.add((r["grid_x"], r["grid_y"]))
     return occupied
 
 
-def find_empty_cell() -> tuple[int, int]:
-    """Find a random unoccupied world grid cell."""
-    occupied = get_occupied_world_cells()
+def find_empty_cell(world_id: int = 0, grid_w: int = 0, grid_h: int = 0) -> tuple[int, int]:
+    """Find a random unoccupied cell within the given world's grid dimensions."""
+    if grid_w <= 0:
+        grid_w = config.WORLD_GRID_W
+    if grid_h <= 0:
+        grid_h = config.WORLD_GRID_H
+    occupied = get_occupied_world_cells(world_id)
     for _ in range(1000):
-        x = random.randint(0, config.WORLD_GRID_W - 1)
-        y = random.randint(0, config.WORLD_GRID_H - 1)
+        x = random.randint(0, grid_w - 1)
+        y = random.randint(0, grid_h - 1)
         if (x, y) not in occupied:
             occupied.add((x, y))
             return x, y
     raise RuntimeError("World grid is full — cannot find empty cell.")
 
 
-def get_world_map_snapshot() -> list[dict]:
-    """All world entities as a flat list for the map renderer."""
+def get_world_map_snapshot(world_id: int = 0) -> list[dict]:
+    """All world entities as a flat list for the map renderer (filtered by world)."""
     db = get_db()
     items: list[dict] = []
 
     for r in db.execute(
         "SELECT c.id, c.grid_x, c.grid_y, p.id as owner_id, p.username as owner_name, p.role as owner_role "
-        "FROM castle c JOIN player p ON c.player_id=p.id"
+        "FROM castle c JOIN player p ON c.player_id=p.id WHERE c.world_id=?",
+        (world_id,),
     ).fetchall():
         items.append({
             "type": "castle", "id": r["id"],
@@ -1079,7 +1181,8 @@ def get_world_map_snapshot() -> list[dict]:
 
     for r in db.execute(
         "SELECT f.*, p.username as owner_name, p.role as owner_role "
-        "FROM fort f LEFT JOIN player p ON f.owner_id=p.id"
+        "FROM fort f LEFT JOIN player p ON f.owner_id=p.id WHERE f.world_id=?",
+        (world_id,),
     ).fetchall():
         items.append({
             "type": "fort", "id": r["id"],
@@ -1090,7 +1193,8 @@ def get_world_map_snapshot() -> list[dict]:
         })
 
     for r in db.execute(
-        "SELECT id, grid_x, grid_y, star_level FROM monster_camp WHERE is_active=1"
+        "SELECT id, grid_x, grid_y, star_level FROM monster_camp WHERE is_active=1 AND world_id=?",
+        (world_id,),
     ).fetchall():
         items.append({
             "type": "monster_camp", "id": r["id"],
@@ -1098,6 +1202,21 @@ def get_world_map_snapshot() -> list[dict]:
             "owner_id": None, "owner_name": None,
             "is_npc": False,
             "star_level": r["star_level"],
+        })
+
+    for r in db.execute(
+        "SELECT id, grid_x, grid_y, decoration_type, display_scale, cluster_id "
+        "FROM map_decoration WHERE world_id=?",
+        (world_id,),
+    ).fetchall():
+        items.append({
+            "type": "decoration", "id": r["id"],
+            "grid_x": r["grid_x"], "grid_y": r["grid_y"],
+            "owner_id": None, "owner_name": None,
+            "is_npc": False, "star_level": None,
+            "decoration_type": r["decoration_type"],
+            "display_scale": r["display_scale"],
+            "cluster_id": r["cluster_id"],
         })
 
     return items
@@ -1140,7 +1259,7 @@ def create_npc_player(username: str) -> int:
     return cur.lastrowid
 
 
-def ensure_npc_population() -> int:
+def ensure_npc_population(world_id: int = 0, grid_w: int = 0, grid_h: int = 0) -> int:
     """
     Generate NPC players (with castles + forts) until MAX_NPC_COUNT is reached.
     Returns the number of new NPCs created.
@@ -1166,21 +1285,16 @@ def ensure_npc_population() -> int:
         npc_id = create_npc_player(name)
 
         # Give NPC a castle
-        cx, cy = find_empty_cell()
-        castle_id = create_castle(npc_id, 8, cx, cy)
+        cx, cy = find_empty_cell(world_id, grid_w, grid_h)
+        castle_id = create_castle(npc_id, 8, cx, cy, world_id)
 
         # Give NPC some forts
         for _ in range(config.NPC_FORTS_PER_NPC):
-            fx, fy = find_empty_cell()
+            fx, fy = find_empty_cell(world_id, grid_w, grid_h)
             star = random.randint(1, 3)
             monster_data: list = []  # NPC-owned forts start empty (no monsters)
-            create_fort(8, fx, fy, monster_data, star)
-            # Claim the fort for the NPC
-            forts = get_db().execute(
-                "SELECT id FROM fort WHERE grid_x=? AND grid_y=?", (fx, fy)
-            ).fetchone()
-            if forts:
-                claim_fort(forts["id"], npc_id)
+            fort_id = create_fort(8, fx, fy, monster_data, star, world_id)
+            claim_fort(fort_id, npc_id)
 
         created += 1
 
@@ -1206,24 +1320,29 @@ def set_player_resources(player_id: int, food: Optional[float] = None,
     db.commit()
 
 
-def admin_add_troops_to_castle(player_id: int, unit_type: str, quantity: int) -> bool:
+def admin_add_troops_to_castle(player_id: int, unit_type: str, quantity: int,
+                               world_id: Optional[int] = None) -> bool:
     """Add troops directly to a player's castle. Returns False if no castle found."""
-    castle = get_castle_by_player(player_id)
+    castle = get_castle_by_player(player_id, world_id=world_id)
+    if not castle:
+        # Fall back to any castle if world-scoped lookup misses
+        castle = get_castle_by_player(player_id)
     if not castle:
         return False
     add_troop(player_id, unit_type, quantity, "castle", castle["id"])
     return True
 
 
-def admin_grant_fort(player_id: int, slot_count: int = 6, fully_built: bool = False) -> int:
+def admin_grant_fort(player_id: int, slot_count: int = 6, fully_built: bool = False,
+                     world_id: int = 0) -> int:
     """
     Create a new fort on a random empty cell and assign it to the player.
     If fully_built=True, fills all remaining slots with buildings that are
     immediately complete (no build timer).
     Returns the new fort id.
     """
-    cx, cy = find_empty_cell()
-    fort_id = create_fort(slot_count, cx, cy, [], star_level=1)
+    cx, cy = find_empty_cell(world_id)
+    fort_id = create_fort(slot_count, cx, cy, [], star_level=1, world_id=world_id)
     # Assign to player directly (bypasses monster-clear since it never had monsters)
     db = get_db()
     db.execute("UPDATE fort SET owner_id=?, monster_data=NULL WHERE id=?", (player_id, fort_id))
@@ -1389,4 +1508,34 @@ def get_friendship_status(player_id: int, other_id: int) -> str:
     if row["requester_id"] == player_id:
         return "pending_sent"
     return "pending_received"
+
+
+# ── Map Decorations ────────────────────────────────────────────────── #
+
+def create_map_decoration(world_id: int, decoration_type: str, grid_x: int, grid_y: int,
+                          display_scale: float = 1.0,
+                          cluster_id: Optional[int] = None) -> int:
+    db = get_db()
+    cur = db.execute(
+        "INSERT INTO map_decoration (world_id, decoration_type, grid_x, grid_y, display_scale, cluster_id) "
+        "VALUES (?,?,?,?,?,?)",
+        (world_id, decoration_type, grid_x, grid_y, display_scale, cluster_id),
+    )
+    db.commit()
+    return cur.lastrowid
+
+
+def get_map_decorations(world_id: int) -> list[dict]:
+    rows = get_db().execute(
+        "SELECT * FROM map_decoration WHERE world_id=? ORDER BY id",
+        (world_id,),
+    ).fetchall()
+    return [dict(r) for r in rows]
+
+
+def clear_map_decorations(world_id: int) -> None:
+    """Remove all decorations for a world (called before regenerating)."""
+    db = get_db()
+    db.execute("DELETE FROM map_decoration WHERE world_id=?", (world_id,))
+    db.commit()
 

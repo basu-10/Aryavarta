@@ -50,6 +50,18 @@ def _set_auth_session(player_id: int, username: str) -> None:
     session.permanent = True
 
 
+def _world_post_login_redirect():
+    """Return a redirect Response based on how many worlds exist."""
+    worlds = m.get_all_worlds()
+    if len(worlds) == 1:
+        session["world_id"] = worlds[0]["id"]
+        return redirect(url_for("world.world_map"))
+    if len(worlds) > 1:
+        return redirect(url_for("world.select_world"))
+    flash("No worlds available. Contact an admin.", "error")
+    return None
+
+
 def _issue_remember_token(player_id: int) -> str:
     token = secrets.token_urlsafe(48)
     token_hash = _hash_remember_token(token)
@@ -84,6 +96,15 @@ def restore_session_from_remember_cookie() -> None:
         return
 
     _set_auth_session(player["id"], player["username"])
+    # Restore world_id from default world if not already set
+    if not session.get("world_id"):
+        worlds = m.get_all_worlds()
+        if len(worlds) == 1:
+            session["world_id"] = worlds[0]["id"]
+        else:
+            default = m.get_default_world()
+            if default:
+                session["world_id"] = default["id"]
 
 
 # ── Auth guard decorator ─────────────────────────────────────────────── #
@@ -105,6 +126,19 @@ def admin_required(f):
             return redirect(url_for("auth.login"))
         player = m.get_player_by_id(session["player_id"])
         if not player or player["role"] != "admin":
+            return "Forbidden", 403
+        return f(*args, **kwargs)
+    return decorated
+
+
+def mod_required(f):
+    """Allows 'mod' or 'admin' roles."""
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        if "player_id" not in session:
+            return redirect(url_for("auth.login"))
+        player = m.get_player_by_id(session["player_id"])
+        if not player or player["role"] not in ("mod", "admin"):
             return "Forbidden", 403
         return f(*args, **kwargs)
     return decorated
@@ -135,13 +169,19 @@ def register():
                 [4, 5, 6, 7, 8, 9, 10],
                 weights=config.FORT_SLOT_WEIGHTS,
             )[0]
-            cx, cy = find_empty_cell()
-            m.create_castle(player_id, slot_count, cx, cy)
+            worlds = m.get_all_worlds()
+            world_id = worlds[0]["id"] if worlds else 0
+            grid_w = worlds[0]["grid_width"] if worlds else config.WORLD_GRID_W
+            grid_h = worlds[0]["grid_height"] if worlds else config.WORLD_GRID_H
+            cx, cy = find_empty_cell(world_id, grid_w, grid_h)
+            m.create_castle(player_id, slot_count, cx, cy, world_id)
 
             _set_auth_session(player_id, username)
             token = _issue_remember_token(player_id)
-            response = redirect(url_for("world.world_map"))
-            return _set_remember_cookie(response, token)
+            redir = _world_post_login_redirect()
+            if redir is None:
+                return render_template("auth/register.html")
+            return _set_remember_cookie(redir, token)
 
     return render_template("auth/register.html")
 
@@ -163,8 +203,10 @@ def login():
             else:
                 _set_auth_session(player["id"], player["username"])
                 token = _issue_remember_token(player["id"])
-                response = redirect(next_url)
-                return _set_remember_cookie(response, token)
+                redir = _world_post_login_redirect()
+                if redir is None:
+                    return render_template("auth/login.html", next_url=next_url)
+                return _set_remember_cookie(redir, token)
         else:
             flash("Invalid username or password.", "error")
 
