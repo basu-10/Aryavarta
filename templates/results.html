@@ -108,7 +108,7 @@
               <template x-for="c in GRID_COLS" :key="c">
                 <div
                   :class="getCellClass(r - 1, c - 1)"
-                  class="battle-cell w-16 h-16 sm:w-20 sm:h-20 flex flex-col items-center justify-center select-none"
+                  class="battle-cell flex flex-col items-center justify-center select-none"
                 >
                   <!-- Neutral zone -->
                   <template x-if="isNeutral(c - 1)">
@@ -146,93 +146,40 @@
     </div>
   </div>
 
-  <!-- ── UNIT STATUS + FULL TICK LOG (side by side) ─────────────────────── -->
-  <div class="grid grid-cols-1 lg:grid-cols-5 gap-6">
-
-    <!-- Unit Status (wider) -->
-    <div class="lg:col-span-3 space-y-2">
-      <h2 class="text-sm font-semibold text-gray-400 uppercase tracking-wider">Unit Status</h2>
-      <div class="overflow-x-auto rounded-lg border border-gray-800">
-        <table class="w-full text-xs">
-          <thead class="bg-gray-800 text-gray-400 uppercase tracking-wider">
-            <tr>
-              <th class="px-3 py-2 text-left">ID</th>
-              <th class="px-3 py-2 text-left">Team</th>
-              <th class="px-3 py-2 text-left">Type</th>
-              <th class="px-3 py-2 text-center">Pos</th>
-              <th class="px-3 py-2 text-center">HP</th>
-              <th class="px-3 py-2 text-center">Status</th>
-              <th class="px-3 py-2 text-left">Action</th>
-            </tr>
-          </thead>
-          <tbody class="divide-y divide-gray-800">
-            <template x-for="u in currentUnits" :key="u.unit_id">
-              <tr
-                :class="u.status === 'dead' ? 'opacity-40' : ''"
-                class="hover:bg-gray-800/50"
-              >
-                <td class="px-3 py-2 font-mono" x-text="u.unit_id"></td>
-                <td class="px-3 py-2">
-                  <span
-                    :class="u.team === 'A' ? 'text-blue-400' : 'text-red-400'"
-                    x-text="'Team ' + u.team"
-                  ></span>
-                </td>
-                <td class="px-3 py-2" x-text="u.type"></td>
-                <td class="px-3 py-2 text-center font-mono" x-text="'(' + u.row + ',' + u.col + ')'"></td>
-                <td class="px-3 py-2 text-center">
-                  <span x-text="u.hp + '/' + u.max_hp"></span>
-                  <div class="mt-0.5 bg-gray-700 rounded-full h-1 w-12 mx-auto">
-                    <div
-                      class="h-1 rounded-full"
-                      :class="u.team === 'A' ? 'bg-blue-500' : 'bg-red-500'"
-                      :style="'width:' + Math.max(0, (u.hp / u.max_hp) * 100) + '%'"
-                    ></div>
-                  </div>
-                </td>
-                <td class="px-3 py-2 text-center">
-                  <span
-                    :class="u.status === 'dead' ? 'text-gray-500' : 'text-green-400'"
-                    x-text="u.status"
-                  ></span>
-                </td>
-                <td class="px-3 py-2 text-gray-400" x-text="actionLabel(u)"></td>
-              </tr>
+  <!-- ── TROOP ACTIONS LOG ─────────────────────────────────────────────── -->
+  <div class="space-y-2">
+    <h2 class="text-sm font-semibold text-gray-400 uppercase tracking-wider flex items-center gap-2">
+      Troop Actions
+      <span class="text-gray-600 font-normal text-xs normal-case">tick <span x-text="currentTick"></span></span>
+    </h2>
+    <div class="bg-gray-900 border border-gray-800 rounded-lg p-4 space-y-1"
+         style="min-height: 120px;">
+      <template x-if="buildActionLog().length === 0">
+        <div class="text-gray-600 text-xs italic">— No events this tick —</div>
+      </template>
+      <template x-for="(entry, i) in buildActionLog()" :key="i">
+        <div class="flex items-start gap-2 py-0.5 border-b border-gray-800/60 last:border-0">
+          <!-- Icon -->
+          <span class="text-base leading-none flex-shrink-0 mt-0.5" x-text="entry.icon"></span>
+          <!-- Description -->
+          <div class="text-xs font-mono leading-snug flex-1">
+            <!-- Attacker / actor -->
+            <span :class="entry.teamA === 'A' ? 'text-blue-300 font-semibold' : 'text-red-300 font-semibold'"
+                  x-text="entry.actor"></span>
+            <span class="text-gray-400" x-text="' ' + entry.verb + ' '"></span>
+            <!-- Target (optional) -->
+            <template x-if="entry.target">
+              <span :class="entry.teamB === 'A' ? 'text-blue-300 font-semibold' : 'text-red-300 font-semibold'"
+                    x-text="entry.target"></span>
             </template>
-          </tbody>
-        </table>
-      </div>
+            <!-- Extra detail -->
+            <template x-if="entry.detail">
+              <span class="text-gray-500" x-text="' · ' + entry.detail"></span>
+            </template>
+          </div>
+        </div>
+      </template>
     </div>
-
-    <!-- Full Tick Log -->
-    <div class="lg:col-span-2 space-y-2">
-      <h2 class="text-sm font-semibold text-gray-400 uppercase tracking-wider flex items-center gap-2">
-        Tick Log
-        <span class="text-gray-600 font-normal text-xs normal-case">all ticks · current highlighted</span>
-      </h2>
-      <div x-ref="tickLogScroll"
-           class="bg-gray-900 border border-gray-800 rounded-lg p-3 overflow-y-auto"
-           style="max-height: 420px;">
-        <template x-for="entry in fullTickLog" :key="entry.key">
-          <!-- Tick header -->
-          <template x-if="entry.type === 'header'">
-            <div :id="'tick-log-' + entry.tick"
-                 :class="entry.tick === currentTick
-                   ? 'bg-blue-900/40 border-blue-600/60 text-blue-300'
-                   : 'border-gray-700/50 text-gray-500'"
-                 class="mt-2 first:mt-0 px-2 py-0.5 rounded border text-xs font-semibold font-mono sticky top-0 z-10"
-                 x-text="'Tick ' + entry.tick"></div>
-          </template>
-          <!-- Event line -->
-          <template x-if="entry.type === 'event'">
-            <div :class="[logLineClass(entry.text), entry.tick === currentTick ? 'opacity-100' : 'opacity-50']"
-                 class="pl-3 py-px text-xs font-mono"
-                 x-text="entry.text"></div>
-          </template>
-        </template>
-      </div>
-    </div>
-
   </div>
 
 </div>

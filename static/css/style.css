@@ -5,6 +5,9 @@
   transition: background-color 0.18s ease, filter 0.18s ease;
   border-right: 1px solid rgba(0, 0, 0, 0.22);
   border-bottom: 1px solid rgba(0, 0, 0, 0.22);
+  flex: 1 1 0;
+  aspect-ratio: 1 / 1;
+  min-width: 0;
 }
 
 /* Team cell backgrounds */
@@ -164,48 +167,18 @@
 }
 
 /* ════════════════════════════════════════════════════════════════════════
-   Battlefield — mobile portrait rotation
-   The grid is 9 cols × 4 rows (landscape).  On small screens we rotate it
-   90° so the long axis runs vertically, making better use of portrait space.
+   Battlefield — full-width stretch layout
+   The grid fills the available width with 20px padding on each side.
+   Cells are square via aspect-ratio so rows scale proportionally.
    ════════════════════════════════════════════════════════════════════════ */
 
-/* The outer container reserves vertical space equal to the grid's natural width */
 .battlefield-container {
   width: 100%;
+  padding: 0 20px;
+  box-sizing: border-box;
 }
 
 .battlefield-rotatable {
-  display: inline-block;
-}
-
-/* On screens narrower than 640 px (Tailwind's sm breakpoint) rotate 90°    */
-/* The grid is roughly 9 × 64px = 576px wide, 4 × 64px = 256px tall.        */
-/* After rotation: rendered height ≈ 576px, rendered width ≈ 256px           */
-@media (max-width: 639px) {
-  .battlefield-container {
-    /* Reserve the height the rotated grid will occupy + room for the legend  */
-    height: calc(9 * 4rem + 2.5rem);
-    overflow: visible;
-    display: flex;
-    flex-direction: column;
-    /* flex-start: item always begins at x=0, so margin-left gives exact offset */
-    /* (center caused off-screen positioning when viewport < 576px)             */
-    align-items: flex-start;
-  }
-
-  .battlefield-rotatable {
-    transform-origin: top left;
-    transform: rotate(90deg);
-    margin-top: 0;
-    /* Shift right by the grid's portrait height (4 rows × 4rem) so that after  */
-    /* rotating clockwise the visual left edge lands exactly at x=0             */
-    margin-left: calc(4 * 4rem);
-  }
-
-  /* CSS transform doesn't move the layout box, so the legend's natural y is    */
-  /* grid layout-height (4×4rem = 256px), not the visual height (9×4rem = 576px). */
-  /* Add the difference (5×4rem) plus the original mt-3 (0.75rem) to push it down */
-  .battlefield-container > div:last-child {
-    margin-top: calc(5 * 4rem + 0.75rem);
-  }
+  display: block;
+  width: 100%;
 }

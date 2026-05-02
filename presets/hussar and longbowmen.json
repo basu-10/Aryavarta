@@ -1,0 +1,62 @@
+{
+  "name": "hussar and longbowmen",
+  "army_a": [
+    {
+      "unit_id": "A_Hussar_3_3",
+      "type": "Hussar",
+      "row": 3,
+      "col": 3,
+      "quantity": 100
+    },
+    {
+      "unit_id": "A_Hussar_2_3",
+      "type": "Hussar",
+      "row": 2,
+      "col": 3,
+      "quantity": 100
+    },
+    {
+      "unit_id": "A_Hussar_1_3",
+      "type": "Hussar",
+      "row": 1,
+      "col": 3,
+      "quantity": 100
+    },
+    {
+      "unit_id": "A_Hussar_0_3",
+      "type": "Hussar",
+      "row": 0,
+      "col": 3,
+      "quantity": 100
+    },
+    {
+      "unit_id": "A_Longbowman_0_2",
+      "type": "Longbowman",
+      "row": 0,
+      "col": 2,
+      "quantity": 100
+    },
+    {
+      "unit_id": "A_Longbowman_1_2",
+      "type": "Longbowman",
+      "row": 1,
+      "col": 2,
+      "quantity": 100
+    },
+    {
+      "unit_id": "A_Longbowman_2_2",
+      "type": "Longbowman",
+      "row": 2,
+      "col": 2,
+      "quantity": 100
+    },
+    {
+      "unit_id": "A_Longbowman_3_2",
+      "type": "Longbowman",
+      "row": 3,
+      "col": 2,
+      "quantity": 100
+    }
+  ],
+  "army_b": []
+}

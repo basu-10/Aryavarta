@@ -161,9 +161,10 @@ The results page (`/results/<battle_id>`) now includes ◀ (previous) and ▶ (n
 The tick-by-tick replay viewer on the results page uses the same visual style as the battle setup page:
 
 - **Cell classes**: `bc-cell-a` (Team A columns 0–3), `bc-cell-neutral` (column 4), `bc-cell-b` (Team B columns 5–8).
-- **Cell size**: 80 × 80 px to match the setup battlefield.
+- **Cell size**: fluid — cells use `flex: 1` and `aspect-ratio: 1/1` so the grid stretches to full page width with 20 px padding on each side.
 - **Neutral detection**: `isNeutral(col)` in `static/js/tick_viewer.js` checks `col === 4`.
 - Troop sprites and a legend are shown the same way as on the setup page.
+- **Troop Actions log**: Replaces the old "Unit Status" table and "Tick Log". Shows one line per event (attack, move, blocked, death) for the current tick with attacker type, position, target type, position, damage dealt, and HP change.
 
 ---
 

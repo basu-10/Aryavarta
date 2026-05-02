@@ -29,7 +29,7 @@
               <div
                 @click="toggleCell(r - 1, c - 1)"
                 :class="cellClass(r - 1, c - 1)"
-                class="battle-cell w-16 h-16 sm:w-20 sm:h-20 cursor-pointer flex flex-col items-center justify-center select-none"
+                class="battle-cell cursor-pointer flex flex-col items-center justify-center select-none"
               >
                 <!-- Neutral zone -->
                 <template x-if="isNeutral(c - 1)">

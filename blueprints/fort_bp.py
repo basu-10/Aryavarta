@@ -58,7 +58,7 @@ def castle_page():
         owned_fort_cards=fort_cards,
         build_costs=config.BUILDING_BUILD_COST,
         build_types=list(config.BUILDING_BUILD_TIME.keys()),
-        all_slots=range(castle["slot_count"]),
+        all_slots=range(1, castle["slot_count"] + 1),
     )
 
 
@@ -81,7 +81,7 @@ def fort_page(fort_id: int):
         owned_fort_cards=[],
         build_costs=config.BUILDING_BUILD_COST,
         build_types=list(config.BUILDING_BUILD_TIME.keys()),
-        all_slots=range(fort["slot_count"]),
+        all_slots=range(1, fort["slot_count"] + 1),
     )
 
 

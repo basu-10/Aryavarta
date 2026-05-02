@@ -244,6 +244,101 @@ function tickViewer() {
       return `${cell.hp}/${cell.max_hp} HP`;
     },
 
+    // ── Per-cell action log ────────────────────────────────────────────── //
+    /**
+     * Build a rich action log for the current tick from the events array.
+     * Each entry: { icon, actor, teamA, verb, target, teamB, detail }
+     */
+    buildActionLog() {
+      const snap = this.currentSnap;
+      const events = snap.events || [];
+      if (!events.length) return [];
+
+      // Build unit lookup: unit_id -> {type, team, row, col, hp, max_hp}
+      const unitMap = {};
+      for (const u of (snap.units || [])) {
+        unitMap[u.unit_id] = u;
+      }
+      // For deaths, also check previous snap units
+      const prevSnap = this.prevSnap();
+      const prevUnitMap = {};
+      for (const u of (prevSnap && prevSnap.units ? prevSnap.units : [])) {
+        prevUnitMap[u.unit_id] = u;
+      }
+
+      const entries = [];
+
+      for (const ev of events) {
+        if (ev.type === 'attack') {
+          const att = unitMap[ev.attacker_id] || prevUnitMap[ev.attacker_id] || {};
+          const tgt = unitMap[ev.target_id] || prevUnitMap[ev.target_id] || {};
+          const attPos = att.row !== undefined ? `[${att.row},${att.col}]` : '';
+          const tgtPos = tgt.row !== undefined ? `[${tgt.row},${tgt.col}]` : '';
+          const tgtHpBefore = (prevUnitMap[ev.target_id] || {}).hp;
+          const tgtHpAfter  = tgt.hp;
+          const hpDetail = (tgtHpBefore !== undefined && tgtHpAfter !== undefined)
+            ? `${ev.damage} dmg  (${tgtHpBefore} → ${Math.max(0, tgtHpAfter)} HP)`
+            : `${ev.damage} dmg`;
+          entries.push({
+            icon: '⚔',
+            actor:  `${att.type || ev.attacker_id} ${attPos}`,
+            teamA:  att.team || 'A',
+            verb:   'attacked',
+            target: `${tgt.type || ev.target_id} ${tgtPos}`,
+            teamB:  tgt.team || 'B',
+            detail: hpDetail,
+          });
+        } else if (ev.type === 'move') {
+          const u = unitMap[ev.unit_id] || prevUnitMap[ev.unit_id] || {};
+          entries.push({
+            icon: '→',
+            actor:  `${u.type || ev.unit_id}`,
+            teamA:  u.team || 'A',
+            verb:   `moved [${ev.from[0]},${ev.from[1]}] → [${ev.to[0]},${ev.to[1]}]`,
+            target: null,
+            teamB:  null,
+            detail: null,
+          });
+        } else if (ev.type === 'retreat') {
+          const u = unitMap[ev.unit_id] || prevUnitMap[ev.unit_id] || {};
+          entries.push({
+            icon: '↩',
+            actor:  `${u.type || ev.unit_id}`,
+            teamA:  u.team || 'A',
+            verb:   `retreated [${ev.from[0]},${ev.from[1]}] → [${ev.to[0]},${ev.to[1]}]`,
+            target: null,
+            teamB:  null,
+            detail: null,
+          });
+        } else if (ev.type === 'blocked') {
+          const u = unitMap[ev.unit_id] || prevUnitMap[ev.unit_id] || {};
+          entries.push({
+            icon: '✗',
+            actor:  `${u.type || ev.unit_id}`,
+            teamA:  u.team || 'A',
+            verb:   `blocked at [${ev.pos[0]},${ev.pos[1]}]`,
+            target: null,
+            teamB:  null,
+            detail: null,
+          });
+        } else if (ev.type === 'death') {
+          const u = unitMap[ev.unit_id] || prevUnitMap[ev.unit_id] || {};
+          const pos = u.row !== undefined ? ` [${u.row},${u.col}]` : '';
+          entries.push({
+            icon: '☠',
+            actor:  `${u.type || ev.unit_id}${pos}`,
+            teamA:  u.team || 'A',
+            verb:   'eliminated',
+            target: null,
+            teamB:  null,
+            detail: null,
+          });
+        }
+      }
+
+      return entries;
+    },
+
     // ── Log rendering ─────────────────────────────────────────────────── //
     logLineClass(line) {
       if (line.includes('eliminated')) return 'text-red-400';

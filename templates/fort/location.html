@@ -38,7 +38,10 @@
   'Command Centre': '/assets/theme1/buildings/default/command-centre.svg',
 } %}
 
-<h2 class="text-lg font-semibold mb-3">Buildings ({{ location.slot_count }} slots)</h2>
+{# ── Slot 0 — Command Centre (always present, non-removable) ─────────── #}
+{% set cc = occupied.get(0) %}
+
+<h2 class="text-lg font-semibold mb-3">Buildings ({{ location.slot_count }} slots + Command Centre)</h2>
 {% if location_type == 'castle' %}
 {# ── CoC-style top-down castle base ──────────────────────────────────── #}
 <div class="max-w-4xl mb-8">
@@ -50,7 +53,32 @@
          alt="Castle Base" draggable="false"
          class="absolute inset-0 w-full h-full object-cover pointer-events-none" />
 
-    {# 3×3 building overlay grid, positioned on the inner grass area (≈ 20%–80% of the base image) #}
+    {# ── Command Centre — slot 0, top-center above the 3×3 grid ─────── #}
+    <div class="absolute flex flex-col items-center justify-center"
+         style="top:5%; left:36%; width:28%; height:14%;
+                background:rgba(80,10,10,0.55); border:2px solid #7f1d1d;
+                border-radius:0.5rem; backdrop-filter:blur(2px);">
+      {% if cc %}
+        {% set cc_icon = building_icon_map.get(cc.type) %}
+        {% if cc_icon %}
+        <img src="{{ cc_icon }}" alt="Command Centre"
+             class="w-[40%] h-[40%] object-contain drop-shadow-lg pointer-events-none" />
+        {% endif %}
+        <div class="text-[8px] text-red-200 font-semibold mt-0.5 leading-tight text-center">
+          {% if cc.build_complete_at %}
+            <span class="countdown-label" data-complete="{{ cc.build_complete_at }}">…</span>
+          {% else %}
+            Command Centre Lv{{ cc.level }}
+          {% endif %}
+        </div>
+      {% else %}
+        <div class="text-2xl pointer-events-none">🏰</div>
+        <div class="text-[8px] text-red-300 font-semibold mt-0.5">Command Centre</div>
+      {% endif %}
+      <div class="absolute top-0.5 right-1 text-[7px] text-red-400/70 font-bold leading-none">⚑</div>
+    </div>
+
+    {# ── 3×3 building overlay grid, positioned on the inner grass area ── #}
     <div class="absolute"
          style="top:21%; left:21%; width:58%; height:58%;
                 display:grid; grid-template-columns:repeat(3,1fr); grid-template-rows:repeat(3,1fr); gap:2%;">
@@ -67,14 +95,12 @@
                       {% else %}hover:outline hover:outline-2 hover:outline-blue-400{% endif %}
                       overflow-hidden flex flex-col items-center justify-center"
                style="background:rgba(0,0,0,0.18); backdrop-filter:blur(1px);">
-            {# Building icon – fills most of the cell #}
             {% if building_icon %}
             <img src="{{ building_icon }}" alt="{{ b.type }}"
                  class="w-[55%] h-[55%] object-contain drop-shadow-lg pointer-events-none" />
             {% else %}
             <div class="text-2xl pointer-events-none">🏗</div>
             {% endif %}
-            {# Status badge #}
             <div class="absolute bottom-0 inset-x-0 text-center py-0.5 text-[9px] leading-tight
                         {% if b.is_destroyed %}bg-red-900/80 text-red-200
                         {% elif b.build_complete_at %}bg-yellow-900/80 text-yellow-200
@@ -83,7 +109,6 @@
               {% elif b.build_complete_at %}<span class="countdown-label" data-complete="{{ b.build_complete_at }}">…</span>
               {% else %}{{ b.type|truncate(12,true,'') }} Lv{{ b.level }}{% endif %}
             </div>
-            {# Repair button overlay for destroyed buildings #}
             {% if b.is_destroyed %}
             <button onclick="event.stopPropagation(); repairBuilding({{ b.id }})"
                     class="absolute inset-0 m-auto w-[80%] h-6 bg-yellow-700 hover:bg-yellow-600 text-white text-[9px] font-semibold rounded">
@@ -114,8 +139,40 @@
   </div>
 </div>
 {% else %}
+{# ── Fort view — Command Centre card at top, then regular building cards #}
+
+{# Command Centre slot #}
+<div class="mb-4">
+  <div class="bg-gray-900 border-2 border-red-900 rounded-lg p-3 flex items-center gap-3 max-w-xs relative">
+    {% if cc %}
+      {% set cc_icon = building_icon_map.get(cc.type) %}
+      {% if cc_icon %}
+      <img src="{{ cc_icon }}" alt="Command Centre" class="w-8 h-8 object-contain flex-shrink-0" />
+      {% else %}
+      <div class="text-2xl flex-shrink-0">🏰</div>
+      {% endif %}
+      <div class="min-w-0">
+        <div class="font-semibold text-sm text-red-200">Command Centre</div>
+        <div class="text-xs text-gray-400">Level {{ cc.level }}</div>
+        {% if cc.build_complete_at %}
+        <div class="text-xs text-yellow-400 mt-0.5">Building… <span class="countdown-label" data-complete="{{ cc.build_complete_at }}">…</span></div>
+        {% elif cc.is_destroyed %}
+        <div class="text-xs text-red-400 mt-0.5">Destroyed</div>
+        {% else %}
+        <div class="text-xs text-green-400 mt-0.5">Active</div>
+        {% endif %}
+      </div>
+    {% else %}
+      <div class="text-2xl flex-shrink-0">🏰</div>
+      <div class="font-semibold text-sm text-red-300">Command Centre</div>
+    {% endif %}
+    <span class="absolute top-1.5 right-2 text-[10px] text-red-500/70 font-bold">⚑ HQ</span>
+  </div>
+</div>
+
 <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-8">
   {% for slot in all_slots %}
+    {% if slot == 0 %}{% else %}
     {% if slot in occupied %}
       {% set b = occupied[slot] %}
       {% set building_icon = building_icon_map.get(b.type) %}
@@ -150,6 +207,7 @@
         <button onclick="openBuildModal({{ slot }})"
                 class="text-xs bg-blue-700 hover:bg-blue-600 text-white px-3 py-1 rounded">Build</button>
       </div>
+    {% endif %}
     {% endif %}
   {% endfor %}
 </div>
