@@ -209,13 +209,12 @@ function toggleZoomAll() {
 
 // ── Legend ────────────────────────────────────────────────────────────
 const LEGEND_ITEMS = [
-  { label: 'Your Castle',   color: EC.castle_own,   icon: 'castle' },
-  { label: 'Other Castle',  color: EC.castle_other, icon: 'castle' },
-  { label: 'NPC Castle',    color: EC.castle_npc,   icon: 'castle' },
-  { label: 'Your Fort',     color: EC.fort_own,     icon: 'fort' },
-  { label: 'Enemy Fort',    color: EC.fort_enemy,   icon: 'fort' },
-  { label: 'Monster Fort',  color: EC.fort_monster, icon: 'fort' },
-  { label: 'Monster Camp',  color: EC.camp,         icon: 'monster_camp' },
+  { label: 'Your Castle',     color: EC.castle_own,   icon: 'castle' },
+  { label: 'Enemy Castle',    color: EC.castle_other, icon: 'castle' },
+  { label: 'Your Fort',       color: EC.fort_own,     icon: 'fort' },
+  { label: 'Enemy Fort',      color: EC.fort_enemy,   icon: 'fort' },
+  { label: 'Abandoned Fort',  color: EC.fort_monster, icon: 'fort' },
+  { label: 'Monster Camp',    color: EC.camp,         icon: 'monster_camp' },
 ];
 const LOCATION_ICON = {
   castle:       `${THEME_PATH}/locations/castle.svg`,

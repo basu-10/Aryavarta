@@ -136,7 +136,7 @@ def attack_prep(target_type: str, target_id: int):
             return "Cannot attack your own fort", 403
         target_label = (
             f"{target['owner_name']}'s Fort" if target.get("owner_name")
-            else "Monster Fort" if target.get("owner_id") is None
+            else "Abandoned Fort" if target.get("owner_id") is None
             else f"Fort #{target_id}"
         )
         target_stars = target.get("star_level", 0)

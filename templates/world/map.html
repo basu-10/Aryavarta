@@ -1,31 +1,31 @@
-﻿{% extends "base.html" %}
-{% block title %}World Map â€” BattleCells{% endblock %}
+{% extends "base.html" %}
+{% block title %}World Map - BattleCells{% endblock %}
 {% block body_class %}h-screen overflow-hidden{% endblock %}
 {% block main_class %}p-0 overflow-hidden min-h-0 flex flex-col{% endblock %}
 {% block content %}
 
 <div class="flex-1 min-h-0 flex flex-col">
 
-  {# â”€â”€ Title / label-toggle bar â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ #}
+  {# -- Title / label-toggle bar ---------------------------------------- #}
   <div class="flex items-center gap-3 px-4 py-2 bg-gray-950 border-b border-gray-800 shrink-0 flex-wrap">
     <h1 class="text-base font-bold text-white">
       World Map
       <span class="text-xs font-normal text-gray-400 hidden sm:inline">(click any entity to interact)</span>
     </h1>
-    {# â”€â”€ View option buttons â”€â”€ #}
+    {# -- View option buttons -- #}
     <div class="flex items-center gap-1 ml-auto flex-wrap">
       <button id="btn-zoom-all" type="button" onclick="toggleZoomAll()"
               class="px-2 py-1 text-xs rounded bg-gray-800 border border-gray-700 hover:bg-gray-700 text-gray-200"
-              title="Zoom to fit all entities / restore zoom">âŠ¡ Zoom All</button>
+              title="Zoom to fit all entities / restore zoom">&#9633; Zoom All</button>
       <button id="btn-show-mine" type="button" onclick="toggleFilter('own')"
               class="px-2 py-1 text-xs rounded bg-gray-800 border border-gray-700 hover:bg-gray-700 text-gray-200"
-              title="Highlight my forts &amp; castle">ðŸ° Mine</button>
+              title="Highlight my forts &amp; castle">&#127984; Mine</button>
       <div class="relative" id="friends-dropdown-wrap">
         <button id="btn-friends" type="button" onclick="toggleFriendsMenu()"
                 class="px-2 py-1 text-xs rounded bg-gray-800 border border-gray-700 hover:bg-gray-700 text-gray-200"
-                title="Highlight a friend's entities">ðŸ‘¥ Friends â–¾</button>
+                title="Highlight a friend's entities">&#128101; Friends &#9660;</button>
         <div id="friends-menu" class="hidden absolute right-0 top-full mt-1 z-30 bg-gray-900 border border-gray-700 rounded-lg shadow-2xl py-1 min-w-[160px] max-h-60 overflow-y-auto">
-          <div id="friends-list-inner" class="text-xs text-gray-300"><span class="px-3 py-2 block text-gray-500">Loadingâ€¦</span></div>
+          <div id="friends-list-inner" class="text-xs text-gray-300"><span class="px-3 py-2 block text-gray-500">Loading&hellip;</span></div>
         </div>
       </div>
       <label class="flex items-center gap-2 text-sm text-gray-300 cursor-pointer select-none">
@@ -35,9 +35,9 @@
     </div>
   </div>
 
-  {# â”€â”€ Map shell â€” fills remaining height â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ #}
+  {# -- Map shell - fills remaining height ------------------------------ #}
   <div id="world-map-shell" class="relative flex-1 min-h-0 overflow-hidden bg-gray-950">
-    {# Canvas renderer â€” pan via drag, zoom via wheel/buttons #}
+    {# Canvas renderer - pan via drag, zoom via wheel/buttons #}
     <canvas id="world-canvas" style="display:block;position:absolute;top:0;left:0;" tabindex="0"></canvas>
 
       <div id="entity-popup" class="hidden absolute z-20" style="min-width:280px;max-width:min(22rem, calc(100vw - 2rem));"></div>
@@ -46,7 +46,7 @@
       <div class="absolute top-2 left-2 z-10 flex items-center gap-1 bg-gray-900/85 backdrop-blur border border-gray-700 rounded-lg px-2 py-1.5">
         <button id="zoom-out"   type="button"
                 class="px-1.5 py-0.5 rounded bg-gray-800 border border-gray-700 hover:bg-gray-700 text-xs font-bold"
-                aria-label="Zoom out">âˆ’</button>
+                aria-label="Zoom out">&#8722;</button>
         <button id="zoom-reset" type="button"
                 class="px-1.5 py-0.5 rounded bg-gray-800 border border-gray-700 hover:bg-gray-700 text-xs w-10 text-center"
                 aria-label="Reset zoom">100%</button>
@@ -60,7 +60,7 @@
       <div id="legend-card" class="absolute right-2 bottom-20 sm:right-3 sm:bottom-3 z-10 w-40 sm:w-48 max-w-[calc(100vw-1rem)] bg-gray-900/70 backdrop-blur border border-gray-600 rounded-lg shadow-lg">
         <button id="legend-toggle" class="w-full flex items-center justify-between px-3 py-2 text-xs font-semibold tracking-wide text-gray-200 hover:bg-gray-800/40 rounded-t-lg">
           <span>Legend</span>
-          <span id="legend-caret">â–¾</span>
+          <span id="legend-caret">&#9660;</span>
         </button>
         <div id="legend-body" class="px-3 pb-3 text-xs text-gray-300 space-y-1"></div>
       </div>
@@ -69,25 +69,25 @@
       <button class="map-scroll-btn" id="map-scroll-up"
               style="top:48px;left:50%;transform:translateX(-50%)"
               onpointerdown="startMapScroll(0,-1)" onpointerup="stopMapScroll()" onpointerleave="stopMapScroll()"
-              aria-label="Scroll up">â–²</button>
+              aria-label="Scroll up">&#9650;</button>
       <button class="map-scroll-btn" id="map-scroll-down"
               style="bottom:48px;left:50%;transform:translateX(-50%)"
               onpointerdown="startMapScroll(0,1)" onpointerup="stopMapScroll()" onpointerleave="stopMapScroll()"
-              aria-label="Scroll down">â–¼</button>
+              aria-label="Scroll down">&#9660;</button>
       <button class="map-scroll-btn" id="map-scroll-left"
               style="top:50%;left:48px;transform:translateY(-50%)"
               onpointerdown="startMapScroll(-1,0)" onpointerup="stopMapScroll()" onpointerleave="stopMapScroll()"
-              aria-label="Scroll left">â—€</button>
+              aria-label="Scroll left">&#9664;</button>
       <button class="map-scroll-btn" id="map-scroll-right"
               style="top:50%;right:48px;transform:translateY(-50%)"
               onpointerdown="startMapScroll(1,0)" onpointerup="stopMapScroll()" onpointerleave="stopMapScroll()"
-              aria-label="Scroll right">â–¶</button>
+              aria-label="Scroll right">&#9654;</button>
 
   </div>{# end world-map-shell #}
 </div>{# end flex column #}
 
 <script>
-// Jinja-injected constants â€” consumed by the static JS modules below
+// Jinja-injected constants - consumed by the static JS modules below
 const WORLD_W    = {{ world_w }};
 const WORLD_H    = {{ world_h }};
 const WORLD_SEED = {{ world.id }};
@@ -97,6 +97,5 @@ const THEME_PATH = '/assets/{{ active_theme }}/map';
 <script src="{{ url_for('static', filename='js/world/map-renderer.js') }}"></script>
 <script src="{{ url_for('static', filename='js/world/map-input.js') }}"></script>
 <script src="{{ url_for('static', filename='js/world/map-ui.js') }}"></script>
-
 {% endblock %}
 {% block footer %}{% endblock %}

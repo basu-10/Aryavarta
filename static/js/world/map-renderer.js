@@ -9,8 +9,7 @@ const FOG_FADE   = 4;
 // ── Entity colours ([r, g, b, a]) ──────────────────────────────────────
 const EC = {
   castle_own:   [37,  99, 235, 0.82],
-  castle_npc:   [124, 58, 237, 0.82],
-  castle_other: [30,  58, 138, 0.82],
+  castle_other: [30,  58, 138, 0.82],  // covers both NPC and player enemy castles
   fort_own:     [22,  163, 74, 0.82],
   fort_npc:     [180, 83,   9, 0.82],
   fort_enemy:   [220, 38,  38, 0.82],
@@ -189,13 +188,13 @@ function draw() {
     let col = null, label = '', starStr = '';
 
     if (item.type === 'castle') {
-      col   = item.owner_id === PLAYER_ID ? EC.castle_own : item.is_npc ? EC.castle_npc : EC.castle_other;
+      col   = item.owner_id === PLAYER_ID ? EC.castle_own : EC.castle_other;
       label = item.owner_id === PLAYER_ID ? 'Your Castle' : (item.owner_name || '?');
     } else if (item.type === 'fort') {
       if      (item.owner_id === PLAYER_ID) { col = EC.fort_own;     label = 'Your Fort'; }
       else if (item.is_npc)                 { col = EC.fort_npc;     label = item.owner_name || 'NPC Fort';   starStr = '\u2605'.repeat(Math.min(item.star_level || 0, 4)); }
       else if (item.owner_id)               { col = EC.fort_enemy;   label = item.owner_name || 'Enemy Fort'; }
-      else                                  { col = EC.fort_monster; label = 'Monster Fort'; starStr = '\u2605'.repeat(Math.min(item.star_level || 0, 4)); }
+      else                                  { col = EC.fort_monster; label = 'Abandoned Fort'; starStr = '\u2605'.repeat(Math.min(item.star_level || 0, 4)); }
     } else if (item.type === 'monster_camp') {
       col = EC.camp; label = 'Monster Camp'; starStr = '\u2605'.repeat(Math.min(item.star_level || 0, 4));
     }
