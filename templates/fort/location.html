@@ -49,16 +49,18 @@
 {% for b in buildings %}
   {% set _ = occupied.update({b.slot_index: b}) %}
 {% endfor %}
+{% set _bext = 'png' if active_theme == 'theme2' else 'svg' %}
+{% set _bp   = '/assets/' ~ active_theme ~ '/buildings' %}
 {% set building_icon_map = {
-  'Farm': '/assets/theme1/buildings/resource/farm.svg',
-  'Lumber Mill': '/assets/theme1/buildings/resource/lumber-mill.svg',
-  'Merchant': '/assets/theme1/buildings/resource/merchant.svg',
-  'Mine': '/assets/theme1/buildings/resource/mine.svg',
-  'Garrison': '/assets/theme1/buildings/military/garrison.svg',
-  'Stable': '/assets/theme1/buildings/military/stable.svg',
-  'Cannon': '/assets/theme1/buildings/defense/cannon.svg',
-  'Archer Tower': '/assets/theme1/buildings/defense/archer-tower.svg',
-  'Command Centre': '/assets/theme1/buildings/default/command-centre.svg',
+  'Farm':           _bp ~ '/resource/farm.'          ~ _bext,
+  'Lumber Mill':    _bp ~ '/resource/lumber-mill.'   ~ _bext,
+  'Merchant':       _bp ~ '/resource/merchant.'      ~ _bext,
+  'Mine':           _bp ~ '/resource/mine.'          ~ _bext,
+  'Garrison':       _bp ~ '/military/garrison.'      ~ _bext,
+  'Stable':         _bp ~ '/military/stable.'        ~ _bext,
+  'Cannon':         _bp ~ '/defense/cannon.'         ~ _bext,
+  'Archer Tower':   _bp ~ '/defense/archer-tower.'   ~ _bext,
+  'Command Centre': _bp ~ '/default/command-centre.' ~ _bext,
 } %}
 
 {# ── Slot 0 — Command Centre (always present, non-removable) ─────────── #}
@@ -69,10 +71,16 @@
   <div class="castle-base-wrapper relative w-full rounded-xl overflow-hidden select-none"
        style="aspect-ratio:1/1; max-height:680px; background:#1a3a0d;">
 
-    {# Background field image - the CoC-style grass base #}
+    {# Background field image #}
+    {% if active_theme == 'theme2' %}
+    <img src="/assets/theme2/floors/fort-floor.png"
+         alt="Castle Base" draggable="false"
+         class="absolute inset-0 w-full h-full object-cover pointer-events-none" />
+    {% else %}
     <img src="/assets/theme1/ui/castle-base/base-field.svg"
          alt="Castle Base" draggable="false"
          class="absolute inset-0 w-full h-full object-cover pointer-events-none" />
+    {% endif %}
 
     {# ── Command Centre — slot 0, top-center above the 3×3 grid ─────── #}
     <div class="absolute flex flex-col items-center justify-center"

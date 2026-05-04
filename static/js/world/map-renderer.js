@@ -25,13 +25,13 @@ const GRASS = ['#4a9640', '#4e9844', '#529648', '#489040', '#50974a'];
 const SPR = {};
 (function preload() {
   const pairs = [
-    ['castle',       `${THEME_PATH}/locations/castle.svg`],
-    ['fort',         `${THEME_PATH}/locations/fort.svg`],
-    ['monster_camp', `${THEME_PATH}/locations/monster-camp.svg`],
-    ['trees',        `${THEME_PATH}/terrain/trees.svg`],
-    ['bushes',       `${THEME_PATH}/terrain/bushes.svg`],
-    ['grass',        `${THEME_PATH}/terrain/grass.svg`],
-    ['pond',         `${THEME_PATH}/terrain/pond.svg`],
+    ['castle',       `${THEME_PATH}/locations/castle.${SPRITE_EXT}`],
+    ['fort',         `${THEME_PATH}/locations/fort.${SPRITE_EXT}`],
+    ['monster_camp', `${THEME_PATH}/locations/monster-camp.${SPRITE_EXT}`],
+    ['trees',        `${THEME_PATH}/terrain/trees.${SPRITE_EXT}`],
+    ['bushes',       `${THEME_PATH}/terrain/bushes.${SPRITE_EXT}`],
+    ['grass',        `${THEME_PATH}/terrain/grass.${SPRITE_EXT}`],
+    ['pond',         `${THEME_PATH}/terrain/pond.${SPRITE_EXT}`],
   ];
   for (const [k, u] of pairs) {
     const img = new Image();

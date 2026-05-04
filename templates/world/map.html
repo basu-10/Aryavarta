@@ -1,4 +1,4 @@
-{% extends "base.html" %}
+﻿{% extends "base.html" %}
 {% block title %}World Map - BattleCells{% endblock %}
 {% block body_class %}h-screen overflow-hidden{% endblock %}
 {% block main_class %}p-0 overflow-hidden min-h-0 flex flex-col{% endblock %}
@@ -92,7 +92,8 @@ const WORLD_W    = {{ world_w }};
 const WORLD_H    = {{ world_h }};
 const WORLD_SEED = {{ world.id }};
 const PLAYER_ID  = {{ session.get('player_id') | tojson }};
-const THEME_PATH = '/assets/{{ active_theme }}/map';
+const THEME_PATH  = '/assets/{{ active_theme }}/map';
+const SPRITE_EXT  = '{{ "png" if active_theme == "theme2" else "svg" }}';
 </script>
 <script src="{{ url_for('static', filename='js/world/map-renderer.js') }}"></script>
 <script src="{{ url_for('static', filename='js/world/map-input.js') }}"></script>

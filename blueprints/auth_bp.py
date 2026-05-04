@@ -50,14 +50,19 @@ def _set_auth_session(player_id: int, username: str) -> None:
     session.permanent = True
 
 
-def _world_post_login_redirect():
-    """Return a redirect Response based on how many worlds exist."""
+def _world_post_login_redirect(player_role: str = "player"):
+    """Return a redirect Response based on world availability and role."""
     worlds = m.get_all_worlds()
     if len(worlds) == 1:
         session["world_id"] = worlds[0]["id"]
         return redirect(url_for("world.world_map"))
     if len(worlds) > 1:
-        return redirect(url_for("world.select_world"))
+        if player_role in ("admin", "mod"):
+            return redirect(url_for("world.select_world"))
+
+        default = m.get_default_world()
+        session["world_id"] = (default["id"] if default else worlds[0]["id"])
+        return redirect(url_for("world.world_map"))
     flash("No worlds available. Contact an admin.", "error")
     return None
 
@@ -203,7 +208,7 @@ def login():
             else:
                 _set_auth_session(player["id"], player["username"])
                 token = _issue_remember_token(player["id"])
-                redir = _world_post_login_redirect()
+                redir = _world_post_login_redirect(player.get("role", "player"))
                 if redir is None:
                     return render_template("auth/login.html", next_url=next_url)
                 return _set_remember_cookie(redir, token)
