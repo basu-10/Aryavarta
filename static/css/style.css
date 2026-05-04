@@ -2,12 +2,68 @@
 
 /* Smooth cell transitions on the battlefield grid */
 .battle-cell {
-  transition: background-color 0.18s ease, filter 0.18s ease;
+  transition: background-color 0.3s ease, filter 0.28s ease;
   border-right: 1px solid rgba(0, 0, 0, 0.22);
   border-bottom: 1px solid rgba(0, 0, 0, 0.22);
   flex: 1 1 0;
   aspect-ratio: 1 / 1;
   min-width: 0;
+}
+
+.battlefield-unit-visual,
+.battlefield-unit-fallback {
+  transition: transform 0.26s ease, opacity 0.26s ease, filter 0.26s ease;
+  will-change: transform, opacity, filter;
+}
+
+.damage-popups {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: visible;
+}
+
+@keyframes damage-pop {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, 6px) scale(0.88);
+  }
+  15% {
+    opacity: 1;
+    transform: translate(-50%, 0px) scale(1);
+  }
+  85% {
+    opacity: 1;
+    transform: translate(-50%, -18px) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -26px) scale(0.96);
+  }
+}
+
+.damage-popup {
+  position: absolute;
+  left: 50%;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 11px;
+  line-height: 1;
+  font-weight: 700;
+  color: #fecaca;
+  background: rgba(127, 29, 29, 0.8);
+  border: 1px solid rgba(239, 68, 68, 0.6);
+  border-radius: 999px;
+  padding: 2px 6px;
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.35);
+  box-shadow: 0 2px 8px rgba(127, 29, 29, 0.35);
+  animation: damage-pop 0.72s ease-out forwards;
+}
+
+.damage-popup-icon {
+  font-size: 10px;
+  line-height: 1;
 }
 
 /* Team cell backgrounds */

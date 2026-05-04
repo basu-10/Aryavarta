@@ -73,13 +73,13 @@
                       :src="getBattlefieldCellVisual(getBattlefieldCell(r - 1, c - 1), r - 1, c - 1)"
                       :alt="getBattlefieldCell(r - 1, c - 1).type"
                       :class="battlefieldIconClass"
-                      class="object-contain drop-shadow"
+                      class="object-contain drop-shadow battlefield-unit-visual"
                     />
                   </template>
                   <template x-if="!troopIcon(getBattlefieldCell(r - 1, c - 1).type)">
                     <span
                       :class="battlefieldFallbackClass"
-                      class="font-bold leading-none"
+                      class="font-bold leading-none battlefield-unit-fallback"
                       x-text="getBattlefieldCellFallback(getBattlefieldCell(r - 1, c - 1))"
                     ></span>
                   </template>
@@ -88,6 +88,17 @@
                     class="leading-none font-semibold text-yellow-200"
                     x-text="getBattlefieldCellText(getBattlefieldCell(r - 1, c - 1))"
                   ></span>
+                </div>
+              </template>
+
+              <template x-if="typeof getBattlefieldDamagePopups === 'function' && getBattlefieldDamagePopups(r - 1, c - 1).length">
+                <div class="damage-popups">
+                  <template x-for="(popup, i) in getBattlefieldDamagePopups(r - 1, c - 1)" :key="popup.id">
+                    <div class="damage-popup" :style="'top:' + Math.max(4, 18 - (i * 13)) + '%'">
+                      <span class="damage-popup-icon">🩸</span>
+                      <span x-text="popup.text"></span>
+                    </div>
+                  </template>
                 </div>
               </template>
             </div>

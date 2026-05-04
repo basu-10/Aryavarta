@@ -15,8 +15,12 @@ function tickViewer() {
     totalTicks: 0,
     winner: '',
     playing: false,
-    playSpeed: 600,  // ms per tick
+    playSpeed: 860,  // ms per tick (about 0.7x of previous default)
     _playTimer: null,
+    prevBattleUrl: null,
+    nextBattleUrl: null,
+    damageBubblesByCell: {},
+    _keydownHandler: null,
 
     // ── Derived (computed from currentTick) ───────────────────────────── //
     get currentSnap() {
@@ -67,10 +71,113 @@ function tickViewer() {
       this.ticks = TICK_DATA;
       this.totalTicks = TOTAL_TICKS;
       this.winner = WINNER;
+      this.prevBattleUrl = (typeof PREV_BATTLE_URL !== 'undefined') ? PREV_BATTLE_URL : null;
+      this.nextBattleUrl = (typeof NEXT_BATTLE_URL !== 'undefined') ? NEXT_BATTLE_URL : null;
       this.GRID_ROWS = GRID_ROWS;
       this.GRID_COLS = GRID_COLS;
       // Scroll log to current tick whenever currentTick changes
-      this.$watch('currentTick', () => this._scrollLogToTick());
+      this.$watch('currentTick', () => {
+        // Clear-and-rebuild to avoid stale popup ghosting between frames.
+        this._rebuildDamageBubbles();
+        this._scrollLogToTick();
+      });
+      this._bindKeyboardShortcuts();
+      this._rebuildDamageBubbles();
+    },
+
+    _bindKeyboardShortcuts() {
+      if (this._keydownHandler) {
+        window.removeEventListener('keydown', this._keydownHandler);
+      }
+      this._keydownHandler = (e) => this._onKeyDown(e);
+      window.addEventListener('keydown', this._keydownHandler);
+    },
+
+    _onKeyDown(e) {
+      if (this._shouldIgnoreKeyTarget(e)) return;
+
+      const isCtrlNav = (e.ctrlKey || e.metaKey) && (e.key === 'ArrowLeft' || e.key === 'ArrowRight');
+      if (isCtrlNav) {
+        e.preventDefault();
+        if (e.key === 'ArrowLeft') this.goToPrevBattle();
+        if (e.key === 'ArrowRight') this.goToNextBattle();
+        return;
+      }
+
+      if (e.key === ' ') {
+        e.preventDefault();
+        this.togglePlay();
+        return;
+      }
+
+      if (e.key === 'ArrowLeft') {
+        e.preventDefault();
+        this.prev();
+        return;
+      }
+
+      if (e.key === 'ArrowRight') {
+        e.preventDefault();
+        this.next();
+      }
+    },
+
+    _shouldIgnoreKeyTarget(e) {
+      const el = e && e.target ? e.target : null;
+      if (!el) return false;
+      const tag = (el.tagName || '').toLowerCase();
+      return el.isContentEditable || ['input', 'textarea', 'select', 'button'].includes(tag);
+    },
+
+    goToPrevBattle() {
+      if (!this.prevBattleUrl) return;
+      window.location.assign(this.prevBattleUrl);
+    },
+
+    goToNextBattle() {
+      if (!this.nextBattleUrl) return;
+      window.location.assign(this.nextBattleUrl);
+    },
+
+    _rebuildDamageBubbles() {
+      this.damageBubblesByCell = {};
+
+      const snap = this.currentSnap || {};
+      const events = snap.events || [];
+      if (!events.length) return;
+
+      const unitMap = {};
+      for (const u of (snap.units || [])) {
+        unitMap[u.unit_id] = u;
+      }
+
+      const prev = this.prevSnap();
+      const prevUnitMap = {};
+      for (const u of (prev && prev.units ? prev.units : [])) {
+        prevUnitMap[u.unit_id] = u;
+      }
+
+      let bubbleIdx = 0;
+      for (const ev of events) {
+        if (ev.type !== 'attack') continue;
+        const dmg = Number(ev.damage);
+        if (!Number.isFinite(dmg) || dmg <= 0) continue;
+
+        const target = unitMap[ev.target_id] || prevUnitMap[ev.target_id];
+        if (!target || target.row === undefined || target.col === undefined) continue;
+
+        const cellKey = `${target.row},${target.col}`;
+        if (!this.damageBubblesByCell[cellKey]) this.damageBubblesByCell[cellKey] = [];
+        this.damageBubblesByCell[cellKey].push({
+          id: `dmg-${this.currentTick}-${bubbleIdx++}`,
+          text: `-${Math.round(dmg)}`,
+        });
+      }
+    },
+
+    getBattlefieldDamagePopups(r, c) {
+      const key = `${r},${c}`;
+      return this.damageBubblesByCell[key] || [];
     },
 
     _scrollLogToTick() {
@@ -217,7 +324,7 @@ function tickViewer() {
       return this.troopVisualForCell(cell, r, c);
     },
     getBattlefieldCellFallback(cell) {
-      return this.unitInitial(cell.type);
+      return cell && cell.type ? cell.type : '';
     },
     getBattlefieldCellText(cell) {
       return this.hpBar(cell);

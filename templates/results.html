@@ -84,17 +84,6 @@
       :class="playing ? 'bg-yellow-600 hover:bg-yellow-500' : 'bg-green-700 hover:bg-green-600'"
       x-text="playing ? '⏸ Pause' : '▶ Play'"
     ></button>
-
-    <!-- Speed -->
-    <select
-      x-model="playSpeed"
-      class="bg-gray-800 border border-gray-600 rounded px-2 py-1 text-xs"
-    >
-      <option value="1000">0.5×</option>
-      <option value="600" selected>1×</option>
-      <option value="300">2×</option>
-      <option value="100">5×</option>
-    </select>
   </div>
 
   <!-- ── HP POOLS ───────────────────────────────────────────────────────── -->
@@ -174,6 +163,8 @@
   const GRID_COLS = {{ grid_cols }};
   const WINNER = {{ winner | tojson }};
   const TOTAL_TICKS = {{ total_ticks }};
+  const PREV_BATTLE_URL = {{ (url_for('battle.results', battle_id=prev_id) if prev_id else None) | tojson }};
+  const NEXT_BATTLE_URL = {{ (url_for('battle.results', battle_id=next_id) if next_id else None) | tojson }};
 </script>
 <script src="{{ url_for('static', filename='js/tick_viewer.js') }}"></script>
 {% endblock %}
