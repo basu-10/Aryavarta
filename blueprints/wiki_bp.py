@@ -32,9 +32,9 @@ def _troop_image_path(name: str) -> str | None:
 
 def _category_label(category: str) -> str:
     return {
-        "infantry":     "Infantry",
+        "infantry":     "Melee",
         "ranged":       "Ranged",
-        "cavalry":      "Cavalry",
+        "cavalry":      "Melee",
         "monster":      "Monster",
         "siege_defence": "Siege / Defence",
     }.get(category, category.title())
@@ -44,7 +44,7 @@ def _category_color(category: str) -> str:
     return {
         "infantry":     "text-orange-400",
         "ranged":       "text-sky-400",
-        "cavalry":      "text-yellow-400",
+        "cavalry":      "text-orange-400",
         "monster":      "text-red-400",
         "siege_defence": "text-purple-400",
     }.get(category, "text-gray-400")
@@ -207,7 +207,29 @@ def troops_index():
     for t in troops:
         categories.setdefault(t["category_label"], []).append(t)
 
-    return render_template("wiki/troops.html", troops=troops, categories=categories)
+    # Build monster rows: each entry pairs melee + ranged by star level
+    _MONSTER_STAR_PAIRS = [
+        (1,  "Troll",        "Wraith"),
+        (2,  "Goblin Brute", "Harpy"),
+        (3,  "Minotaur",     "Basilisk"),
+        (4,  "Gargoyle",     "Manticore"),
+        (5,  "Hydra",        "Siren"),
+        (6,  "Behemoth",     "Chimera"),
+        (7,  "Leviathan",    "Phoenix"),
+        (8,  "Colossus",     "Thunderbird"),
+        (9,  "Abyssal Titan", "Void Drake"),
+        (10, "Demon",        "Pegasus"),
+    ]
+    troop_by_name = {t["troop_type"]: t for t in troops}
+    monster_rows = []
+    for star, melee_name, ranged_name in _MONSTER_STAR_PAIRS:
+        melee_t  = troop_by_name.get(melee_name)
+        ranged_t = troop_by_name.get(ranged_name)
+        if melee_t or ranged_t:
+            monster_rows.append({"star": star, "melee": melee_t, "ranged": ranged_t})
+
+    return render_template("wiki/troops.html", troops=troops, categories=categories,
+                           monster_rows=monster_rows)
 
 
 @wiki_bp.route("/buildings")
