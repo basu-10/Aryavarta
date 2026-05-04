@@ -39,6 +39,7 @@ def dashboard():
         building_types=list(config.BUILDING_BUILD_COST.keys()),
         available_themes=config.AVAILABLE_THEMES,
         active_theme=config.ACTIVE_THEME,
+        instant_travel=m.get_instant_travel(),
     )
 
 
@@ -106,6 +107,27 @@ def set_theme(theme_name: str):
         return jsonify({"ok": False, "error": f"Theme '{theme_name}' not found."}), 400
     config.ACTIVE_THEME = theme_name
     return jsonify({"ok": True, "active_theme": config.ACTIVE_THEME})
+
+
+# ── Travel mode ───────────────────────────────────────────────────────── #
+
+@admin_bp.route("/settings/travel-mode", methods=["POST"])
+@admin_required
+def set_travel_mode():
+    """Toggle INSTANT_TRAVEL between True (instant) and False (real-time)."""
+    data = request.get_json(force=True, silent=True) or {}
+    mode = data.get("instant")
+    if not isinstance(mode, bool):
+        return jsonify({"ok": False, "error": "Expected {instant: true|false}"}), 400
+    m.set_instant_travel(mode)
+    return jsonify({"ok": True, "instant": m.get_instant_travel()})
+
+
+@admin_bp.route("/settings/travel-mode", methods=["GET"])
+@admin_required
+def get_travel_mode():
+    return jsonify({"instant": m.get_instant_travel()})
+
 
 
 # ── User management ───────────────────────────────────────────────────── #

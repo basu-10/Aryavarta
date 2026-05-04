@@ -12,6 +12,11 @@ CREATE TABLE IF NOT EXISTS world (
     is_default INTEGER NOT NULL DEFAULT 0,
     created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
+CREATE TABLE IF NOT EXISTS game_setting (
+    key TEXT PRIMARY KEY,
+    value TEXT NOT NULL,
+    updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
 CREATE TABLE IF NOT EXISTS clan (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT UNIQUE NOT NULL,
@@ -117,7 +122,10 @@ CREATE TABLE IF NOT EXISTS battle_mission (
         arrive_time TEXT NOT NULL,
         resolved INTEGER NOT NULL DEFAULT 0,
         result_battle_id TEXT,
-        winner TEXT -- 'attacker' | 'defender' | NULL
+        winner TEXT,
+        -- 'attacker' | 'defender' | NULL
+        defender_id INTEGER REFERENCES player(id),
+        defender_seen INTEGER NOT NULL DEFAULT 0
 );
 CREATE TABLE IF NOT EXISTS clan_message (
     id INTEGER PRIMARY KEY AUTOINCREMENT,

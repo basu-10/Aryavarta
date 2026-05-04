@@ -51,6 +51,32 @@ def init_db() -> None:
     db.commit()
 
 
+def apply_migrations() -> None:
+    """Add columns that may be missing from existing databases (safe, idempotent)."""
+    db = get_db()
+    existing = {row[1] for row in db.execute("PRAGMA table_info(battle_mission)").fetchall()}
+    if "defender_id" not in existing:
+        db.execute("ALTER TABLE battle_mission ADD COLUMN defender_id INTEGER REFERENCES player(id)")
+    if "defender_seen" not in existing:
+        db.execute("ALTER TABLE battle_mission ADD COLUMN defender_seen INTEGER NOT NULL DEFAULT 0")
+
+    db.execute(
+        """CREATE TABLE IF NOT EXISTS game_setting (
+               key TEXT PRIMARY KEY,
+               value TEXT NOT NULL,
+               updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+           )"""
+    )
+    from config import INSTANT_TRAVEL
+    row = db.execute("SELECT value FROM game_setting WHERE key='instant_travel'").fetchone()
+    if row is None:
+        db.execute(
+            "INSERT INTO game_setting (key, value) VALUES ('instant_travel', ?)",
+            ("1" if INSTANT_TRAVEL else "0",),
+        )
+    db.commit()
+
+
 def init_app(app: Flask) -> None:
     """Register DB lifecycle hooks and CLI commands with the Flask app."""
     app.teardown_appcontext(close_db)

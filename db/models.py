@@ -34,6 +34,33 @@ def _row(row) -> Optional[dict]:
     return dict(row) if row is not None else None
 
 
+def get_game_setting(key: str, default: Optional[str] = None) -> Optional[str]:
+    row = get_db().execute("SELECT value FROM game_setting WHERE key=?", (key,)).fetchone()
+    if row is None:
+        return default
+    return str(row["value"])
+
+
+def set_game_setting(key: str, value: str) -> None:
+    db = get_db()
+    db.execute(
+        """INSERT INTO game_setting (key, value, updated_at)
+           VALUES (?, ?, datetime('now'))
+           ON CONFLICT(key) DO UPDATE SET value=excluded.value, updated_at=datetime('now')""",
+        (key, str(value)),
+    )
+    db.commit()
+
+
+def get_instant_travel() -> bool:
+    raw = get_game_setting("instant_travel", "1" if config.INSTANT_TRAVEL else "0")
+    return str(raw).strip().lower() in ("1", "true", "yes", "on")
+
+
+def set_instant_travel(enabled: bool) -> None:
+    set_game_setting("instant_travel", "1" if enabled else "0")
+
+
 # ── World ─────────────────────────────────────────────────────────────── #
 
 def create_world(name: str, grid_width: int, grid_height: int,
@@ -749,15 +776,16 @@ def deduct_troop(owner_id: int, unit_type: str, quantity: int,
 
 def create_mission(attacker_id: int, target_type: str, target_id: int,
                    formation: list, origin_type: str, origin_id: int,
-                   arrive_time_iso: str, world_id: int = 0) -> int:
+                   arrive_time_iso: str, world_id: int = 0,
+                   defender_id: Optional[int] = None) -> int:
     db = get_db()
     cur = db.execute(
         """INSERT INTO battle_mission
            (world_id, attacker_id, target_type, target_id, formation, origin_type, origin_id,
-            depart_time, arrive_time)
-           VALUES (?,?,?,?,?,?,?,?,?)""",
+            depart_time, arrive_time, defender_id)
+           VALUES (?,?,?,?,?,?,?,?,?,?)""",
         (world_id, attacker_id, target_type, target_id, json.dumps(formation),
-         origin_type, origin_id, _now_iso(), arrive_time_iso),
+         origin_type, origin_id, _now_iso(), arrive_time_iso, defender_id),
     )
     db.commit()
     return cur.lastrowid
@@ -825,6 +853,38 @@ def get_recent_resolved_missions(player_id: int, limit: int = 10) -> list[dict]:
         d["formation"] = json.loads(d["formation"])
         result.append(d)
     return result
+
+
+def get_recent_defence_reports(player_id: int, limit: int = 50) -> list[dict]:
+    """Fetch missions where this player was the defender (their fort was attacked)."""
+    rows = get_db().execute(
+        """SELECT * FROM battle_mission WHERE defender_id=? AND resolved=1
+           ORDER BY arrive_time DESC LIMIT ?""",
+        (player_id, limit),
+    ).fetchall()
+    result = []
+    for r in rows:
+        d = dict(r)
+        d["formation"] = json.loads(d["formation"])
+        result.append(d)
+    return result
+
+
+def mark_defences_seen(player_id: int) -> None:
+    db = get_db()
+    db.execute(
+        "UPDATE battle_mission SET defender_seen=1 WHERE defender_id=? AND resolved=1",
+        (player_id,),
+    )
+    db.commit()
+
+
+def count_unseen_defences(player_id: int) -> int:
+    row = get_db().execute(
+        "SELECT COUNT(*) FROM battle_mission WHERE defender_id=? AND resolved=1 AND defender_seen=0",
+        (player_id,),
+    ).fetchone()
+    return row[0] if row else 0
 
 
 # ── Clan ─────────────────────────────────────────────────────────────── #

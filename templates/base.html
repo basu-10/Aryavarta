@@ -46,7 +46,7 @@
     </a>
     <a href="{{ url_for('fort.castle_page') }}" data-nav-path="/castle"
        class="desktop-nav-link px-3 py-1.5 rounded text-sm text-gray-300 hover:text-white hover:bg-gray-800 transition-colors">
-      🏰 Castle
+      <span class="relative">🏰 Castle<span id="castle-dot-desktop" class="hidden absolute -top-1 -right-2 w-2 h-2 rounded-full bg-yellow-400"></span></span>
     </a>
     <a href="{{ url_for('clan.clan_page') }}" data-nav-path="/clan"
        class="desktop-nav-link px-3 py-1.5 rounded text-sm text-gray-300 hover:text-white hover:bg-gray-800 transition-colors">
@@ -62,7 +62,7 @@
     {# Secondary actions — right side #}
     <a href="{{ url_for('auth.battles') }}" data-nav-path="/battles"
        class="desktop-nav-link px-3 py-1.5 rounded text-sm text-gray-400 hover:text-white hover:bg-gray-800 transition-colors">
-      📜 History
+      <span class="relative">📜 History<span id="history-dot-desktop" class="hidden absolute -top-1 -right-2 w-2 h-2 rounded-full bg-red-500"></span></span>
     </a>
     <a href="{{ url_for('wiki.wiki_index') }}" data-nav-path="/wiki"
        class="desktop-nav-link px-3 py-1.5 rounded text-sm text-gray-400 hover:text-white hover:bg-gray-800 transition-colors">
@@ -546,24 +546,95 @@
     openDmPanel(id, name);
   }
 
-  // ── Unread badge poll ────────────────────────────────────────────── //
-  async function pollUnread() {
-    const res = await fetch('/api/dm/unread');
-    if (!res.ok) return;
-    const { unread } = await res.json();
+  // ── Notifications poll (dm/history/castle), adaptive + idle-aware ── //
+  const _POLL_ACTIVE_MS = 30000;
+  const _POLL_HIDDEN_MS = 120000;
+  const _IDLE_STOP_MS = 60 * 60 * 1000;
+  let _lastUserActionAt = Date.now();
+  let _notifTimer = null;
+
+  function _setUnreadDm(unread) {
     const fabBadge = document.getElementById('chat-fab-badge');
     const dmBadge  = document.getElementById('chat-dm-badge');
+    if (!fabBadge) return;
     if (unread > 0) {
       fabBadge.textContent = unread;
       fabBadge.classList.remove('hidden');
-      if (dmBadge) { dmBadge.textContent = unread; dmBadge.classList.remove('hidden'); }
+      if (dmBadge) {
+        dmBadge.textContent = unread;
+        dmBadge.classList.remove('hidden');
+      }
     } else {
       fabBadge.classList.add('hidden');
       if (dmBadge) dmBadge.classList.add('hidden');
     }
   }
-  setInterval(pollUnread, 10000);
-  pollUnread();
+
+  function _setDot(id, visible) {
+    const el = document.getElementById(id);
+    if (el) el.classList.toggle('hidden', !visible);
+  }
+
+  function _isIdle() {
+    return (Date.now() - _lastUserActionAt) >= _IDLE_STOP_MS;
+  }
+
+  function _nextPollDelayMs() {
+    if (_isIdle()) return null;
+    return document.hidden ? _POLL_HIDDEN_MS : _POLL_ACTIVE_MS;
+  }
+
+  function scheduleNotificationsPoll(immediate = false) {
+    if (_notifTimer) {
+      clearTimeout(_notifTimer);
+      _notifTimer = null;
+    }
+    const delay = immediate ? 0 : _nextPollDelayMs();
+    if (delay === null) return;
+    _notifTimer = setTimeout(pollNotifications, delay);
+  }
+
+  async function pollNotifications() {
+    try {
+      if (_isIdle()) {
+        scheduleNotificationsPoll(false);
+        return;
+      }
+      const res = await fetch('/api/notifications');
+      if (!res.ok) {
+        scheduleNotificationsPoll(false);
+        return;
+      }
+      const { unread_defences, unread_dm, castle_ready } = await res.json();
+      _setUnreadDm(unread_dm || 0);
+      const hasDef = unread_defences > 0;
+      _setDot('history-dot-desktop', hasDef);
+      _setDot('history-dot-mobile',  hasDef);
+      _setDot('castle-dot-desktop',  castle_ready);
+      _setDot('castle-dot-mobile',   castle_ready);
+    } catch (_) {
+      // Keep silent and retry with backoff cadence.
+    } finally {
+      scheduleNotificationsPoll(false);
+    }
+  }
+
+  function markUserActive() {
+    const wasIdle = _isIdle();
+    _lastUserActionAt = Date.now();
+    if (wasIdle) scheduleNotificationsPoll(true);
+  }
+
+  ['click', 'keydown', 'touchstart', 'scroll', 'mousemove'].forEach(evt => {
+    window.addEventListener(evt, markUserActive, { passive: true });
+  });
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden) markUserActive();
+    scheduleNotificationsPoll(true);
+  });
+
+  scheduleNotificationsPoll(true);
+
 
   // ── Toast ────────────────────────────────────────────────────────── //
   function showToast(text) {
@@ -596,7 +667,7 @@
 
       <a href="{{ url_for('fort.castle_page') }}" data-nav-path="/castle"
          class="nav-tab flex flex-col items-center justify-center flex-1 gap-0.5 text-gray-400 hover:text-blue-300 transition-colors active:scale-95">
-        <span class="text-2xl leading-none">🏰</span>
+        <span class="relative text-2xl leading-none">🏰<span id="castle-dot-mobile" class="hidden absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-yellow-400 border border-gray-900"></span></span>
         <span class="text-[10px] font-medium tracking-wide">Castle</span>
       </a>
 
@@ -615,7 +686,7 @@
       <button @click="moreOpen = !moreOpen"
               :class="moreOpen ? 'text-blue-400' : 'text-gray-400'"
               class="nav-tab flex flex-col items-center justify-center flex-1 gap-0.5 hover:text-blue-300 transition-colors active:scale-95">
-        <span class="text-2xl leading-none font-bold">···</span>
+               <span class="relative text-2xl leading-none font-bold">···<span id="history-dot-mobile" class="hidden absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-red-500 border border-gray-900"></span></span>
         <span class="text-[10px] font-medium tracking-wide">More</span>
       </button>
 

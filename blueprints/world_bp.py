@@ -33,6 +33,8 @@ world_bp = Blueprint("world", __name__)
 _TEAM_A_POSITIONS = [(r, c) for r in range(config.GRID_ROWS) for c in config.TEAM_A_COLS]
 _TEAM_B_POSITIONS = [(r, c) for r in range(config.GRID_ROWS) for c in config.TEAM_B_COLS]
 _PRESETS_DIR = Path(__file__).parent.parent / "presets"
+_NOTIFICATIONS_CACHE_TTL_SECONDS = 5
+_NOTIFICATIONS_CACHE: dict[int, tuple[float, dict]] = {}
 
 
 # ── Pages ─────────────────────────────────────────────────────────────── #
@@ -267,6 +269,36 @@ def api_active_missions():
     return render_template("world/_missions.html", missions=result)
 
 
+# ── Notifications API ─────────────────────────────────────────────────── #
+
+@world_bp.route("/api/notifications")
+@login_required
+def api_notifications():
+    """Return unread defence count and castle-resources-ready flag for nav dots."""
+    player_id = session["player_id"]
+    now_ts = datetime.now(timezone.utc).timestamp()
+    cached = _NOTIFICATIONS_CACHE.get(player_id)
+    if cached and (now_ts - cached[0]) < _NOTIFICATIONS_CACHE_TTL_SECONDS:
+        return jsonify(cached[1])
+
+    unread_defences = m.count_unseen_defences(player_id)
+    unread_dm = m.get_dm_unread_count(player_id)
+
+    castle_ready = False
+    castle = m.get_castle_by_player(player_id)
+    if castle:
+        pending = m.get_location_pending_resources("castle", castle["id"])
+        castle_ready = sum(pending.values()) >= 1000
+
+    payload = {
+        "unread_defences": unread_defences,
+        "unread_dm": unread_dm,
+        "castle_ready": castle_ready,
+    }
+    _NOTIFICATIONS_CACHE[player_id] = (now_ts, payload)
+    return jsonify(payload)
+
+
 # ── Attack dispatch ───────────────────────────────────────────────────── #
 
 @world_bp.route("/api/attack", methods=["POST"])
@@ -336,22 +368,33 @@ def api_attack():
     slowest_speed = _slowest_speed(formation)
     travel_secs = max(1, math.ceil(distance / max(slowest_speed, 0.1))
                       * config.WORLD_TRAVEL_SECONDS_PER_CELL)
-    # NOTE (testing): set arrive_time = now so the mission resolves instantly
-    arrive_time = datetime.now(timezone.utc).isoformat(timespec="seconds")
+
+    instant_travel = m.get_instant_travel()
+    if instant_travel:
+        arrive_time = datetime.now(timezone.utc).isoformat(timespec="seconds")
+    else:
+        arrive_time = (datetime.now(timezone.utc) + timedelta(seconds=travel_secs)).isoformat(timespec="seconds")
+
+    # Determine defender_id for player-owned fort targets
+    defender_id = None
+    if target_type == "fort":
+        defender_id = target.get("owner_id")  # None for unowned/monster forts
 
     mission_id = m.create_mission(
         player_id, target_type, target_id, formation,
         origin_type, origin_id, arrive_time,
         world_id=session.get("world_id", 0),
+        defender_id=defender_id,
     )
 
-    # Resolve immediately and return result in the same response
-    mission = m.get_pending_missions_for_player(player_id)
+    # If instant travel, resolve immediately and return result in the same response
     resolved_result = None
-    for mis in mission:
-        if mis["id"] == mission_id:
-            resolved_result = _resolve_one_mission(mis)
-            break
+    if instant_travel:
+        mission = m.get_pending_missions_for_player(player_id)
+        for mis in mission:
+            if mis["id"] == mission_id:
+                resolved_result = _resolve_one_mission(mis)
+                break
 
     return jsonify({
         "ok": True,

@@ -228,15 +228,22 @@ def logout():
 @login_required
 def battles():
     player = m.get_player_by_id(session["player_id"])
-    missions = m.get_recent_resolved_missions(session["player_id"], limit=50)
-    wins = sum(1 for mis in missions if mis.get("winner") == "attacker")
-    losses = sum(1 for mis in missions if mis.get("winner") == "defender")
+    attacks = m.get_recent_resolved_missions(session["player_id"], limit=50)
+    defences = m.get_recent_defence_reports(session["player_id"], limit=50)
+    m.mark_defences_seen(session["player_id"])
+    wins   = sum(1 for mis in attacks if mis.get("winner") == "attacker")
+    losses = sum(1 for mis in attacks if mis.get("winner") == "defender")
+    def_wins   = sum(1 for mis in defences if mis.get("winner") == "defender")
+    def_losses = sum(1 for mis in defences if mis.get("winner") == "attacker")
     return render_template(
         "auth/battles.html",
         player=player,
-        missions=missions,
+        attacks=attacks,
+        defences=defences,
         wins=wins,
         losses=losses,
+        def_wins=def_wins,
+        def_losses=def_losses,
     )
 
 

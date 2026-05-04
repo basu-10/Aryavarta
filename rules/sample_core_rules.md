@@ -17,19 +17,19 @@
 
 ## Core Game Elements
 
-### Fort and Palace: Similarities
+### Fort and Castle: Similarities
 
-- Both Fort and palace appear with a command centre prebuilt. There are 10 building slots per fort/palace. Command centre takes up 1 slot. User will fill up the rest 9 slots.
+- Both Fort and Castle appear with a command centre prebuilt. There are 10 building slots per fort/castle. Command centre takes up 1 slot. User will fill up the rest 9 slots.
 - The command centre is the heart of the mechanics - if its in broken state(can be repaired), troops cant be sent out.
   
 
-### Fort and Palace: Differences
+### Fort and Castle: Differences
 
 - Fort is acquired by players and can be lost.
-- Palace is never lost.
-- Palaces can't be attacked.
+- Castle is never lost.
+- Castles can't be attacked.
 
-### Fort and Palace: Buildings available
+### Fort and Castle: Buildings available
 
 - canon, archer tower (these are not troops and cant be deployed in battle, they are just part of the fort defenses)
 - mine, farm, lumber mill, merchant
@@ -37,7 +37,7 @@
 
 ## Attack 
 
-- players cant attack a fort if the command centre is damaged, but they can repair it and then attack. This is why command centre is the deafult building in forts and palaces and cant be removed.
+- players cant attack a fort if the command centre is damaged, but they can repair it and then attack. This is why command centre is the deafult building in forts and castles and cant be removed.
 - attack is turn based, each turn is 1 tick in game time.
 - attacking a fort can also damage the buildings in the fort, which can be repaired by the owner.
 - attacking a fort damages the command centre and if the atacker wins, he(new owner) needs to repair it before sending out troops from the captured fort. 
@@ -45,7 +45,7 @@
 
 ## Troops available
 
-### Human troops (can be trained in forts and palaces)
+### Human troops (can be trained in forts and castles)
 
 Melee, Ranged
 archer, longbowmen

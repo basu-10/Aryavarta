@@ -72,6 +72,30 @@
 </section>
 
 <!-- ── Create user ───────────────────────────────────────────────────── -->
+<!-- ── Travel Mode ──────────────────────────────────────────────────── -->
+<section class="bg-gray-800 rounded p-4 mb-8"
+         x-data="{ instant: {{ 'true' if instant_travel else 'false' }}, saving: false }">
+  <h2 class="font-semibold mb-1">Troop Travel Mode</h2>
+  <p class="text-xs text-gray-400 mb-3">
+    <strong>Instant</strong> — missions resolve immediately (testing phase).
+    <strong>Real-time</strong> — troops travel across the map in real time (live mode).
+  </p>
+  <div class="flex items-center gap-4">
+    <button @click="instant=true; saveTravelMode(true)"
+            :class="instant ? 'bg-green-600 text-white' : 'bg-gray-700 text-gray-300 hover:bg-gray-600'"
+            class="px-4 py-2 rounded text-sm font-semibold transition-colors">
+      ⚡ Instant (Testing)
+    </button>
+    <button @click="instant=false; saveTravelMode(false)"
+            :class="!instant ? 'bg-blue-600 text-white' : 'bg-gray-700 text-gray-300 hover:bg-gray-600'"
+            class="px-4 py-2 rounded text-sm font-semibold transition-colors">
+      🗺 Real-time (Live)
+    </button>
+    <span x-show="saving" class="text-xs text-gray-400">Saving…</span>
+  </div>
+</section>
+
+<!-- ── Create user ───────────────────────────────────────────────────── -->
 <section class="bg-gray-800 rounded p-4 mb-8"
          x-data="{username:'', password:'', role:'player', world_id:'{{ worlds[0].id if worlds else 0 }}', msg:'', err:''}">
   <h2 class="font-semibold mb-3">Create User</h2>
@@ -497,6 +521,16 @@ async function switchTheme(themeName) {
   } else {
     alert(`Failed to switch theme: ${j.error}`);
   }
+}
+
+async function saveTravelMode(instant) {
+  const r = await fetch('/admin/settings/travel-mode', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ instant }),
+  });
+  const j = await r.json();
+  if (!j.ok) alert(`Failed to set travel mode: ${j.error}`);
 }
 </script>
 {% endblock %}

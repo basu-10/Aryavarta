@@ -90,8 +90,9 @@ def create_app(output_dir: str | None = None) -> Flask:
 
     # Seed monster forts and camps on startup (tops up to configured maximums)
     with app.app_context():
-        from db import init_db
+        from db import init_db, apply_migrations
         init_db()
+        apply_migrations()
         from db.world_seeder import ensure_world_entities
         ensure_world_entities()
 

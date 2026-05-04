@@ -1,53 +1,78 @@
 {% extends "base.html" %}
 {% block title %}Battles - {{ player.username }}{% endblock %}
 {% block content %}
-<div class="space-y-6">
+<div class="space-y-6" x-data="{ view: 'all' }">
   <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
     <div>
-      <h1 class="text-2xl font-bold">Battle Results</h1>
-      <p class="text-sm text-gray-400 mt-1">Recent resolved missions and replay links for {{ player.username }}.</p>
+      <h1 class="text-2xl font-bold">Battle Reports</h1>
+      <p class="text-sm text-gray-400 mt-1">Resolved battles for {{ player.username }}.</p>
     </div>
     <a href="{{ url_for('world.world_map') }}" class="text-sm px-4 py-2 rounded bg-gray-800 hover:bg-gray-700 transition-colors">
       Back to World
     </a>
   </div>
 
-  <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+  {# ── Stats ────────────────────────────────────────────────────────── #}
+  <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
     <div class="bg-gray-900 border border-gray-800 rounded-lg p-4">
-      <div class="text-xs uppercase tracking-wide text-gray-500">Total Battles</div>
-      <div class="mt-1 text-2xl font-semibold text-white">{{ missions|length }}</div>
+      <div class="text-xs uppercase tracking-wide text-gray-500">Attacks</div>
+      <div class="mt-1 text-2xl font-semibold text-white">{{ attacks|length }}</div>
     </div>
     <div class="bg-gray-900 border border-gray-800 rounded-lg p-4">
-      <div class="text-xs uppercase tracking-wide text-gray-500">Victories</div>
+      <div class="text-xs uppercase tracking-wide text-gray-500">Attack Wins</div>
       <div class="mt-1 text-2xl font-semibold text-green-400">{{ wins }}</div>
     </div>
     <div class="bg-gray-900 border border-gray-800 rounded-lg p-4">
-      <div class="text-xs uppercase tracking-wide text-gray-500">Defeats</div>
-      <div class="mt-1 text-2xl font-semibold text-red-400">{{ losses }}</div>
+      <div class="text-xs uppercase tracking-wide text-gray-500">Times Defended</div>
+      <div class="mt-1 text-2xl font-semibold text-amber-300">{{ defences|length }}</div>
+    </div>
+    <div class="bg-gray-900 border border-gray-800 rounded-lg p-4">
+      <div class="text-xs uppercase tracking-wide text-gray-500">Defences Held</div>
+      <div class="mt-1 text-2xl font-semibold text-blue-400">{{ def_wins }}</div>
     </div>
   </div>
 
-  <section class="bg-gray-900 border border-gray-800 rounded-lg overflow-hidden">
-    <div class="px-4 py-3 border-b border-gray-800 flex items-center justify-between gap-3">
-      <h2 class="text-sm font-semibold uppercase tracking-wide text-gray-400">Recent Battle Reports</h2>
-      <span class="text-xs text-gray-500">Last {{ missions|length }} missions</span>
-    </div>
+  {# ── 3-way toggle ─────────────────────────────────────────────────── #}
+  <div class="flex gap-1 bg-gray-900 border border-gray-800 rounded-lg p-1 w-fit">
+    <button @click="view = 'all'"
+            :class="view === 'all' ? 'bg-gray-700 text-white' : 'text-gray-400 hover:text-white'"
+            class="px-4 py-1.5 rounded text-sm font-medium transition-colors">
+      All
+    </button>
+    <button @click="view = 'attacks'"
+            :class="view === 'attacks' ? 'bg-blue-700 text-white' : 'text-gray-400 hover:text-white'"
+            class="px-4 py-1.5 rounded text-sm font-medium transition-colors">
+      ⚔ Attacks
+    </button>
+    <button @click="view = 'defences'"
+            :class="view === 'defences' ? 'bg-amber-700 text-white' : 'text-gray-400 hover:text-white'"
+            class="px-4 py-1.5 rounded text-sm font-medium transition-colors">
+      🛡 Defences
+    </button>
+  </div>
 
-    {% if missions %}
+  {# ── Attack entries ────────────────────────────────────────────────── #}
+  <section x-show="view === 'all' || view === 'attacks'"
+           class="bg-gray-900 border border-gray-800 rounded-lg overflow-hidden">
+    <div class="px-4 py-3 border-b border-gray-800 flex items-center gap-3">
+      <span class="text-sm font-semibold uppercase tracking-wide text-blue-400">⚔ Attack Reports</span>
+      <span class="text-xs text-gray-500">{{ attacks|length }} battles</span>
+    </div>
+    {% if attacks %}
     <div class="overflow-x-auto">
       <table class="w-full text-sm">
         <thead class="bg-gray-800/70 text-gray-400 uppercase text-xs tracking-wide">
           <tr>
-            <th class="text-left px-4 py-3">Arrived</th>
+            <th class="text-left px-4 py-3">Time</th>
             <th class="text-left px-4 py-3">Target</th>
             <th class="text-left px-4 py-3">Outcome</th>
             <th class="text-left px-4 py-3">Replay</th>
           </tr>
         </thead>
         <tbody class="divide-y divide-gray-800">
-          {% for mis in missions %}
+          {% for mis in attacks %}
           <tr class="hover:bg-gray-800/40 transition-colors">
-            <td class="px-4 py-3 text-gray-300 font-mono">{{ mis.arrive_time }}</td>
+            <td class="px-4 py-3 text-gray-300 font-mono text-xs">{{ mis.arrive_time }}</td>
             <td class="px-4 py-3 text-gray-300">{{ mis.target_type|replace('_', ' ')|title }} #{{ mis.target_id }}</td>
             <td class="px-4 py-3">
               {% if mis.winner == 'attacker' %}
@@ -58,9 +83,9 @@
             </td>
             <td class="px-4 py-3">
               {% if mis.result_battle_id %}
-              <a href="{{ url_for('battle.results', battle_id=mis.result_battle_id) }}" class="inline-flex items-center text-blue-400 hover:text-blue-300 text-xs font-semibold">View Replay -></a>
+              <a href="{{ url_for('battle.results', battle_id=mis.result_battle_id) }}" class="inline-flex items-center text-blue-400 hover:text-blue-300 text-xs font-semibold">View Replay →</a>
               {% else %}
-              <span class="text-xs text-gray-500">Unavailable</span>
+              <span class="text-xs text-gray-500">—</span>
               {% endif %}
             </td>
           </tr>
@@ -70,8 +95,57 @@
     </div>
     {% else %}
     <div class="px-4 py-8 text-center">
-      <p class="text-sm text-gray-400">No resolved missions yet.</p>
+      <p class="text-sm text-gray-400">No attack records yet.</p>
       <p class="text-xs text-gray-500 mt-2">Attack from the world map to generate battle reports.</p>
+    </div>
+    {% endif %}
+  </section>
+
+  {# ── Defence entries ───────────────────────────────────────────────── #}
+  <section x-show="view === 'all' || view === 'defences'"
+           class="bg-amber-950/30 border border-amber-800/40 rounded-lg overflow-hidden">
+    <div class="px-4 py-3 border-b border-amber-800/40 flex items-center gap-3">
+      <span class="text-sm font-semibold uppercase tracking-wide text-amber-400">🛡 Defence Reports</span>
+      <span class="text-xs text-amber-600">{{ defences|length }} battles</span>
+    </div>
+    {% if defences %}
+    <div class="overflow-x-auto">
+      <table class="w-full text-sm">
+        <thead class="bg-amber-900/20 text-amber-500/70 uppercase text-xs tracking-wide">
+          <tr>
+            <th class="text-left px-4 py-3">Time</th>
+            <th class="text-left px-4 py-3">Fort Attacked</th>
+            <th class="text-left px-4 py-3">Result</th>
+            <th class="text-left px-4 py-3">Replay</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-amber-900/30">
+          {% for mis in defences %}
+          <tr class="hover:bg-amber-900/20 transition-colors">
+            <td class="px-4 py-3 text-amber-200/70 font-mono text-xs">{{ mis.arrive_time }}</td>
+            <td class="px-4 py-3 text-amber-200/80">Fort #{{ mis.target_id }}</td>
+            <td class="px-4 py-3">
+              {% if mis.winner == 'defender' %}
+              <span class="inline-flex items-center px-2 py-1 rounded text-xs font-semibold bg-blue-900/50 text-blue-300 border border-blue-700/60">Held</span>
+              {% else %}
+              <span class="inline-flex items-center px-2 py-1 rounded text-xs font-semibold bg-red-900/50 text-red-300 border border-red-700/60">Lost</span>
+              {% endif %}
+            </td>
+            <td class="px-4 py-3">
+              {% if mis.result_battle_id %}
+              <a href="{{ url_for('battle.results', battle_id=mis.result_battle_id) }}" class="inline-flex items-center text-amber-400 hover:text-amber-300 text-xs font-semibold">View Replay →</a>
+              {% else %}
+              <span class="text-xs text-amber-700">—</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="px-4 py-8 text-center">
+      <p class="text-sm text-amber-600/70">No forts have been attacked yet.</p>
     </div>
     {% endif %}
   </section>

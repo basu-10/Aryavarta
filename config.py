@@ -269,6 +269,9 @@ WORLD_GRID_W = 50
 WORLD_GRID_H = 50
 WORLD_TRAVEL_SECONDS_PER_CELL = 1  # base seconds of travel per grid cell
 
+# Travel mode — True = instant (testing), False = real-time
+INSTANT_TRAVEL: bool = True
+
 # NPC auto-population settings
 MAX_NPC_COUNT       = 8   # max NPC player entities on the map
 NPC_FORTS_PER_NPC   = 2   # forts each NPC spawns with
