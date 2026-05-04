@@ -31,6 +31,8 @@ def get_db() -> sqlite3.Connection:
         )
         conn.row_factory = sqlite3.Row
         conn.execute("PRAGMA foreign_keys = ON")
+        # WAL improves concurrent read/write behavior for map-heavy polling endpoints.
+        conn.execute("PRAGMA journal_mode = WAL")
         setattr(g, _DB_KEY, conn)
     return getattr(g, _DB_KEY)
 

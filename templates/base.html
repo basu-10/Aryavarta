@@ -33,7 +33,7 @@
           class="hidden sm:flex fixed top-0 left-0 right-0 z-[60] h-14 bg-gray-900 border-b border-gray-800 items-center gap-1 px-4">
 
     {# Brand #}
-    <a href="{{ url_for('world.world_map') if session.get('player_id') else url_for('wiki.wiki_index') }}"
+    <a href="{{ url_for('battle.index') }}"
        class="font-bold text-white text-sm mr-3 shrink-0 hover:text-blue-300 transition-colors">
       ⚔ BattleCells
     </a>
@@ -262,6 +262,51 @@
   let _chatPanelOpen  = false;
   let _chatActiveTab  = 'world';
 
+  function parseServerUtcTimestamp(value) {
+    if (!value) return null;
+    const normalized = String(value).trim().replace(' ', 'T');
+    const iso = /(?:Z|[+-]\d\d:\d\d)$/.test(normalized) ? normalized : `${normalized}Z`;
+    const parsed = new Date(iso);
+    return Number.isNaN(parsed.getTime()) ? null : parsed;
+  }
+
+  function formatChatTimestamp(value, mode = 'time') {
+    const parsed = parseServerUtcTimestamp(value);
+    if (!parsed) return value || '';
+    if (mode === 'datetime') {
+      return new Intl.DateTimeFormat(undefined, {
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+      }).format(parsed);
+    }
+    return new Intl.DateTimeFormat(undefined, {
+      hour: '2-digit',
+      minute: '2-digit',
+    }).format(parsed);
+  }
+
+  function formatChatTimestamps(root = document) {
+    root.querySelectorAll('[data-chat-timestamp]').forEach(el => {
+      const raw = el.dataset.chatTimestamp;
+      const mode = el.dataset.chatTimestampMode || 'time';
+      const parsed = parseServerUtcTimestamp(raw);
+      el.textContent = formatChatTimestamp(raw, mode);
+      if (parsed) {
+        el.title = new Intl.DateTimeFormat(undefined, {
+          year: 'numeric',
+          month: 'short',
+          day: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit',
+          second: '2-digit',
+          timeZoneName: 'short',
+        }).format(parsed);
+      }
+    });
+  }
+
   // ── Panel open/close ─────────────────────────────────────────────── //
   function toggleChatPanel() {
     _chatPanelOpen = !_chatPanelOpen;
@@ -390,6 +435,7 @@
     const html = await res.text();
     const container = document.getElementById('dm-panel-messages');
     container.innerHTML = html;
+    formatChatTimestamps(container);
     container.scrollTop = container.scrollHeight;
   }
 
@@ -416,6 +462,15 @@
     if (!btn) return;
     openDmPanel(parseInt(btn.dataset.partnerId), btn.dataset.partnerName);
   });
+
+  document.body.addEventListener('htmx:afterSwap', (event) => {
+    const targetId = event.target && event.target.id;
+    if (targetId === 'world-chat-messages' || targetId === 'clan-chat-messages') {
+      formatChatTimestamps(event.target);
+    }
+  });
+
+  formatChatTimestamps(document);
 
   // ── Player context menu ──────────────────────────────────────────── //
   let _ctxPlayer = null;

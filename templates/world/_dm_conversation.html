@@ -2,7 +2,9 @@
 <div class="flex {% if msg.sender_id == player_id %}justify-end{% else %}justify-start{% endif %} mb-1">
   <div class="max-w-[75%] {% if msg.sender_id == player_id %}bg-blue-700 text-white{% else %}bg-gray-700 text-gray-100{% endif %} rounded-xl px-3 py-2 text-xs">
     <p class="break-words">{{ msg.message }}</p>
-    <p class="text-[10px] opacity-60 mt-0.5 text-right">{{ msg.sent_at[11:16] }}</p>
+     <p class="text-[10px] opacity-60 mt-0.5 text-right"
+       data-chat-timestamp="{{ msg.sent_at }}"
+       data-chat-timestamp-mode="time">{{ msg.sent_at[11:16] }}</p>
   </div>
 </div>
 {% else %}

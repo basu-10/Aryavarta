@@ -12,7 +12,9 @@
             data-grid-y="{{ msg.grid_y or '' }}">{{ msg.username }}</button>
     <span class="text-gray-300 text-xs ml-1 break-words">{{ msg.message }}</span>
   </div>
-  <span class="text-gray-600 text-[10px] mt-0.5 shrink-0">{{ msg.sent_at[11:16] }}</span>
+    <span class="text-gray-600 text-[10px] mt-0.5 shrink-0"
+      data-chat-timestamp="{{ msg.sent_at }}"
+      data-chat-timestamp-mode="time">{{ msg.sent_at[11:16] }}</span>
   {% if player and player.role in ('mod', 'admin') %}
   <button type="button"
           onclick="softDeleteChatMsg({{ msg.id }}, this)"

@@ -247,18 +247,32 @@ def buildings_index():
         "Stable":         "/assets/theme1/buildings/military/stable.svg",
         "Cannon":         "/assets/theme1/buildings/defense/cannon.svg",
         "Archer Tower":   "/assets/theme1/buildings/defense/archer-tower.svg",
+        "Command Centre": "/assets/theme1/buildings/default/command-centre.svg",
+    }
+    _BUILDING_TIPS: dict[str, str] = {
+        "Farm":           "Produces food passively. All troop training consumes food, so this keeps queues running.",
+        "Lumber Mill":    "Generates timber. Most fort construction and upgrades depend on it.",
+        "Merchant":       "Earns gold over time. Gold pays for troop training and many higher-tier upgrades.",
+        "Mine":           "Extracts metal. Needed for cavalry, defenses, and late-game upgrades.",
+        "Garrison":       "Trains Longbowmen. Core ranged production for early and mid-game attacks.",
+        "Stable":         "Trains Hussars. Fast cavalry that reach targets quickly and punch through lines.",
+        "Cannon":         "Adds heavy defensive firepower. Best when you need high damage from a fixed position.",
+        "Archer Tower":   "Adds steady ranged defense. Helps forts survive repeated attacks.",
+        "Command Centre": "Permanent fort core. Upgrading it improves the fort and unlocks stronger progression.",
     }
     buildings = []
-    for name, cost in BUILDING_BUILD_COST.items():
+    for name in BUILDING_BUILD_TIME.keys():
         buildings.append({
             "name":             name,
-            "build_cost":       cost,
+            "build_cost":       BUILDING_BUILD_COST.get(name, {}),
             "build_time":       BUILDING_BUILD_TIME.get(name, 0),
             "upgrade_cost":     BUILDING_UPGRADE_COST.get(name, {}),
             "trains":           ARMY_BUILDINGS.get(name, {}).get("unit_type"),
             "training_seconds": ARMY_BUILDINGS.get(name, {}).get("training_seconds"),
             "ammo":             DEFENCE_BUILDING_AMMO.get(name),
             "icon":             _BUILDING_ICONS.get(name),
+            "tip":              _BUILDING_TIPS.get(name),
+            "fort_buildable":   name != "Command Centre",
         })
     return render_template("wiki/buildings.html", buildings=buildings)
 

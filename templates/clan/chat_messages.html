@@ -2,7 +2,9 @@
 <div class="text-sm">
   <span class="text-blue-400 font-semibold mr-1">{{ msg.username }}:</span>
   <span class="text-gray-200">{{ msg.message }}</span>
-  <span class="text-gray-600 text-xs ml-1">{{ msg.sent_at[:16] }}</span>
+    <span class="text-gray-600 text-xs ml-1"
+      data-chat-timestamp="{{ msg.sent_at }}"
+      data-chat-timestamp-mode="datetime">{{ msg.sent_at[:16] }}</span>
 </div>
 {% else %}
 <p class="text-gray-600 text-xs">No messages yet.</p>

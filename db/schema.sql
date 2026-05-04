@@ -46,6 +46,7 @@ CREATE TABLE IF NOT EXISTS castle (
     grid_y INTEGER NOT NULL,
     UNIQUE(world_id, player_id)
 );
+CREATE INDEX IF NOT EXISTS idx_castle_world_grid ON castle (world_id, grid_x, grid_y);
 CREATE TABLE IF NOT EXISTS fort (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     world_id INTEGER NOT NULL REFERENCES world(id) ON DELETE CASCADE,
@@ -61,6 +62,7 @@ CREATE TABLE IF NOT EXISTS fort (
         star_level INTEGER NOT NULL DEFAULT 1,
         last_defeated_at TEXT
 );
+CREATE INDEX IF NOT EXISTS idx_fort_world_grid ON fort (world_id, grid_x, grid_y);
 CREATE TABLE IF NOT EXISTS building (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     location_type TEXT NOT NULL,
@@ -87,6 +89,7 @@ CREATE TABLE IF NOT EXISTS monster_camp (
     is_active INTEGER NOT NULL DEFAULT 1,
     spawned_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
+CREATE INDEX IF NOT EXISTS idx_monster_camp_world_active_grid ON monster_camp (world_id, is_active, grid_x, grid_y);
 CREATE TABLE IF NOT EXISTS troop (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     owner_id INTEGER NOT NULL REFERENCES player(id),
@@ -274,3 +277,4 @@ CREATE TABLE IF NOT EXISTS map_decoration (
     cluster_id INTEGER -- NULL = standalone; same int = same forest cluster
 );
 CREATE INDEX IF NOT EXISTS idx_map_decoration_world ON map_decoration (world_id);
+CREATE INDEX IF NOT EXISTS idx_map_decoration_world_grid ON map_decoration (world_id, grid_x, grid_y);

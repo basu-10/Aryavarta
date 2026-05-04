@@ -49,8 +49,6 @@ battle_bp = Blueprint("battle", __name__)
 
 @battle_bp.route("/")
 def index():
-    if session.get("player_id"):
-        return redirect(url_for("world.world_map"))
     return render_template("landing.html")
 
 

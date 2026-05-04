@@ -1,4 +1,4 @@
-{% extends "base.html" %}
+﻿{% extends "base.html" %}
 {% block title %}Buildings — BattleCells Wiki{% endblock %}
 
 {% block content %}
@@ -70,6 +70,15 @@
     {% endif %}
 
   </div>
+
+  <!-- Why build this? tip -->
+  {% if b.tip %}
+  <div class="mx-4 mb-4 flex gap-2 rounded-lg bg-blue-950/40 border border-blue-900/40 px-3 py-2">
+    <span class="text-blue-400 font-bold text-xs shrink-0 mt-0.5">?</span>
+    <p class="text-xs text-gray-400 leading-relaxed">{{ b.tip }}</p>
+  </div>
+  {% endif %}
+
 </div>
 {% endmacro %}
 
@@ -84,9 +93,21 @@
     </nav>
     <h1 class="text-3xl font-bold tracking-tight">🏗 Buildings</h1>
     <p class="text-gray-400 text-sm mt-2">
-      Build costs, production, and upgrade paths for every structure in BattleCells.
+      Every structure used inside a fort is listed below. Slot-buildable buildings come first; the Command Centre is the permanent fort core.
     </p>
   </div>
+
+  <!-- Fort slot buildings -->
+  <section>
+    <h2 class="text-xs font-semibold uppercase tracking-widest text-gray-500 mb-4 border-b border-gray-800 pb-1">
+      Build Inside a Fort
+    </h2>
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      {% for b in buildings if b.fort_buildable %}
+        {{ render_card(b) }}
+      {% endfor %}
+    </div>
+  </section>
 
   <!-- Resource Buildings -->
   {% set resource_names = ['Farm', 'Lumber Mill', 'Merchant', 'Mine'] %}
@@ -127,11 +148,11 @@
     </div>
   </section>
 
-  <!-- Special -->
+  <!-- Fort core -->
   {% set special_names = ['Command Centre'] %}
   <section>
     <h2 class="text-xs font-semibold uppercase tracking-widest text-gray-500 mb-4 border-b border-gray-800 pb-1">
-      Special
+      Fort Core
     </h2>
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
       {% for b in buildings if b.name in special_names %}
@@ -142,4 +163,3 @@
 
 </div>
 {% endblock %}
-

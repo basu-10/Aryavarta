@@ -46,6 +46,9 @@ All world-game routes are gated behind the `login_required` decorator defined in
 
 `db/__init__.py` manages one SQLite connection per Flask app context via `flask.g`.
 - `get_db()` opens a connection on first call within a request and caches it on `g` using `setattr`/`getattr` (Flask 3.x requires attribute access on `g`, not item assignment).
+- `get_db()` enables `PRAGMA journal_mode = WAL` so map polling reads can proceed with less lock contention while writes are happening.
 - `close_db()` is registered as a teardown callback; it closes the connection at the end of every request.
 - `flask init-db` runs `db/schema.sql` (all `CREATE TABLE IF NOT EXISTS` — safe to re-run).
 - `flask seed-world` is idempotent: it checks for existing forts/camps before inserting anything.
+
+World-map entity tables (`castle`, `fort`, `monster_camp`, `map_decoration`) include composite `(world_id, grid_x, grid_y)` indexes (and `monster_camp` also includes `is_active`) to reduce scan cost for snapshot/occupancy queries.
