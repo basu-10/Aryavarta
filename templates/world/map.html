@@ -1,31 +1,31 @@
-{% extends "base.html" %}
-{% block title %}World Map — BattleCells{% endblock %}
+﻿{% extends "base.html" %}
+{% block title %}World Map â€” BattleCells{% endblock %}
 {% block body_class %}h-screen overflow-hidden{% endblock %}
 {% block main_class %}p-0 overflow-hidden min-h-0 flex flex-col{% endblock %}
 {% block content %}
 
 <div class="flex-1 min-h-0 flex flex-col">
 
-  {# ── Title / label-toggle bar ─────────────────────────────────────── #}
+  {# â”€â”€ Title / label-toggle bar â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ #}
   <div class="flex items-center gap-3 px-4 py-2 bg-gray-950 border-b border-gray-800 shrink-0 flex-wrap">
     <h1 class="text-base font-bold text-white">
       World Map
       <span class="text-xs font-normal text-gray-400 hidden sm:inline">(click any entity to interact)</span>
     </h1>
-    {# ── View option buttons ── #}
+    {# â”€â”€ View option buttons â”€â”€ #}
     <div class="flex items-center gap-1 ml-auto flex-wrap">
       <button id="btn-zoom-all" type="button" onclick="toggleZoomAll()"
               class="px-2 py-1 text-xs rounded bg-gray-800 border border-gray-700 hover:bg-gray-700 text-gray-200"
-              title="Zoom to fit all entities / restore zoom">⊡ Zoom All</button>
+              title="Zoom to fit all entities / restore zoom">âŠ¡ Zoom All</button>
       <button id="btn-show-mine" type="button" onclick="toggleFilter('own')"
               class="px-2 py-1 text-xs rounded bg-gray-800 border border-gray-700 hover:bg-gray-700 text-gray-200"
-              title="Highlight my forts &amp; castle">🏰 Mine</button>
+              title="Highlight my forts &amp; castle">ðŸ° Mine</button>
       <div class="relative" id="friends-dropdown-wrap">
         <button id="btn-friends" type="button" onclick="toggleFriendsMenu()"
                 class="px-2 py-1 text-xs rounded bg-gray-800 border border-gray-700 hover:bg-gray-700 text-gray-200"
-                title="Highlight a friend's entities">👥 Friends ▾</button>
+                title="Highlight a friend's entities">ðŸ‘¥ Friends â–¾</button>
         <div id="friends-menu" class="hidden absolute right-0 top-full mt-1 z-30 bg-gray-900 border border-gray-700 rounded-lg shadow-2xl py-1 min-w-[160px] max-h-60 overflow-y-auto">
-          <div id="friends-list-inner" class="text-xs text-gray-300"><span class="px-3 py-2 block text-gray-500">Loading…</span></div>
+          <div id="friends-list-inner" class="text-xs text-gray-300"><span class="px-3 py-2 block text-gray-500">Loadingâ€¦</span></div>
         </div>
       </div>
       <label class="flex items-center gap-2 text-sm text-gray-300 cursor-pointer select-none">
@@ -35,15 +35,10 @@
     </div>
   </div>
 
-  {# ── Map shell — fills remaining height ───────────────────────────── #}
+  {# â”€â”€ Map shell â€” fills remaining height â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ #}
   <div id="world-map-shell" class="relative flex-1 min-h-0 overflow-hidden bg-gray-950">
-    {# Scrollable grid #}
-    <div id="world-map-scroll" class="w-full h-full min-h-0 overflow-auto">
-           <div id="world-grid"
-             style="display:inline-grid;grid-template-columns:repeat({{ world_w }}, var(--cell-size, 52px));gap:0;min-width:max-content;background:#4e9844;">
-          <!-- filled by buildGrid() -->
-        </div>
-      </div>
+    {# Canvas renderer â€” pan via drag, zoom via wheel/buttons #}
+    <canvas id="world-canvas" style="display:block;position:absolute;top:0;left:0;" tabindex="0"></canvas>
 
       <div id="entity-popup" class="hidden absolute z-20" style="min-width:280px;max-width:min(22rem, calc(100vw - 2rem));"></div>
 
@@ -51,7 +46,7 @@
       <div class="absolute top-2 left-2 z-10 flex items-center gap-1 bg-gray-900/85 backdrop-blur border border-gray-700 rounded-lg px-2 py-1.5">
         <button id="zoom-out"   type="button"
                 class="px-1.5 py-0.5 rounded bg-gray-800 border border-gray-700 hover:bg-gray-700 text-xs font-bold"
-                aria-label="Zoom out">−</button>
+                aria-label="Zoom out">âˆ’</button>
         <button id="zoom-reset" type="button"
                 class="px-1.5 py-0.5 rounded bg-gray-800 border border-gray-700 hover:bg-gray-700 text-xs w-10 text-center"
                 aria-label="Reset zoom">100%</button>
@@ -65,7 +60,7 @@
       <div id="legend-card" class="absolute right-2 bottom-20 sm:right-3 sm:bottom-3 z-10 w-40 sm:w-48 max-w-[calc(100vw-1rem)] bg-gray-900/70 backdrop-blur border border-gray-600 rounded-lg shadow-lg">
         <button id="legend-toggle" class="w-full flex items-center justify-between px-3 py-2 text-xs font-semibold tracking-wide text-gray-200 hover:bg-gray-800/40 rounded-t-lg">
           <span>Legend</span>
-          <span id="legend-caret">▾</span>
+          <span id="legend-caret">â–¾</span>
         </button>
         <div id="legend-body" class="px-3 pb-3 text-xs text-gray-300 space-y-1"></div>
       </div>
@@ -74,542 +69,34 @@
       <button class="map-scroll-btn" id="map-scroll-up"
               style="top:48px;left:50%;transform:translateX(-50%)"
               onpointerdown="startMapScroll(0,-1)" onpointerup="stopMapScroll()" onpointerleave="stopMapScroll()"
-              aria-label="Scroll up">▲</button>
+              aria-label="Scroll up">â–²</button>
       <button class="map-scroll-btn" id="map-scroll-down"
               style="bottom:48px;left:50%;transform:translateX(-50%)"
               onpointerdown="startMapScroll(0,1)" onpointerup="stopMapScroll()" onpointerleave="stopMapScroll()"
-              aria-label="Scroll down">▼</button>
+              aria-label="Scroll down">â–¼</button>
       <button class="map-scroll-btn" id="map-scroll-left"
               style="top:50%;left:48px;transform:translateY(-50%)"
               onpointerdown="startMapScroll(-1,0)" onpointerup="stopMapScroll()" onpointerleave="stopMapScroll()"
-              aria-label="Scroll left">◀</button>
+              aria-label="Scroll left">â—€</button>
       <button class="map-scroll-btn" id="map-scroll-right"
               style="top:50%;right:48px;transform:translateY(-50%)"
               onpointerdown="startMapScroll(1,0)" onpointerup="stopMapScroll()" onpointerleave="stopMapScroll()"
-              aria-label="Scroll right">▶</button>
+              aria-label="Scroll right">â–¶</button>
 
   </div>{# end world-map-shell #}
 </div>{# end flex column #}
 
 <script>
-const WORLD_W   = {{ world_w }};
-const WORLD_H   = {{ world_h }};
-const PLAYER_ID = {{ session.get('player_id') | tojson }};
-
-const BG = {
-  empty:        'transparent',
-  castle_own:   'rgba(37, 99, 235, 0.78)',
-  castle_npc:   'rgba(124, 58, 237, 0.78)',
-  castle_other: 'rgba(30, 58, 138, 0.78)',
-  fort_own:     'rgba(22, 163, 74, 0.78)',
-  fort_npc:     'rgba(180, 83, 9, 0.78)',
-  fort_enemy:   'rgba(220, 38, 38, 0.78)',
-  fort_monster: 'rgba(234, 88, 12, 0.78)',
-  camp:         'rgba(147, 51, 234, 0.78)',
-};
-
-const LOCATION_ICON = {
-  castle: '/assets/{{ active_theme }}/map/locations/castle.svg',
-  fort: '/assets/{{ active_theme }}/map/locations/fort.svg',
-  monster_camp: '/assets/{{ active_theme }}/map/locations/monster-camp.svg',
-};
-
-const WORLD_MAP_PREFS = {
-  showLabels: 'battlecells.world.showLabels',
-  legendOpen: 'battlecells.world.legendOpen',
-  scroll: 'battlecells.world.scroll.{{ world.id }}',
-};
-
-const LEGEND_ITEMS = [
-  { label: 'Your Castle',   color: BG.castle_own,   icon: 'castle' },
-  { label: 'Other Castle',  color: BG.castle_other, icon: 'castle' },
-  { label: 'NPC Castle',    color: BG.castle_npc,   icon: 'castle' },
-  { label: 'Your Fort',     color: BG.fort_own,     icon: 'fort' },
-  { label: 'Enemy Fort',    color: BG.fort_enemy,   icon: 'fort' },
-  { label: 'Monster Fort',  color: BG.fort_monster, icon: 'fort' },
-  { label: 'Monster Camp',  color: BG.camp,         icon: 'monster_camp' },
-];
-
-// Terrain is rendered via the grid container background — no per-cell SVG tiles.
-// This approach scales to large grids (500×500) without per-cell image overhead.
-function cellStyle(overlayColor) {
-  const size = cellPx();
-  if (!overlayColor || overlayColor === 'transparent') {
-    return `width:${size}px;height:${size}px;`;
-  }
-  return `width:${size}px;height:${size}px;background:${overlayColor};`;
-}
-
-let entityMap = {};
-let showLabels = false;
-let legendOpen = true;
-let popupAnchor = { x: 12, y: 12 };
-let _viewFilter  = null;   // null | 'own' | {type:'friend', id:NUMBER}
-let _zoomAllMode = false;
-let _friends     = [];
-let _scrollRestored = false;
-let _scrollSaveTimer = null;
-
-// Default zoom is 1.0 = 52 px cells (2× the legacy 26 px baseline).
-// Slider range 50–200 maps to 26 px – 104 px.  Reset always returns to 1.0.
-let zoomLevel = 1.0;
-
-const ZOOM_MIN = 0.25;
-const ZOOM_MAX = 2;
-const ZOOM_STEP = 0.1;
-
-function clampZoom(value) {
-  return Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, value));
-}
-
-function readBoolPref(key, fallback) {
-  try {
-    const value = window.localStorage.getItem(key);
-    if (value === null) return fallback;
-    return value === 'true';
-  } catch (_) {
-    return fallback;
-  }
-}
-
-function writeBoolPref(key, value) {
-  try {
-    window.localStorage.setItem(key, String(Boolean(value)));
-  } catch (_) {}
-}
-
-function renderLegendTile(color, iconKey) {
-  const iconPath = LOCATION_ICON[iconKey] || '';
-  const icon = iconPath
-    ? `<img src="${iconPath}" alt="" aria-hidden="true" style="position:absolute;top:8%;left:8%;width:84%;height:84%;object-fit:contain;filter:drop-shadow(0 0 1px rgba(0,0,0,.85));pointer-events:none;" />`
-    : '';
-  return `<span class="relative inline-block w-5 h-5 rounded-sm shrink-0 border border-white/15" style="background:${color};">${icon}</span>`;
-}
-
-function renderLegend() {
-  const body = document.getElementById('legend-body');
-  if (!body) return;
-  body.innerHTML = LEGEND_ITEMS.map(item =>
-    `<div class="flex items-center gap-2 min-w-0">${renderLegendTile(item.color, item.icon)}` +
-    `<span class="truncate">${item.label}</span></div>`
-  ).join('');
-}
-
-function syncLegendUi() {
-  const body = document.getElementById('legend-body');
-  const caret = document.getElementById('legend-caret');
-  body.classList.toggle('hidden', !legendOpen);
-  caret.textContent = legendOpen ? '▾' : '▸';
-}
-
-function syncLabelToggleUi() {
-  const toggle = document.getElementById('toggle-labels');
-  if (toggle) toggle.checked = showLabels;
-}
-
-function restoreMapPrefs() {
-  showLabels = readBoolPref(WORLD_MAP_PREFS.showLabels, false);
-  legendOpen = readBoolPref(WORLD_MAP_PREFS.legendOpen, true);
-  syncLabelToggleUi();
-  syncLegendUi();
-}
-
-function saveMapScrollPosition() {
-  const scrollEl = document.getElementById('world-map-scroll');
-  if (!scrollEl) return;
-  try {
-    window.localStorage.setItem(
-      WORLD_MAP_PREFS.scroll,
-      JSON.stringify({ left: scrollEl.scrollLeft, top: scrollEl.scrollTop }),
-    );
-  } catch (_) {}
-}
-
-function restoreMapScrollPosition() {
-  if (_scrollRestored) return;
-  const scrollEl = document.getElementById('world-map-scroll');
-  if (!scrollEl) return;
-  try {
-    const raw = window.localStorage.getItem(WORLD_MAP_PREFS.scroll);
-    if (!raw) {
-      _scrollRestored = true;
-      return;
-    }
-    const saved = JSON.parse(raw);
-    scrollEl.scrollLeft = Math.max(0, Number(saved.left) || 0);
-    scrollEl.scrollTop = Math.max(0, Number(saved.top) || 0);
-  } catch (_) {}
-  _scrollRestored = true;
-}
-
-function cellPx() {
-  return Math.max(13, Math.round(52 * zoomLevel));
-}
-
-function applyZoom() {
-  const size = cellPx();
-  const grid = document.getElementById('world-grid');
-  grid.style.setProperty('--cell-size', `${size}px`);
-
-  const range = document.getElementById('zoom-range');
-  const reset = document.getElementById('zoom-reset');
-  if (range) range.value = String(Math.round(zoomLevel * 100));
-  if (reset) reset.textContent = `${Math.round(zoomLevel * 100)}%`;
-
-  rebuildGrid();
-}
-
-function setZoom(nextZoom) {
-  const normalized = Math.round(clampZoom(nextZoom) / ZOOM_STEP) * ZOOM_STEP;
-  if (Math.abs(normalized - zoomLevel) < 0.001) return;
-  zoomLevel = normalized;
-  applyZoom();
-}
-
-document.getElementById('toggle-labels').addEventListener('change', e => {
-  showLabels = e.target.checked;
-  writeBoolPref(WORLD_MAP_PREFS.showLabels, showLabels);
-  rebuildGrid();
-});
-
-document.getElementById('legend-toggle').addEventListener('click', () => {
-  legendOpen = !legendOpen;
-  writeBoolPref(WORLD_MAP_PREFS.legendOpen, legendOpen);
-  syncLegendUi();
-});
-
-document.getElementById('zoom-in').addEventListener('click', () => setZoom(zoomLevel + ZOOM_STEP));
-document.getElementById('zoom-out').addEventListener('click', () => setZoom(zoomLevel - ZOOM_STEP));
-document.getElementById('zoom-reset').addEventListener('click', () => {
-  zoomLevel = 1;
-  applyZoom();
-});
-document.getElementById('zoom-range').addEventListener('input', (event) => {
-  setZoom(Number(event.target.value) / 100);
-});
-
-document.getElementById('world-map-scroll').addEventListener('wheel', (event) => {
-  if (!event.ctrlKey) return;
-  event.preventDefault();
-  const delta = event.deltaY < 0 ? ZOOM_STEP : -ZOOM_STEP;
-  setZoom(zoomLevel + delta);
-}, { passive: false });
-
-document.getElementById('world-map-scroll').addEventListener('scroll', () => {
-  if (_scrollSaveTimer) clearTimeout(_scrollSaveTimer);
-  _scrollSaveTimer = setTimeout(saveMapScrollPosition, 120);
-}, { passive: true });
-
-window.addEventListener('pagehide', saveMapScrollPosition);
-
-function stars(n) { return n ? '\u2605'.repeat(Math.min(n, 4)) : ''; }
-
-function buildGrid(items) {
-  entityMap = {};
-  for (const item of items) entityMap[`${item.grid_x},${item.grid_y}`] = item;
-  rebuildGrid();
-  if (!_scrollRestored) {
-    requestAnimationFrame(restoreMapScrollPosition);
-  }
-}
-
-function rebuildGrid() {
-  const grid = document.getElementById('world-grid');
-  const parts = [];
-  const size = cellPx();
-
-  for (let y = 0; y < WORLD_H; y++) {
-    for (let x = 0; x < WORLD_W; x++) {
-      const item = entityMap[`${x},${y}`];
-      if (!item) {
-        parts.push(`<div style="${cellStyle(BG.empty)}"></div>`);
-        continue;
-      }
-
-      let bg, label, starStr = '';
-
-      if (item.type === 'castle') {
-        if (item.owner_id === PLAYER_ID) {
-          bg = BG.castle_own; label = 'Your Castle';
-        } else if (item.is_npc) {
-          bg = BG.castle_npc; label = item.owner_name || 'NPC';
-        } else {
-          bg = BG.castle_other; label = item.owner_name || '?';
-        }
-      } else if (item.type === 'fort') {
-        if (item.owner_id === PLAYER_ID) {
-          bg = BG.fort_own; label = 'Your Fort';
-        } else if (item.is_npc) {
-          bg = BG.fort_npc; label = item.owner_name || 'NPC Fort';
-          starStr = item.star_level ? stars(item.star_level) : '';
-        } else if (item.owner_id) {
-          bg = BG.fort_enemy; label = item.owner_name || 'Enemy Fort';
-        } else {
-          bg = BG.fort_monster; label = 'Monster Fort';
-          starStr = item.star_level ? stars(item.star_level) : '';
-        }
-      } else if (item.type === 'monster_camp') {
-        bg = BG.camp; label = 'Monster Camp';
-        starStr = item.star_level ? stars(item.star_level) : '';
-      } else if (item.type === 'decoration') {
-        // Decoration (tree/bush) — transparent, no label, non-interactive
-        parts.push(`<div style="${cellStyle('transparent')}"></div>`);
-        continue;
-      } else {
-        // Unknown entity type — render as empty
-        parts.push(`<div style="${cellStyle('transparent')}"></div>`);
-        continue;
-      }
-
-      const iconPath = LOCATION_ICON[item.type] || '';
-      const icon = iconPath
-        ? `<img src="${iconPath}" alt="${item.type}" style="position:absolute;top:4%;left:4%;width:92%;height:92%;object-fit:contain;filter:drop-shadow(0 0 2px rgba(0,0,0,.8));pointer-events:none;" />`
-        : '';
-
-      // Highlight ring for view filter
-      let highlightStyle = '';
-      if (_viewFilter === 'own' && item.owner_id === PLAYER_ID) {
-        highlightStyle = 'box-shadow:0 0 0 2px #22d3ee,inset 0 0 0 1px rgba(255,255,255,.12);';
-      } else if (_viewFilter && _viewFilter.type === 'friend' && item.owner_id === _viewFilter.id) {
-        highlightStyle = 'box-shadow:0 0 0 2px #f59e0b,inset 0 0 0 1px rgba(255,255,255,.12);';
-      } else {
-        highlightStyle = 'box-shadow:inset 0 0 0 1px rgba(255,255,255,.12);';
-      }
-      const tooltipFull = label + (starStr ? ' ' + starStr : '');
-
-      // Label overlay text (shown when toggle is on)
-      const labelHtml = showLabels
-        ? `<div style="position:absolute;bottom:100%;left:50%;transform:translateX(-50%);` +
-          `white-space:nowrap;font-size:9px;background:rgba(0,0,0,.85);color:#e5e7eb;` +
-          `padding:1px 4px;border-radius:3px;pointer-events:none;z-index:10;">` +
-          `${label}${starStr ? ' ' + starStr : ''}</div>`
-        : '';
-
-      parts.push(
-        `<div data-type="${item.type}" data-id="${item.id}"` +
-        ` style="${cellStyle(bg)}cursor:pointer;border-radius:2px;position:relative;${highlightStyle}"` +
-        ` title="${tooltipFull}">${icon}${labelHtml}</div>`
-      );
-    }
-  }
-  grid.innerHTML = parts.join('');
-
-  // Single delegated click listener
-  grid.onclick = e => {
-    const cell = e.target.closest('[data-type]');
-    if (!cell) return;
-    openEntityPopup(cell);
-  };
-}
-
-function clampPopup() {
-  const shell = document.getElementById('world-map-shell');
-  const popup = document.getElementById('entity-popup');
-  if (popup.classList.contains('hidden')) return;
-
-  const maxX = Math.max(8, shell.clientWidth - popup.offsetWidth - 8);
-  const maxY = Math.max(8, shell.clientHeight - popup.offsetHeight - 8);
-  const x = Math.min(maxX, Math.max(8, popupAnchor.x));
-  const y = Math.min(maxY, Math.max(8, popupAnchor.y));
-
-  popup.style.left = `${x}px`;
-  popup.style.top = `${y}px`;
-}
-
-function openEntityPopup(cell) {
-  const shell = document.getElementById('world-map-shell');
-  const popup = document.getElementById('entity-popup');
-  const cellRect = cell.getBoundingClientRect();
-  const shellRect = shell.getBoundingClientRect();
-
-  popupAnchor = {
-    x: cellRect.right - shellRect.left + 10,
-    y: cellRect.top - shellRect.top - 4,
-  };
-
-  popup.classList.remove('hidden');
-  popup.style.left = `${popupAnchor.x}px`;
-  popup.style.top = `${popupAnchor.y}px`;
-
-  htmx.ajax('GET', `/world/item/${cell.dataset.type}/${cell.dataset.id}`,
-            {target: '#entity-popup', swap: 'innerHTML'});
-}
-
-function closeEntityPopup() {
-  document.getElementById('entity-popup').classList.add('hidden');
-}
-
-document.body.addEventListener('htmx:afterSwap', (event) => {
-  if (event.target.id !== 'entity-popup') return;
-  clampPopup();
-});
-
-document.addEventListener('click', (event) => {
-  const popup = document.getElementById('entity-popup');
-  if (popup.classList.contains('hidden')) return;
-  if (event.target.closest('#entity-popup')) return;
-  if (event.target.closest('[data-type]')) return;
-  closeEntityPopup();
-});
-
-document.addEventListener('keydown', (event) => {
-  if (event.key === 'Escape') closeEntityPopup();
-});
-
-window.addEventListener('resize', clampPopup);
-
-async function loadMap() {
-  const res = await fetch('/api/world/map');
-  const data = await res.json();
-  buildGrid(data.items || []);
-}
-
-async function loadFriends() {
-  try {
-    const res = await fetch('/api/friends');
-    const data = await res.json();
-    _friends = data.friends || [];
-    renderFriendsList();
-  } catch (_) {}
-}
-
-function renderFriendsList() {
-  const inner = document.getElementById('friends-list-inner');
-  if (!inner) return;
-  if (_friends.length === 0) {
-    inner.innerHTML = '<span class="px-3 py-2 block text-gray-500">No friends yet</span>';
-    return;
-  }
-  inner.innerHTML = _friends.map(f =>
-    `<button type="button" onclick="setFriendFilter(${f.id}, '${escHtml(f.username)}')" ` +
-    `class="w-full text-left px-3 py-1.5 hover:bg-gray-800 text-xs text-gray-200">${escHtml(f.username)}</button>`
-  ).join('');
-}
-
-function escHtml(s) {
-  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-}
-
-function toggleFriendsMenu() {
-  const menu = document.getElementById('friends-menu');
-  menu.classList.toggle('hidden');
-  if (!menu.classList.contains('hidden')) loadFriends();
-}
-
-document.addEventListener('click', e => {
-  const wrap = document.getElementById('friends-dropdown-wrap');
-  if (wrap && !wrap.contains(e.target)) {
-    document.getElementById('friends-menu').classList.add('hidden');
-  }
-});
-
-function setFriendFilter(friendId, friendName) {
-  document.getElementById('friends-menu').classList.add('hidden');
-  if (_viewFilter && _viewFilter.type === 'friend' && _viewFilter.id === friendId) {
-    // Toggle off
-    _viewFilter = null;
-    document.getElementById('btn-friends').textContent = '👥 Friends ▾';
-    document.getElementById('btn-friends').classList.remove('bg-yellow-700','border-yellow-500','text-yellow-100');
-    document.getElementById('btn-friends').classList.add('bg-gray-800','border-gray-700','text-gray-200');
-  } else {
-    _viewFilter = { type: 'friend', id: friendId };
-    document.getElementById('btn-friends').textContent = `👥 ${friendName} ✕`;
-    document.getElementById('btn-friends').classList.add('bg-yellow-700','border-yellow-500','text-yellow-100');
-    document.getElementById('btn-friends').classList.remove('bg-gray-800','border-gray-700','text-gray-200');
-    // Clear 'own' filter
-    document.getElementById('btn-show-mine').classList.remove('bg-cyan-700','border-cyan-500','text-cyan-100');
-    document.getElementById('btn-show-mine').classList.add('bg-gray-800','border-gray-700','text-gray-200');
-  }
-  // Scroll to first matching entity
-  if (_viewFilter && _viewFilter.type === 'friend') {
-    const match = Object.values(entityMap).find(it => it.owner_id === friendId);
-    if (match) scrollGridToCell(match.grid_x, match.grid_y);
-  }
-  rebuildGrid();
-}
-
-function toggleFilter(mode) {
-  if (_viewFilter === mode) {
-    _viewFilter = null;
-    document.getElementById('btn-show-mine').classList.remove('bg-cyan-700','border-cyan-500','text-cyan-100');
-    document.getElementById('btn-show-mine').classList.add('bg-gray-800','border-gray-700','text-gray-200');
-  } else {
-    _viewFilter = mode;
-    document.getElementById('btn-show-mine').classList.add('bg-cyan-700','border-cyan-500','text-cyan-100');
-    document.getElementById('btn-show-mine').classList.remove('bg-gray-800','border-gray-700','text-gray-200');
-    // Clear friend filter
-    _viewFilter = mode;
-    document.getElementById('btn-friends').textContent = '👥 Friends ▾';
-    document.getElementById('btn-friends').classList.remove('bg-yellow-700','border-yellow-500','text-yellow-100');
-    document.getElementById('btn-friends').classList.add('bg-gray-800','border-gray-700','text-gray-200');
-    // Scroll to own castle
-    const mine = Object.values(entityMap).find(it => it.owner_id === PLAYER_ID && it.type === 'castle');
-    if (mine) scrollGridToCell(mine.grid_x, mine.grid_y);
-  }
-  rebuildGrid();
-}
-
-function toggleZoomAll() {
-  if (_zoomAllMode) {
-    // Restore
-    _zoomAllMode = false;
-    document.getElementById('btn-zoom-all').textContent = '⊡ Zoom All';
-    setZoom(1.0);
-    return;
-  }
-  const entities = Object.values(entityMap);
-  if (entities.length === 0) return;
-  const xs = entities.map(e => e.grid_x);
-  const ys = entities.map(e => e.grid_y);
-  const minX = Math.min(...xs), maxX = Math.max(...xs);
-  const minY = Math.min(...ys), maxY = Math.max(...ys);
-  const spanX = Math.max(1, maxX - minX + 2);
-  const spanY = Math.max(1, maxY - minY + 2);
-  const shell = document.getElementById('world-map-shell');
-  const fitZoomX = shell.clientWidth  / (spanX * 52);
-  const fitZoomY = shell.clientHeight / (spanY * 52);
-  const fitZoom  = Math.min(fitZoomX, fitZoomY, ZOOM_MAX);
-  _zoomAllMode = true;
-  document.getElementById('btn-zoom-all').textContent = '↩ Restore';
-  setZoom(fitZoom);
-  // After grid redraws, scroll to the centroid
-  requestAnimationFrame(() => {
-    scrollGridToCell(Math.round((minX + maxX) / 2), Math.round((minY + maxY) / 2));
-  });
-}
-
-renderLegend();
-restoreMapPrefs();
-applyZoom();
-loadMap();
-loadFriends();
-setInterval(loadMap, 10000);
-
-// ── Scroll helpers ─────────────────────────────────────────────────── //
-let _scrollInterval = null;
-const SCROLL_SPEED  = 130;
-
-function startMapScroll(dx, dy) {
-  stopMapScroll();
-  const el = document.getElementById('world-map-scroll');
-  _scrollInterval = setInterval(() => {
-    el.scrollBy({ left: dx * SCROLL_SPEED, top: dy * SCROLL_SPEED });
-  }, 40);
-}
-
-function stopMapScroll() {
-  if (_scrollInterval) { clearInterval(_scrollInterval); _scrollInterval = null; }
-}
-
-// ── scrollGridToCell — used by global ctx menu "See on Map" ──────────── //
-function scrollGridToCell(gx, gy) {
-  const size    = cellPx();
-  const scrollEl = document.getElementById('world-map-scroll');
-  const left = gx * size - scrollEl.clientWidth  / 2;
-  const top  = gy * size - scrollEl.clientHeight / 2;
-  scrollEl.scrollTo({ left: Math.max(0, left), top: Math.max(0, top), behavior: 'smooth' });
-}
+// Jinja-injected constants â€” consumed by the static JS modules below
+const WORLD_W    = {{ world_w }};
+const WORLD_H    = {{ world_h }};
+const WORLD_SEED = {{ world.id }};
+const PLAYER_ID  = {{ session.get('player_id') | tojson }};
+const THEME_PATH = '/assets/{{ active_theme }}/map';
 </script>
+<script src="{{ url_for('static', filename='js/world/map-renderer.js') }}"></script>
+<script src="{{ url_for('static', filename='js/world/map-input.js') }}"></script>
+<script src="{{ url_for('static', filename='js/world/map-ui.js') }}"></script>
 
 {% endblock %}
 {% block footer %}{% endblock %}
