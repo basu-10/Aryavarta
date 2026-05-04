@@ -24,6 +24,22 @@ _CLUSTER_SIZE_MIN = 3
 _CLUSTER_SIZE_MAX = 7
 
 
+def _seed_npc_fort_human_garrison(npc_id: int, fort_id: int, star_level: int) -> None:
+    """Populate NPC forts with human-only troops."""
+    human_types = [
+        unit_type
+        for unit_type, cls in config.UNIT_CLASSIFICATION.items()
+        if cls.get("faction") == "human" and unit_type not in config.BUILDING_TYPES
+    ]
+    if not human_types:
+        return
+
+    stacks = random.randint(1, min(3, len(human_types)))
+    for unit_type in random.sample(human_types, stacks):
+        qty = random.randint(20, 80) * max(1, int(star_level))
+        m.add_troop(npc_id, unit_type, qty, "fort", fort_id)
+
+
 def _random_star_level(minimum: int = 1) -> int:
     star_levels = list(config.MONSTER_STAR_SPAWN_WEIGHTS.keys())
     weights = list(config.MONSTER_STAR_SPAWN_WEIGHTS.values())
@@ -107,6 +123,7 @@ def _seed_npc_population(world_id: int, grid_w: int, grid_h: int,
             star = random.randint(1, 3)
             fort_id = m.create_fort(8, fx, fy, [], star, world_id)
             m.claim_fort(fort_id, npc_id)
+            _seed_npc_fort_human_garrison(npc_id, fort_id, star)
             forts_placed += 1
 
     return {"npcs": npc_count, "npc_castles": castles_placed, "npc_forts": forts_placed}
@@ -271,13 +288,18 @@ def seed_world(num_forts: int = 15, num_camps: int = 10, force: bool = False,
             return {"forts": 0, "camps": 0, "skipped": True, "reason": "no worlds"}
         world_id = worlds[0]["id"]
 
-    world = m.get_world(world_id)
+    if world_id is None:
+        return {"forts": 0, "camps": 0, "skipped": True, "reason": "world not found"}
+
+    resolved_world_id = int(world_id)
+
+    world = m.get_world(resolved_world_id)
     if not world:
         return {"forts": 0, "camps": 0, "skipped": True, "reason": "world not found"}
     grid_w, grid_h = world["grid_width"], world["grid_height"]
 
-    existing_forts = _count_monster_forts(world_id)
-    existing_camps = _count_active_camps(world_id)
+    existing_forts = _count_monster_forts(resolved_world_id)
+    existing_camps = _count_active_camps(resolved_world_id)
 
     if not force and existing_forts >= num_forts and existing_camps >= num_camps:
         return {"forts": 0, "camps": 0, "skipped": True}
@@ -293,16 +315,16 @@ def seed_world(num_forts: int = 15, num_camps: int = 10, force: bool = False,
             [4, 5, 6, 7, 8, 9, 10],
             weights=config.FORT_SLOT_WEIGHTS,
         )[0]
-        x, y = m.find_empty_cell(world_id, grid_w, grid_h)
-        m.create_fort(slot_count, x, y, monster_data, star, world_id)
+        x, y = m.find_empty_cell(resolved_world_id, grid_w, grid_h)
+        m.create_fort(slot_count, x, y, monster_data, star, resolved_world_id)
         forts_created += 1
 
     camps_created = 0
     for _ in range(camps_to_create):
         star = _random_star_level(minimum=1)
         unit_data = _random_monster_spec(star)
-        x, y = m.find_empty_cell(world_id, grid_w, grid_h)
-        m.create_monster_camp(x, y, unit_data, star, world_id)
+        x, y = m.find_empty_cell(resolved_world_id, grid_w, grid_h)
+        m.create_monster_camp(x, y, unit_data, star, resolved_world_id)
         camps_created += 1
 
     return {"forts": forts_created, "camps": camps_created}

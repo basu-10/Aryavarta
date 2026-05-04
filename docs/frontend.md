@@ -65,12 +65,14 @@ Clicking a cell fires an HTMX request to `GET /world/item/<type>/<id>`, which re
 A full-page pre-attack UI that replaces the old inline modal. It has three main sections:
 
 1. **Available Troops panel** — lists idle troops stationed at the player's castle and each owned fort. Includes an "Attack From" origin selector.
-2. **Saved Formations grid** — all presets are rendered as clickable cards. Each card shows a mini 4×4 battlefield (Team A side only). Clicking a card selects it. Presets created on `/setup` (both teams) and presets created on this page (Team A only) are both listed.
-3. **Build a New Formation** — an inline 4-row × 4-col Team A grid. Click any cell to open the troop-picker modal. The built formation can be used directly for the attack, or saved as a named preset (stored in `presets/<name>.json` with `army_b: []`).
+2. **Formation options** — two controls in one row:
+   - **Saved Formations** button opens the shared preset-selection modal.
+   - **Build New Formation** button redirects to `/setup`.
+3. **Launch Attack** — dispatches the selected origin + selected preset.
 
-After selecting a formation (either a saved preset or a freshly built one) the player clicks **Launch Attack!** which calls `POST /api/attack` and immediately redirects to `/results/<battle_id>`.
+After selecting a saved preset, the player clicks **Launch Attack** which calls `POST /api/attack` and immediately redirects to `/results/<battle_id>`.
 
-Alpine.js `attackPrep()` component manages all selection, builder, and attack dispatch logic client-side.
+Alpine.js `attackPrep()` component manages preset selection and attack dispatch logic client-side.
 
 The map JSON is refreshed every 10 seconds via a `setInterval` in `templates/world/map.html`.
 
@@ -192,6 +194,11 @@ The location page (`/castle` and `/fort/<id>`) uses a click-to-manage building p
 - Buildings are overlaid on top of each grass tile and remain click-to-manage.
 - Empty unlocked tiles expose the Build action; locked tiles are shown as locked when slot count is below 9.
 - Fort view keeps the existing slot card layout.
+- Fort page now includes a **Defense Formation Preset** section:
+   - **Select Formation** button opens a preset picker modal.
+   - **Clear** removes explicit selection.
+   - If exactly one preset exists and no explicit selection is set, that preset is used as default.
+   - If more than one preset exists and none is selected, defender troop placement falls back to random.
 
 - Clicking `Command Centre` opens a troop details table (unit count + core stats).
 - Clicking `Garrison (Barracks)` or `Stable` opens troop management:

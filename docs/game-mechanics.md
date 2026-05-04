@@ -29,15 +29,34 @@
 Wild fort and camp star level is rolled at spawn time using the same table for both entity types:
 
 | Stars | Spawn chance | Defender total |
-|---|---|
-| ★ | 25% | 2–3 monsters |
-| ★★ | 25% | 4–5 monsters |
-| ★★★ | 20% | 6–8 monsters |
-| ★★★★ | 15% | 9–11 monsters |
+|---|---|---|
+| ★ | 20% | 2–3 monsters |
+| ★★ | 18% | 4–5 monsters |
+| ★★★ | 15% | 6–8 monsters |
+| ★★★★ | 12% | 9–11 monsters |
 | ★★★★★ | 10% | 12–14 monsters |
-| ★★★★★★ | 5% | 15–16 monsters |
+| ★★★★★★ | 8% | 15–16 monsters |
+| ★★★★★★★ | 7% | 17–19 monsters |
+| ★★★★★★★★ | 5% | 20–22 monsters |
+| ★★★★★★★★★ | 3% | 23–25 monsters |
+| ★★★★★★★★★★ | 2% | 26–30 monsters |
 
-The rolled star level is stored on the fort/camp row in `star_level`. The spawned unit mix is random across the monster roster, but the total unit count always stays inside that star band's range.
+The rolled star level is stored on the fort/camp row in `star_level`. The total unit count always stays inside that star band's range.
+
+Each star uses a dedicated melee/ranged mythical pair:
+
+| Star | Monster pair |
+|---|---|
+| 1 | Troll, Wraith |
+| 2 | Goblin Brute, Harpy |
+| 3 | Minotaur, Basilisk |
+| 4 | Gargoyle, Manticore |
+| 5 | Hydra, Siren |
+| 6 | Behemoth, Chimera |
+| 7 | Leviathan, Phoenix |
+| 8 | Colossus, Thunderbird |
+| 9 | Abyssal Titan, Void Drake |
+| 10 | Demon, Pegasus |
 
 ### Spawn and respawn rules
 

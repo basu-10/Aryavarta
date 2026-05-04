@@ -97,29 +97,39 @@ If a player-owned fort successfully defends, dead defending stacks are removed f
 
 ## Defense buildings in battle
 
-- Cannon and Archer Tower buildings each spawn one stationary Unit into the battle grid when their fort is attacked.
+- Cannon and Archer Tower buildings each spawn one stationary Unit into the battle grid when their fort is attacked, only if they currently have ammo loaded.
 - Each fires once per tick if a valid target is in range.
 - Each attack tick consumes 1 ammo unit. No ammo = no fire.
 - Remaining ammo is persisted back to the building after the battle resolves.
 
 ---
 
-## Monster fort garrison (star levels)
+## Player fort defense formation
 
-Monster-occupied forts are seeded with Troll/Wraith units (stars 1–6) or Demon/Pegasus units (stars 7–10).
+- When a player-owned fort is attacked, all idle troops stationed in that fort are sent into the battle as defenders.
+- The fort can optionally select one saved preset as a defense formation preset.
+- If a defense preset is selected, defender troop stacks are positioned using preset Team A cells mirrored onto Team B cells.
+- If exactly one preset exists globally and none is selected, that single preset is used as the default.
+- If multiple presets exist and none is selected, defender troops are placed randomly.
+
+---
+
+## Monster fort and camp garrison (star levels)
+
+Monster forts and monster camps use the same star-level roster and unit-count ranges.
 
 | Star | Unit count | Types |
 |---|---|---|
 | 1 | 2–3 | Troll, Wraith |
-| 2 | 4–5 | Troll, Wraith |
-| 3 | 6–8 | Troll, Wraith |
-| 4 | 9–11 | Troll, Wraith |
-| 5 | 12–14 | Troll, Wraith |
-| 6 | 15–16 | Troll, Wraith |
-| 7 | 2–3 | Demon, Pegasus |
-| 8 | 4–5 | Demon, Pegasus |
-| 9 | 6–8 | Demon, Pegasus |
-| 10 | 9–11 | Demon, Pegasus |
+| 2 | 4–5 | Goblin Brute, Harpy |
+| 3 | 6–8 | Minotaur, Basilisk |
+| 4 | 9–11 | Gargoyle, Manticore |
+| 5 | 12–14 | Hydra, Siren |
+| 6 | 15–16 | Behemoth, Chimera |
+| 7 | 17–19 | Leviathan, Phoenix |
+| 8 | 20–22 | Colossus, Thunderbird |
+| 9 | 23–25 | Abyssal Titan, Void Drake |
+| 10 | 26–30 | Demon, Pegasus |
 
 Monster defenders are placed as individual unstacked units (one per grid cell, `quantity = 1`).
 
@@ -135,6 +145,24 @@ Monster defenders are placed as individual unstacked units (one per grid cell, `
 | Hussar | 80 | 30 | 10 | 1 | 1.0* |
 | Troll | 200 | 30 | 20 | 1 | 1.0 |
 | Wraith | 80 | 30 | 0 | 3 | 1.0 |
+| Goblin Brute | 450 | 55 | 35 | 1 | 1.0 |
+| Harpy | 220 | 70 | 10 | 3 | 1.0 |
+| Minotaur | 900 | 95 | 70 | 1 | 1.0 |
+| Basilisk | 450 | 120 | 30 | 3 | 0.9 |
+| Gargoyle | 1800 | 170 | 130 | 1 | 0.9 |
+| Manticore | 900 | 210 | 55 | 3 | 0.9 |
+| Hydra | 3600 | 300 | 240 | 1 | 0.9 |
+| Siren | 1700 | 360 | 100 | 3 | 0.8 |
+| Behemoth | 8000 | 520 | 420 | 1 | 0.8 |
+| Chimera | 3600 | 650 | 180 | 4 | 0.8 |
+| Leviathan | 20000 | 1200 | 900 | 1 | 0.8 |
+| Phoenix | 10000 | 1700 | 320 | 4 | 0.7 |
+| Colossus | 120000 | 8000 | 6000 | 1 | 0.7 |
+| Thunderbird | 70000 | 11000 | 2200 | 4 | 0.7 |
+| Abyssal Titan | 8000000 | 300000 | 180000 | 1 | 0.7 |
+| Void Drake | 5000000 | 420000 | 90000 | 4 | 0.6 |
+| Demon | 400000000000 | 1200000000 | 1000000000 | 1 | 1.0 |
+| Pegasus | 250000000000 | 2000000000 | 0 | 3 | 0.5 |
 | Cannon | 300 | 50 | 30 | 4 | 0 (stationary) |
 | Archer Tower | 200 | 30 | 20 | 3 | 0 (stationary) |
 

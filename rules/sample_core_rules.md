@@ -55,4 +55,12 @@ barbarian, hussar
 
 Melee, Ranged
 Troll, Wraith
-demon, pegasus
+Goblin Brute, Harpy
+Minotaur, Basilisk
+Gargoyle, Manticore
+Hydra, Siren
+Behemoth, Chimera
+Leviathan, Phoenix
+Colossus, Thunderbird
+Abyssal Titan, Void Drake
+Demon, Pegasus

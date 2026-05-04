@@ -1,0 +1,58 @@
+<template x-if="showPresetModal">
+  <div
+    class="fixed inset-0 bg-black/70 flex items-start justify-center z-50 pt-12 pb-8 overflow-y-auto"
+    @click.self="showPresetModal = false"
+  >
+    <div class="bg-gray-900 border border-gray-700 rounded-xl shadow-2xl w-full max-w-4xl mx-4">
+      <div class="border-b border-gray-700 px-6 py-4 flex items-center justify-between">
+        <h2 class="font-semibold text-lg" x-text="presetModalTitle || 'Load Preset'"></h2>
+        <button @click="showPresetModal = false" class="text-gray-500 hover:text-white text-xl leading-none px-1">X</button>
+      </div>
+
+      <div class="p-6">
+        <template x-if="presetsLoading">
+          <p class="text-gray-400 text-center py-10">Loading presets...</p>
+        </template>
+
+        <template x-if="!presetsLoading && presetCards.length === 0">
+          <p class="text-gray-500 italic text-center py-10" x-text="presetModalEmptyText || 'No saved presets yet.'"></p>
+        </template>
+
+        <template x-if="!presetsLoading && presetCards.length > 0">
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            <template x-for="pc in presetCards" :key="pc.name">
+              <div
+                class="bg-gray-800 border border-gray-700 hover:border-indigo-500 rounded-lg p-4 cursor-pointer transition-all"
+                @click="selectPresetFromModal(pc)"
+              >
+                <div class="flex items-start justify-between mb-3">
+                  <h3 class="font-semibold text-sm truncate flex-1 mr-2" x-text="pc.name"></h3>
+                  <span class="text-xs text-gray-500 shrink-0"
+                        x-text="(pc.army_a.length + pc.army_b.length) + ' cells'"></span>
+                </div>
+
+                <div
+                  class="rounded overflow-hidden border border-gray-600 w-full"
+                  x-data="presetModalCardGrid(pc, {
+                    rows: getBattlefieldRows(),
+                    cols: getBattlefieldCols(),
+                    teamACols: TEAM_A_COLS,
+                    teamBCols: (typeof TEAM_B_COLS !== 'undefined' ? TEAM_B_COLS : []),
+                    mode: presetModalPreviewMode || 'both'
+                  })"
+                >
+                  {% include "components/battlefield_grid.html" %}
+                </div>
+
+                <div class="mt-2 flex justify-between text-xs">
+                  <span class="text-blue-400">A: <span x-text="pc.army_a.length + ' cell' + (pc.army_a.length !== 1 ? 's' : '')"></span></span>
+                  <span class="text-red-400">B: <span x-text="pc.army_b.length + ' cell' + (pc.army_b.length !== 1 ? 's' : '')"></span></span>
+                </div>
+              </div>
+            </template>
+          </div>
+        </template>
+      </div>
+    </div>
+  </div>
+</template>

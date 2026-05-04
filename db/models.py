@@ -299,7 +299,7 @@ def capture_fort(fort_id: int, new_owner_id: int) -> None:
     """Transfer ownership and destroy all buildings (fort was defeated in battle)."""
     db = get_db()
     db.execute(
-        "UPDATE fort SET owner_id=?, monster_data=NULL, last_defeated_at=? WHERE id=?",
+        "UPDATE fort SET owner_id=?, monster_data=NULL, defense_preset_name=NULL, last_defeated_at=? WHERE id=?",
         (new_owner_id, _now_iso(), fort_id),
     )
     db.execute(
@@ -307,6 +307,31 @@ def capture_fort(fort_id: int, new_owner_id: int) -> None:
         (fort_id,),
     )
     db.commit()
+
+
+def set_fort_defense_preset(fort_id: int, preset_name: Optional[str]) -> None:
+    db = get_db()
+    db.execute(
+        "UPDATE fort SET defense_preset_name=? WHERE id=?",
+        (preset_name if preset_name else None, fort_id),
+    )
+    db.commit()
+
+
+def _seed_npc_fort_human_garrison(npc_id: int, fort_id: int, star_level: int) -> None:
+    """Seed a newly created NPC fort with human-only troops."""
+    human_types = [
+        unit_type
+        for unit_type, cls in config.UNIT_CLASSIFICATION.items()
+        if cls.get("faction") == "human" and unit_type not in config.BUILDING_TYPES
+    ]
+    if not human_types:
+        return
+
+    stacks = random.randint(1, min(3, len(human_types)))
+    for unit_type in random.sample(human_types, stacks):
+        qty = random.randint(20, 80) * max(1, int(star_level))
+        add_troop(npc_id, unit_type, qty, "fort", fort_id)
 
 
 # ── Building ─────────────────────────────────────────────────────────── #
@@ -1295,6 +1320,7 @@ def ensure_npc_population(world_id: int = 0, grid_w: int = 0, grid_h: int = 0) -
             monster_data: list = []  # NPC-owned forts start empty (no monsters)
             fort_id = create_fort(8, fx, fy, monster_data, star, world_id)
             claim_fort(fort_id, npc_id)
+            _seed_npc_fort_human_garrison(npc_id, fort_id, star)
 
         created += 1
 

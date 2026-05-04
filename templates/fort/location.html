@@ -22,6 +22,29 @@
   <span id="collect-msg" class="text-xs text-gray-400"></span>
 </div>
 
+{% if location_type == 'fort' %}
+<div class="mb-6 bg-gray-900 border border-gray-800 rounded-lg p-4">
+  <div class="flex items-start justify-between gap-3 flex-wrap">
+    <div>
+      <h2 class="text-sm font-semibold text-gray-300">Defense Formation Preset</h2>
+      <p id="defense-preset-status" class="text-xs text-gray-500 mt-1">Loading defense preset...</p>
+    </div>
+    <div class="flex items-center gap-2">
+      <button type="button"
+              onclick="openDefensePresetModal()"
+              class="bg-indigo-700 hover:bg-indigo-600 text-white text-xs px-3 py-1.5 rounded font-medium">
+        Select Formation
+      </button>
+      <button type="button"
+              onclick="clearDefensePreset()"
+              class="bg-gray-700 hover:bg-gray-600 text-white text-xs px-3 py-1.5 rounded font-medium">
+        Clear
+      </button>
+    </div>
+  </div>
+</div>
+{% endif %}
+
 {% set occupied = {} %}
 {% for b in buildings %}
   {% set _ = occupied.update({b.slot_index: b}) %}
@@ -288,6 +311,21 @@
   </div>
 </div>
 
+{% if location_type == 'fort' %}
+<div id="defense-preset-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/70">
+  <div class="bg-gray-900 border border-gray-700 rounded-xl shadow-2xl w-full max-w-3xl mx-4 max-h-[90vh] flex flex-col">
+    <div class="flex items-center justify-between px-6 py-4 border-b border-gray-700">
+      <h3 class="text-lg font-bold">Select Defense Formation</h3>
+      <button type="button" onclick="closeDefensePresetModal()" class="text-gray-400 hover:text-white text-xl leading-none">&times;</button>
+    </div>
+    <div class="overflow-y-auto p-6">
+      <div id="defense-preset-list" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3"></div>
+      <p id="defense-preset-empty" class="hidden text-sm text-gray-500 italic"></p>
+    </div>
+  </div>
+</div>
+{% endif %}
+
 <script>
 const BUILD_COSTS = {{ build_costs | tojson }};
 const LOC_TYPE = '{{ location_type }}';
@@ -298,6 +336,7 @@ let pendingSlot = null;
 let currentBuildingId = null;
 let panelTimer = null;
 let didReload = false;
+let defensePresetState = null;
 
 const RES_ICONS = { food: '🍖', timber: '🪵', gold: '💰', metal: '⚙️' };
 const TROOP_ASSETS = {
@@ -680,8 +719,139 @@ function updateCountdowns() {
   });
 }
 
+async function fetchDefensePresetState() {
+  if (LOC_TYPE !== 'fort') return null;
+  const r = await fetch(`/api/fort/${LOC_ID}/defense-presets`);
+  const d = await r.json();
+  if (!r.ok || d.error) {
+    throw new Error(d.error || 'Failed to load defense presets');
+  }
+  defensePresetState = d;
+  renderDefensePresetStatus();
+  return d;
+}
+
+function renderDefensePresetStatus() {
+  if (LOC_TYPE !== 'fort') return;
+  const el = document.getElementById('defense-preset-status');
+  if (!el) return;
+  if (!defensePresetState) {
+    el.textContent = 'Unable to load defense presets.';
+    return;
+  }
+  const presets = defensePresetState.presets || [];
+  if (!presets.length) {
+    el.textContent = 'No saved presets found. Defenders will be placed randomly.';
+    return;
+  }
+  if (defensePresetState.selected_preset_name) {
+    el.textContent = `Selected preset: ${defensePresetState.selected_preset_name}`;
+    return;
+  }
+  if (defensePresetState.effective_preset_name) {
+    el.textContent = `Default preset: ${defensePresetState.effective_preset_name} (only preset available)`;
+    return;
+  }
+  el.textContent = 'No preset selected. Defender troops will be placed randomly.';
+}
+
+function closeDefensePresetModal() {
+  const modal = document.getElementById('defense-preset-modal');
+  if (!modal) return;
+  modal.classList.add('hidden');
+  modal.classList.remove('flex');
+}
+
+async function openDefensePresetModal() {
+  if (LOC_TYPE !== 'fort') return;
+  try {
+    if (!defensePresetState) {
+      await fetchDefensePresetState();
+    }
+  } catch (e) {
+    panelError(e.message);
+    return;
+  }
+  renderDefensePresetModal();
+  const modal = document.getElementById('defense-preset-modal');
+  if (!modal) return;
+  modal.classList.remove('hidden');
+  modal.classList.add('flex');
+}
+
+function renderDefensePresetModal() {
+  const listEl = document.getElementById('defense-preset-list');
+  const emptyEl = document.getElementById('defense-preset-empty');
+  if (!listEl || !emptyEl) return;
+
+  listEl.innerHTML = '';
+  const presets = (defensePresetState && defensePresetState.presets) || [];
+  if (!presets.length) {
+    emptyEl.classList.remove('hidden');
+    emptyEl.textContent = 'No saved presets yet. Create one from the Simulator page.';
+    return;
+  }
+
+  emptyEl.classList.add('hidden');
+  const selectedName = defensePresetState.selected_preset_name;
+  for (const p of presets) {
+    const isSelected = selectedName === p.name;
+    const card = document.createElement('div');
+    card.className = `border rounded-lg p-3 transition-colors ${isSelected ? 'border-indigo-500 bg-indigo-900/20' : 'border-gray-700 bg-gray-800'}`;
+    card.innerHTML = `
+      <div class="flex items-center justify-between gap-2 mb-2">
+        <h4 class="text-sm font-semibold truncate">${p.name}</h4>
+        ${isSelected ? '<span class="text-[10px] text-green-400 font-semibold">Selected</span>' : ''}
+      </div>
+      <div class="text-xs text-gray-500 mb-3">Team A cells: ${(p.army_a || []).length}</div>
+      <button type="button" class="w-full bg-indigo-700 hover:bg-indigo-600 text-white text-xs px-3 py-1.5 rounded">Use this preset</button>
+    `;
+    card.querySelector('button').addEventListener('click', async () => {
+      await setDefensePreset(p.name);
+    });
+    listEl.appendChild(card);
+  }
+}
+
+async function setDefensePreset(presetName) {
+  const r = await fetch(`/api/fort/${LOC_ID}/defense-preset`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ preset_name: presetName }),
+  });
+  const d = await r.json();
+  if (!r.ok || d.error) {
+    panelError(d.error || 'Failed to set defense preset');
+    return;
+  }
+  await fetchDefensePresetState();
+  renderDefensePresetModal();
+}
+
+async function clearDefensePreset() {
+  if (LOC_TYPE !== 'fort') return;
+  const r = await fetch(`/api/fort/${LOC_ID}/defense-preset`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ preset_name: '' }),
+  });
+  const d = await r.json();
+  if (!r.ok || d.error) {
+    panelError(d.error || 'Failed to clear defense preset');
+    return;
+  }
+  await fetchDefensePresetState();
+}
+
 updateCountdowns();
 setInterval(updateCountdowns, 1000);
+
+if (LOC_TYPE === 'fort') {
+  fetchDefensePresetState().catch((e) => {
+    const status = document.getElementById('defense-preset-status');
+    if (status) status.textContent = e.message;
+  });
+}
 
 document.getElementById('build-modal').addEventListener('click', (e) => {
   if (e.target === document.getElementById('build-modal')) closeBuildModal();
@@ -689,5 +859,10 @@ document.getElementById('build-modal').addEventListener('click', (e) => {
 document.getElementById('building-panel').addEventListener('click', (e) => {
   if (e.target === document.getElementById('building-panel')) closeBuildingPanel();
 });
+if (LOC_TYPE === 'fort') {
+  document.getElementById('defense-preset-modal').addEventListener('click', (e) => {
+    if (e.target === document.getElementById('defense-preset-modal')) closeDefensePresetModal();
+  });
+}
 </script>
 {% endblock %}

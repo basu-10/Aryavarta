@@ -389,22 +389,36 @@ def _safe_preset_name(name: str) -> str:
     return re.sub(r'[<>:"/\\|?*\x00-\x1f]', "", name).strip()
 
 
-def _formation_from_preset_name(name: str) -> list[dict]:
-    """Load selected preset and derive attacker formation from Team A units."""
-    if not name:
-        return []
-
+def _load_preset_by_name(name: str) -> dict | None:
     safe = _safe_preset_name(name)
     if not safe:
-        return []
-
+        return None
     path = _PRESETS_DIR / f"{safe}.json"
     if not path.exists():
-        return []
-
+        return None
     try:
-        preset = json.loads(path.read_text(encoding="utf-8"))
+        return json.loads(path.read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError):
+        return None
+
+
+def _list_all_preset_names() -> list[str]:
+    names: list[str] = []
+    for f in sorted(_PRESETS_DIR.glob("*.json")):
+        try:
+            payload = json.loads(f.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError):
+            continue
+        name = str(payload.get("name") or f.stem).strip()
+        if name:
+            names.append(name)
+    return names
+
+
+def _formation_from_preset_name(name: str) -> list[dict]:
+    """Load selected preset and derive attacker formation from Team A units."""
+    preset = _load_preset_by_name(name)
+    if not preset:
         return []
 
     # Preserve explicit unit placements so attack presets are deterministic.
@@ -610,16 +624,50 @@ def _build_defender_units(defender_spec: list[dict]) -> list[Unit]:
             quantity=1,
         ))
 
-    # Place regular troops in random TEAM_B_COLS positions
-    total_troops = sum(e["count"] for e in troop_entries)
-    positions = random.sample(_TEAM_B_POSITIONS, min(len(_TEAM_B_POSITIONS), len(troop_entries)))
+    # Place explicitly positioned troops first, then random-fill the rest.
+    occupied_b_positions: set[tuple[int, int]] = set()
+    positioned_entries = [
+        e for e in troop_entries
+        if isinstance(e.get("row"), int) and isinstance(e.get("col"), int)
+    ]
+    unpositioned_entries = [
+        e for e in troop_entries
+        if not (isinstance(e.get("row"), int) and isinstance(e.get("col"), int))
+    ]
+
+    for entry in positioned_entries:
+        utype = entry["type"]
+        stats = all_stats.get(utype, config.UNIT_STATS.get("Troll", {}))
+        row = int(entry.get("row", -1))
+        col = int(entry.get("col", -1))
+        if not (0 <= row < config.GRID_ROWS and col in config.TEAM_B_COLS):
+            continue
+        if (row, col) in occupied_b_positions:
+            continue
+        occupied_b_positions.add((row, col))
+        qty = max(1, int(entry.get("count", 1)))
+        unit_id = f"B_{utype[0]}{len(units)+1}"
+        units.append(Unit(
+            unit_id=unit_id,
+            team="B",
+            unit_type=utype,
+            row=row, col=col,
+            hp=stats["hp"] * qty, max_hp=stats["hp"] * qty,
+            damage=stats["damage"] * qty, defense=stats["defense"] * qty,
+            range=stats["range"], speed=stats["speed"],
+            quantity=qty,
+        ))
+
+    available_positions = [pos for pos in _TEAM_B_POSITIONS if pos not in occupied_b_positions]
+    positions = random.sample(available_positions, min(len(available_positions), len(unpositioned_entries)))
     pos_idx = 0
-    for entry in troop_entries:
+    for entry in unpositioned_entries:
         if pos_idx >= len(positions):
             break
         utype = entry["type"]
         stats = all_stats.get(utype, config.UNIT_STATS.get("Troll", {}))
-        row, col = positions[pos_idx]; pos_idx += 1
+        row, col = positions[pos_idx]
+        pos_idx += 1
         qty = max(1, int(entry.get("count", 1)))
         unit_id = f"B_{utype[0]}{len(units)+1}"
         units.append(Unit(
@@ -633,6 +681,50 @@ def _build_defender_units(defender_spec: list[dict]) -> list[Unit]:
             quantity=qty,
         ))
     return units
+
+
+def _resolve_fort_defense_preset_name(fort: dict) -> str | None:
+    """Resolve effective defense preset for a fort by explicit selection, then default rule."""
+    all_names = _list_all_preset_names()
+    selected = str(fort.get("defense_preset_name") or "").strip()
+    if selected and selected in all_names:
+        return selected
+    if len(all_names) == 1:
+        return all_names[0]
+    return None
+
+
+def _defense_positions_from_preset(preset_name: str, troop_spec: dict[str, int]) -> dict[str, tuple[int, int]]:
+    """Map defender troop types to Team B cells based on Team A coordinates from a saved preset."""
+    preset = _load_preset_by_name(preset_name)
+    if not preset:
+        return {}
+
+    mapped: dict[str, tuple[int, int]] = {}
+    occupied: set[tuple[int, int]] = set()
+
+    for unit in preset.get("army_a", []):
+        if not isinstance(unit, dict):
+            continue
+        unit_type = (unit.get("type") or unit.get("unit_type") or "").strip()
+        row = unit.get("row")
+        col = unit.get("col")
+        if unit_type not in troop_spec or unit_type in mapped:
+            continue
+        if not isinstance(row, int) or not isinstance(col, int):
+            continue
+        if col not in config.TEAM_A_COLS or not (0 <= row < config.GRID_ROWS):
+            continue
+
+        b_col = config.TEAM_B_COLS[config.TEAM_A_COLS.index(col)]
+        b_pos = (row, b_col)
+        if b_pos in occupied:
+            continue
+
+        occupied.add(b_pos)
+        mapped[unit_type] = b_pos
+
+    return mapped
 
 
 def _get_defender_spec(mission: dict) -> list[dict]:
@@ -665,25 +757,47 @@ def _get_defender_spec(mission: dict) -> list[dict]:
             get_db().commit()
         return monster_data
 
-    # Player-owned fort: defence buildings (with ammo) + garrisoned troops
+    # Player-owned fort: defence buildings (only if ammo > 0) + garrisoned troops
     spec_entries: list[dict] = []
     troop_spec: dict[str, int] = {}
+    owner = m.get_player_by_id(fort.get("owner_id")) if fort.get("owner_id") else None
+    owner_is_npc = bool(owner and owner.get("role") == "npc")
+
     buildings = m.get_buildings("fort", target_id)
     for b in buildings:
         if b["is_destroyed"]:
             continue
         if b["type"] == "Cannon":
             ammo = m.get_building_ammo(b["id"]).get("cannon_ball", 0)
-            spec_entries.append({"type": "Cannon", "count": 1, "building_id": b["id"], "ammo_count": ammo})
+            if ammo > 0:
+                spec_entries.append({"type": "Cannon", "count": 1, "building_id": b["id"], "ammo_count": ammo})
         elif b["type"] == "Archer Tower":
             ammo = m.get_building_ammo(b["id"]).get("arrow", 0)
-            spec_entries.append({"type": "Archer Tower", "count": 1, "building_id": b["id"], "ammo_count": ammo})
+            if ammo > 0:
+                spec_entries.append({"type": "Archer Tower", "count": 1, "building_id": b["id"], "ammo_count": ammo})
+
     troops = m.get_troops_at("fort", target_id)
     for t in troops:
-        troop_spec[t["unit_type"]] = troop_spec.get(t["unit_type"], 0) + t["quantity"]
+        unit_type = t["unit_type"]
+        if owner_is_npc:
+            unit_cls = config.UNIT_CLASSIFICATION.get(unit_type, {})
+            if unit_cls.get("faction") != "human":
+                continue
+        troop_spec[unit_type] = troop_spec.get(unit_type, 0) + t["quantity"]
+
+    defense_preset_name = _resolve_fort_defense_preset_name(fort)
+    defense_positions = (
+        _defense_positions_from_preset(defense_preset_name, troop_spec)
+        if defense_preset_name else {}
+    )
 
     for k, v in troop_spec.items():
-        spec_entries.append({"type": k, "count": v})
+        entry = {"type": k, "count": v}
+        if k in defense_positions:
+            row, col = defense_positions[k]
+            entry["row"] = row
+            entry["col"] = col
+        spec_entries.append(entry)
 
     return spec_entries
 

@@ -4,6 +4,10 @@ blueprints/fort_bp.py — Fort and castle management (buildings, troops, resourc
 
 from __future__ import annotations
 
+import json
+import re
+from pathlib import Path
+
 from flask import (
     Blueprint, flash, jsonify, redirect, render_template,
     request, session, url_for,
@@ -14,6 +18,7 @@ from db import models as m
 import config
 
 fort_bp = Blueprint("fort", __name__)
+_PRESETS_DIR = Path(__file__).parent.parent / "presets"
 
 
 # ── Castle page ───────────────────────────────────────────────────────── #
@@ -202,6 +207,79 @@ def _owns_building(player_id: int, building_id: int):
     if not _owns_location(player_id, b["location_type"], b["location_id"]):
         return None
     return b
+
+
+def _safe_preset_name(name: str) -> str:
+    return re.sub(r'[<>:"/\\|?*\x00-\x1f]', "", name).strip()
+
+
+def _list_presets_with_names() -> list[dict]:
+    _PRESETS_DIR.mkdir(exist_ok=True)
+    presets: list[dict] = []
+    for f in sorted(_PRESETS_DIR.glob("*.json")):
+        try:
+            payload = json.loads(f.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError):
+            continue
+        name = str(payload.get("name") or f.stem).strip()
+        if not name:
+            continue
+        presets.append({"name": name, "army_a": payload.get("army_a", [])})
+    return presets
+
+
+def _resolve_effective_defense_preset_name(selected_name: str, preset_names: list[str]) -> str | None:
+    if selected_name and selected_name in preset_names:
+        return selected_name
+    if len(preset_names) == 1:
+        return preset_names[0]
+    return None
+
+
+@fort_bp.route("/api/fort/<int:fort_id>/defense-presets")
+@login_required
+def api_fort_defense_presets(fort_id: int):
+    fort = m.get_fort(fort_id)
+    if not fort or fort.get("owner_id") != session["player_id"]:
+        return jsonify({"error": "Forbidden"}), 403
+
+    presets = _list_presets_with_names()
+    preset_names = [p["name"] for p in presets]
+    selected = str(fort.get("defense_preset_name") or "").strip()
+    effective = _resolve_effective_defense_preset_name(selected, preset_names)
+
+    return jsonify({
+        "fort_id": fort_id,
+        "selected_preset_name": selected or None,
+        "effective_preset_name": effective,
+        "presets": presets,
+        "selection_required": len(preset_names) > 1 and not effective,
+    })
+
+
+@fort_bp.route("/api/fort/<int:fort_id>/defense-preset", methods=["POST"])
+@login_required
+def api_set_fort_defense_preset(fort_id: int):
+    fort = m.get_fort(fort_id)
+    if not fort or fort.get("owner_id") != session["player_id"]:
+        return jsonify({"error": "Forbidden"}), 403
+
+    data = request.get_json(force=True, silent=True) or {}
+    requested = str(data.get("preset_name") or "").strip()
+    if not requested:
+        m.set_fort_defense_preset(fort_id, None)
+        return jsonify({"ok": True, "preset_name": None})
+
+    safe = _safe_preset_name(requested)
+    if not safe:
+        return jsonify({"error": "Invalid preset name"}), 400
+
+    preset_names = [p["name"] for p in _list_presets_with_names()]
+    if requested not in preset_names:
+        return jsonify({"error": "Preset not found"}), 404
+
+    m.set_fort_defense_preset(fort_id, requested)
+    return jsonify({"ok": True, "preset_name": requested})
 
 
 # ── Building details (used by panel UI) ───────────────────────────────── #

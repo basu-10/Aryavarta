@@ -33,7 +33,7 @@
       <p class="text-gray-300"><strong>Purpose:</strong> Practice combat. Generate early-game resources.</p>
       <p class="text-gray-300"><strong>Respawn:</strong> After you defeat a camp, a new camp spawns elsewhere on the map.</p>
       <p class="text-gray-300"><strong>Ownership:</strong> No one owns camps. Anyone can attack any camp.</p>
-      <p class="text-gray-300"><strong>Garrison:</strong> 2–16 monsters (depending on difficulty).</p>
+      <p class="text-gray-300"><strong>Garrison:</strong> 2–30 monsters (depending on difficulty).</p>
     </div>
   </section>
 
@@ -41,7 +41,7 @@
   <section class="space-y-4 border-t border-gray-700 pt-6">
     <h2 class="text-2xl font-bold text-indigo-300">Difficulty Levels (Stars)</h2>
     <p class="text-gray-300">
-      When a camp spawns, it gets a random difficulty level from ★ to ★★★★★. Higher stars = 
+      When a camp spawns, it gets a random difficulty level from ★ to ★★★★★★★★★★. Higher stars = 
       stronger garrison + better loot.
     </p>
     
@@ -51,7 +51,7 @@
           <tr class="border-b border-gray-700">
             <th class="text-left py-2">Difficulty</th>
             <th class="text-left py-2">Garrison Size</th>
-            <th class="text-left py-2">Avg Loot</th>
+            <th class="text-left py-2">Spawn chance</th>
             <th class="text-left py-2">Recommended for</th>
           </tr>
         </thead>
@@ -59,38 +59,62 @@
           <tr class="border-b border-gray-700/50">
             <td class="py-2">★</td>
             <td>2–3</td>
-            <td>~50 Gold/Metal</td>
+            <td>20%</td>
             <td>Complete beginners</td>
           </tr>
           <tr class="border-b border-gray-700/50">
             <td class="py-2">★★</td>
             <td>4–5</td>
-            <td>~100 Gold/Metal</td>
+            <td>18%</td>
             <td>Early game (5+ troops)</td>
           </tr>
           <tr class="border-b border-gray-700/50">
             <td class="py-2">★★★</td>
             <td>6–8</td>
-            <td>~200 Gold/Metal</td>
+            <td>15%</td>
             <td>Growing armies (15+ troops)</td>
           </tr>
           <tr class="border-b border-gray-700/50">
             <td class="py-2">★★★★</td>
             <td>9–11</td>
-            <td>~350 Gold/Metal</td>
+            <td>12%</td>
             <td>Mid-game (30+ troops or defense)</td>
           </tr>
           <tr class="border-b border-gray-700/50">
             <td class="py-2">★★★★★</td>
             <td>12–14</td>
-            <td>~500 Gold/Metal</td>
+            <td>10%</td>
             <td>Late game / groups</td>
           </tr>
-          <tr>
+          <tr class="border-b border-gray-700/50">
             <td class="py-2">★★★★★★</td>
             <td>15–16</td>
-            <td>~750 Gold/Metal</td>
+            <td>8%</td>
             <td>Veteran players / clans</td>
+          </tr>
+          <tr class="border-b border-gray-700/50">
+            <td class="py-2">★★★★★★★</td>
+            <td>17–19</td>
+            <td>7%</td>
+            <td>High-end lineups</td>
+          </tr>
+          <tr class="border-b border-gray-700/50">
+            <td class="py-2">★★★★★★★★</td>
+            <td>20–22</td>
+            <td>5%</td>
+            <td>Optimised formations</td>
+          </tr>
+          <tr class="border-b border-gray-700/50">
+            <td class="py-2">★★★★★★★★★</td>
+            <td>23–25</td>
+            <td>3%</td>
+            <td>Late game raids</td>
+          </tr>
+          <tr>
+            <td class="py-2">★★★★★★★★★★</td>
+            <td>26–30</td>
+            <td>2%</td>
+            <td>Apex challenge only</td>
           </tr>
         </tbody>
       </table>
@@ -106,18 +130,31 @@
   <section class="space-y-4 border-t border-gray-700 pt-6">
     <h2 class="text-2xl font-bold text-indigo-300">Monster Types</h2>
     <p class="text-gray-300">
-      Camps contain random mixes of monsters. Common types you'll face:
+      Camps contain star-banded mythical pairs. Each star has one melee and one ranged type:
     </p>
-    
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mt-3">
-      <div class="bg-gray-900 border border-gray-800 rounded p-3">
-        <h4 class="font-bold">🗿 Troll</h4>
-        <p class="text-gray-400 text-sm">High HP, tanky. Slow but durable. Needs concentrated fire.</p>
-      </div>
-      <div class="bg-gray-900 border border-gray-800 rounded p-3">
-        <h4 class="font-bold">👻 Wraith</h4>
-        <p class="text-gray-400 text-sm">Fast, ranged damage. Watch for speed-based attacks.</p>
-      </div>
+
+    <div class="bg-gray-900 border border-gray-800 rounded-lg p-4 overflow-x-auto mt-3">
+      <table class="w-full text-sm">
+        <thead>
+          <tr class="border-b border-gray-700">
+            <th class="text-left py-2">Star</th>
+            <th class="text-left py-2">Melee</th>
+            <th class="text-left py-2">Ranged</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr class="border-b border-gray-700/50"><td class="py-2">1</td><td>Troll</td><td>Wraith</td></tr>
+          <tr class="border-b border-gray-700/50"><td class="py-2">2</td><td>Goblin Brute</td><td>Harpy</td></tr>
+          <tr class="border-b border-gray-700/50"><td class="py-2">3</td><td>Minotaur</td><td>Basilisk</td></tr>
+          <tr class="border-b border-gray-700/50"><td class="py-2">4</td><td>Gargoyle</td><td>Manticore</td></tr>
+          <tr class="border-b border-gray-700/50"><td class="py-2">5</td><td>Hydra</td><td>Siren</td></tr>
+          <tr class="border-b border-gray-700/50"><td class="py-2">6</td><td>Behemoth</td><td>Chimera</td></tr>
+          <tr class="border-b border-gray-700/50"><td class="py-2">7</td><td>Leviathan</td><td>Phoenix</td></tr>
+          <tr class="border-b border-gray-700/50"><td class="py-2">8</td><td>Colossus</td><td>Thunderbird</td></tr>
+          <tr class="border-b border-gray-700/50"><td class="py-2">9</td><td>Abyssal Titan</td><td>Void Drake</td></tr>
+          <tr><td class="py-2">10</td><td>Demon</td><td>Pegasus</td></tr>
+        </tbody>
+      </table>
     </div>
 
     <p class="text-gray-300 mt-3">
@@ -152,12 +189,11 @@
   <section class="space-y-4 border-t border-gray-700 pt-6">
     <h2 class="text-2xl font-bold text-indigo-300">Loot & Rewards</h2>
     <p class="text-gray-300">
-      Defeating a camp gives you <strong>Gold and Metal</strong> based on the difficulty:
+      Defeating a camp gives you <strong>Gold and Metal</strong>:
     </p>
     <div class="bg-gray-900 border border-gray-800 rounded-lg p-4 mt-3">
       <p class="text-gray-400 text-sm">
-        <strong>Approximate formula:</strong> Loot increases with star level. 
-        A 1-star camp: ~50 each. A 5-star camp: ~500+ each.
+        <strong>Current rule:</strong> Camp victories award fixed Gold and Metal loot.
       </p>
       <p class="text-gray-400 text-sm mt-3">
         Loot is added directly to your castle's resources. No pickup required.

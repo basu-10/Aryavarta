@@ -32,12 +32,16 @@ Rolled once at spawn for both forts and monster camps. Never changes after that.
 
 | Stars | Spawn chance | Garrison size |
 |---|---|---|
-| ★ | 25% | 2–3 units |
-| ★★ | 25% | 4–5 units |
-| ★★★ | 20% | 6–8 units |
-| ★★★★ | 15% | 9–11 units |
+| ★ | 20% | 2–3 units |
+| ★★ | 18% | 4–5 units |
+| ★★★ | 15% | 6–8 units |
+| ★★★★ | 12% | 9–11 units |
 | ★★★★★ | 10% | 12–14 units |
-| ★★★★★★ | 5% | 15–16 units |
+| ★★★★★★ | 8% | 15–16 units |
+| ★★★★★★★ | 7% | 17–19 units |
+| ★★★★★★★★ | 5% | 20–22 units |
+| ★★★★★★★★★ | 3% | 23–25 units |
+| ★★★★★★★★★★ | 2% | 26–30 units |
 
 The unit mix is random from the monster roster, but total unit count always stays inside the band.
 

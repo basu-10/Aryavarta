@@ -72,6 +72,7 @@
         ("⚔️", "Damage",       base.damage,  "Attack damage per hit"),
         ("🛡️", "Defense",      base.defense, "Damage reduction"),
         ("🏹", "Range",        base.range,   "Attack range in cells"),
+        ("🕒", "Attack Speed", base.attack_speed ~ "×", "Attack frequency multiplier"),
         ("💨", "Speed",        base.speed ~ "×", "Movement multiplier"),
         ("⏱️", "Training Time", base.training_time_seconds ~ "s", "Time to train one unit"),
       ] %}
@@ -92,7 +93,7 @@
   <!-- ── Tier-10 threat callout (Demon / Pegasus only) ────────────── -->
   {% if troop_name in ('Demon', 'Pegasus') %}
   <div class="rounded-xl border border-red-900/60 bg-red-950/30 px-5 py-4 space-y-3">
-    <h2 class="text-xs font-semibold uppercase tracking-widest text-red-400">⚠ Tier-10 Threat — Stars 7–10</h2>
+    <h2 class="text-xs font-semibold uppercase tracking-widest text-red-400">⚠ Tier-10 Threat — Star 10 Apex</h2>
     <p class="text-sm text-gray-300 leading-relaxed">
       {% if troop_name == 'Demon' %}
       The Demon's <span class="text-red-300 font-semibold">1 billion defense</span> absorbs all damage
@@ -184,6 +185,7 @@
             <th class="px-4 py-2">DMG</th>
             <th class="px-4 py-2">DEF</th>
             <th class="px-4 py-2">Range</th>
+            <th class="px-4 py-2">Atk Spd</th>
             <th class="px-4 py-2">Speed</th>
             <th class="px-4 py-2">Gold</th>
             <th class="px-4 py-2">Food</th>
@@ -202,6 +204,7 @@
             <td class="px-4 py-2 text-red-300">{{ lvl.damage }}</td>
             <td class="px-4 py-2 text-blue-300">{{ lvl.defense }}</td>
             <td class="px-4 py-2">{{ lvl.range }}</td>
+            <td class="px-4 py-2">{{ lvl.attack_speed }}×</td>
             <td class="px-4 py-2">{{ lvl.speed }}×</td>
             <td class="px-4 py-2 text-yellow-400">{{ lvl.gold_cost }}</td>
             <td class="px-4 py-2 text-green-400">{{ lvl.food_cost }}</td>

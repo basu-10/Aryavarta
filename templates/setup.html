@@ -77,69 +77,7 @@
   {% include "components/battlefield_grid.html" %}
 
   <!--    CELL MODAL                                                          -->
-  <!-- PRESET MODAL -->
-  <template x-if="showPresetModal">
-    <div
-      class="fixed inset-0 bg-black/70 flex items-start justify-center z-50 pt-12 pb-8 overflow-y-auto"
-      @click.self="showPresetModal = false"
-    >
-      <div class="bg-gray-900 border border-gray-700 rounded-xl shadow-2xl w-full max-w-4xl mx-4">
-        <!-- Header -->
-        <div class="border-b border-gray-700 px-6 py-4 flex items-center justify-between">
-          <h2 class="font-semibold text-lg">Load Preset</h2>
-          <button @click="showPresetModal = false" class="text-gray-500 hover:text-white text-xl leading-none px-1">✕</button>
-        </div>
-
-        <!-- Body -->
-        <div class="p-6">
-          <template x-if="presetsLoading">
-            <p class="text-gray-400 text-center py-10">Loading presets…</p>
-          </template>
-          <template x-if="!presetsLoading && presetCards.length === 0">
-            <p class="text-gray-500 italic text-center py-10">No saved presets yet. Name and save one using the field below.</p>
-          </template>
-          <template x-if="!presetsLoading && presetCards.length > 0">
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              <template x-for="pc in presetCards" :key="pc.name">
-                <div
-                  class="bg-gray-800 border border-gray-700 hover:border-indigo-500 rounded-lg p-4 cursor-pointer transition-all"
-                  @click="loadPresetFromModal(pc)"
-                >
-                  <!-- Name + cell count -->
-                  <div class="flex items-start justify-between mb-3">
-                    <h3 class="font-semibold text-sm truncate flex-1 mr-2" x-text="pc.name"></h3>
-                    <span class="text-xs text-gray-500 shrink-0"
-                          x-text="(pc.army_a.length + pc.army_b.length) + ' cells'"></span>
-                  </div>
-
-                  <!-- Mini battlefield grid -->
-                  <div class="rounded overflow-hidden border border-gray-600 w-full">
-                    <template x-for="mr in 4" :key="mr">
-                      <div class="flex">
-                        <template x-for="mc in 9" :key="mc">
-                          <div
-                            :style="miniCellStyle(pc, mr-1, mc-1)"
-                            class="flex-1 border-r border-b border-black/20"
-                            style="height:12px"
-                          ></div>
-                        </template>
-                      </div>
-                    </template>
-                  </div>
-
-                  <!-- Team footers -->
-                  <div class="mt-2 flex justify-between text-xs">
-                    <span class="text-blue-400">A: <span x-text="pc.army_a.length + ' cell' + (pc.army_a.length !== 1 ? 's' : '')"></span></span>
-                    <span class="text-red-400">B: <span x-text="pc.army_b.length + ' cell' + (pc.army_b.length !== 1 ? 's' : '')"></span></span>
-                  </div>
-                </div>
-              </template>
-            </div>
-          </template>
-        </div>
-      </div>
-    </div>
-  </template>
+  {% include "components/preset_selection_modal.html" %}
 
   <!-- CELL MODAL -->
   <template x-if="showTroopModal">
@@ -338,6 +276,7 @@
 
 </div>
 
+<script src="{{ url_for('static', filename='js/preset_selector_modal.js') }}"></script>
 <script>
   const GRID_ROWS = {{ grid_rows }};
   const GRID_COLS = {{ grid_cols }};
@@ -404,6 +343,9 @@
       // Preset modal state
       showPresetModal: false,
       presetCards: [],
+      presetModalTitle: 'Load Preset',
+      presetModalEmptyText: 'No saved presets yet. Name and save one using the field below.',
+      presetModalPreviewMode: 'both',
 
       init() {
         // No-op  €” presets loaded on demand
@@ -451,20 +393,6 @@
         const unit = this.getUnit(r, c);
         if (unit) return teamCls + ' ring-1 ring-inset ring-white/20';
         return teamCls;
-      },
-
-      miniCellStyle(preset, r, c) {
-        if (!preset._cellMap) {
-          preset._cellMap = {};
-          for (const u of [...(preset.army_a || []), ...(preset.army_b || [])]) {
-            preset._cellMap[`${u.row},${u.col}`] = u;
-          }
-        }
-        const neutral = !TEAM_A_COLS.includes(c) && !TEAM_B_COLS.includes(c);
-        const occupied = !!preset._cellMap[`${r},${c}`];
-        if (neutral) return 'background:rgba(92,74,36,0.70)';
-        if (TEAM_A_COLS.includes(c)) return occupied ? 'background:rgba(59,130,246,0.85)' : 'background:rgba(50,78,120,0.50)';
-        return occupied ? 'background:rgba(239,68,68,0.85)' : 'background:rgba(105,38,38,0.50)';
       },
 
       typeAbbrev(type) {
@@ -731,7 +659,7 @@
         }
       },
 
-      loadPresetFromModal(preset) {
+      selectPresetFromModal(preset) {
         this.unitMap = {};
         for (const [arrayKey, inferredTeam] of [['army_a', 'A'], ['army_b', 'B']]) {
           for (const u of (preset[arrayKey] || [])) {

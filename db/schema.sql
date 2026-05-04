@@ -56,6 +56,8 @@ CREATE TABLE IF NOT EXISTS fort (
         grid_y INTEGER NOT NULL,
         monster_data TEXT,
         -- JSON unit spec when unowned
+        defense_preset_name TEXT,
+        -- selected defensive formation preset for this fort
         star_level INTEGER NOT NULL DEFAULT 1,
         last_defeated_at TEXT
 );

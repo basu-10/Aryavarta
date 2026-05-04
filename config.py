@@ -19,9 +19,10 @@ MAX_TICKS = 500  # Safety ceiling to prevent infinite loops — raised to handle
 
 # Unit base stats registry (LEVEL 1 base stats)
 # All human troops scaled to Barbarian base_hp = 100 (10× rescale from original).
-# Monster difficulty tiers:
-#   Tier 1 (star 1-6) : Troll / Wraith  — challenging for small stacks
-#   Tier 10 (star 7-10): Demon / Pegasus — require ~1 billion stacked level-10 troops
+# Monster roster tiers:
+#   Star 1 starts at Troll/Wraith.
+#   Stars 2-9 introduce progressively stronger mythical pairs.
+#   Star 10 is the apex Demon/Pegasus pair.
 # speed: 1.0 = 1 cell/tick (1x), 0.5 = 1 cell every 2 ticks (0.5x)
 UNIT_STATS: dict[str, dict] = {
     "Barbarian": {
@@ -44,6 +45,7 @@ UNIT_STATS: dict[str, dict] = {
         "defense": 20,
         "range": 1,
         "speed": 1.0,   # 1x melee brute
+        "attack_speed": 1.0,
     },
     "Wraith": {
         "hp": 80,
@@ -51,6 +53,135 @@ UNIT_STATS: dict[str, dict] = {
         "defense": 0,
         "range": 3,
         "speed": 1.0,   # 1x fast ranged glass cannon
+        "attack_speed": 1.1,
+    },
+    "Goblin Brute": {
+        "hp": 450,
+        "damage": 55,
+        "defense": 35,
+        "range": 1,
+        "speed": 1.0,
+        "attack_speed": 0.95,
+    },
+    "Harpy": {
+        "hp": 220,
+        "damage": 70,
+        "defense": 10,
+        "range": 3,
+        "speed": 1.0,
+        "attack_speed": 1.05,
+    },
+    "Minotaur": {
+        "hp": 900,
+        "damage": 95,
+        "defense": 70,
+        "range": 1,
+        "speed": 1.0,
+        "attack_speed": 0.9,
+    },
+    "Basilisk": {
+        "hp": 450,
+        "damage": 120,
+        "defense": 30,
+        "range": 3,
+        "speed": 0.9,
+        "attack_speed": 1.0,
+    },
+    "Gargoyle": {
+        "hp": 1_800,
+        "damage": 170,
+        "defense": 130,
+        "range": 1,
+        "speed": 0.9,
+        "attack_speed": 0.85,
+    },
+    "Manticore": {
+        "hp": 900,
+        "damage": 210,
+        "defense": 55,
+        "range": 3,
+        "speed": 0.9,
+        "attack_speed": 0.95,
+    },
+    "Hydra": {
+        "hp": 3_600,
+        "damage": 300,
+        "defense": 240,
+        "range": 1,
+        "speed": 0.9,
+        "attack_speed": 0.8,
+    },
+    "Siren": {
+        "hp": 1_700,
+        "damage": 360,
+        "defense": 100,
+        "range": 3,
+        "speed": 0.8,
+        "attack_speed": 0.9,
+    },
+    "Behemoth": {
+        "hp": 8_000,
+        "damage": 520,
+        "defense": 420,
+        "range": 1,
+        "speed": 0.8,
+        "attack_speed": 0.78,
+    },
+    "Chimera": {
+        "hp": 3_600,
+        "damage": 650,
+        "defense": 180,
+        "range": 4,
+        "speed": 0.8,
+        "attack_speed": 0.88,
+    },
+    "Leviathan": {
+        "hp": 20_000,
+        "damage": 1_200,
+        "defense": 900,
+        "range": 1,
+        "speed": 0.8,
+        "attack_speed": 0.75,
+    },
+    "Phoenix": {
+        "hp": 10_000,
+        "damage": 1_700,
+        "defense": 320,
+        "range": 4,
+        "speed": 0.7,
+        "attack_speed": 0.85,
+    },
+    "Colossus": {
+        "hp": 120_000,
+        "damage": 8_000,
+        "defense": 6_000,
+        "range": 1,
+        "speed": 0.7,
+        "attack_speed": 0.72,
+    },
+    "Thunderbird": {
+        "hp": 70_000,
+        "damage": 11_000,
+        "defense": 2_200,
+        "range": 4,
+        "speed": 0.7,
+        "attack_speed": 0.82,
+    },
+    "Abyssal Titan": {
+        "hp": 8_000_000,
+        "damage": 300_000,
+        "defense": 180_000,
+        "range": 1,
+        "speed": 0.7,
+        "attack_speed": 0.7,
+    },
+    "Void Drake": {
+        "hp": 5_000_000,
+        "damage": 420_000,
+        "defense": 90_000,
+        "range": 4,
+        "speed": 0.6,
+        "attack_speed": 0.8,
     },
     "Longbowman": {
         "hp": 60,
@@ -89,6 +220,7 @@ UNIT_STATS: dict[str, dict] = {
         "defense": 1_000_000_000,    # 1 billion — blocks all but stacked troops
         "range": 1,
         "speed": 1.0,
+        "attack_speed": 0.68,
     },
     "Pegasus": {
         "hp": 250_000_000_000,       # 250 billion
@@ -96,6 +228,7 @@ UNIT_STATS: dict[str, dict] = {
         "defense": 0,                # No physical armour — pure glass-cannon
         "range": 3,
         "speed": 0.5,
+        "attack_speed": 0.78,
     },
 }
 
@@ -107,6 +240,22 @@ UNIT_CLASSIFICATION: dict[str, dict] = {
     "Archer": {"faction": "human", "type": "ranged"},
     "Troll": {"faction": "monster", "type": "melee"},
     "Wraith": {"faction": "monster", "type": "ranged"},
+    "Goblin Brute": {"faction": "monster", "type": "melee"},
+    "Harpy": {"faction": "monster", "type": "ranged"},
+    "Minotaur": {"faction": "monster", "type": "melee"},
+    "Basilisk": {"faction": "monster", "type": "ranged"},
+    "Gargoyle": {"faction": "monster", "type": "melee"},
+    "Manticore": {"faction": "monster", "type": "ranged"},
+    "Hydra": {"faction": "monster", "type": "melee"},
+    "Siren": {"faction": "monster", "type": "ranged"},
+    "Behemoth": {"faction": "monster", "type": "melee"},
+    "Chimera": {"faction": "monster", "type": "ranged"},
+    "Leviathan": {"faction": "monster", "type": "melee"},
+    "Phoenix": {"faction": "monster", "type": "ranged"},
+    "Colossus": {"faction": "monster", "type": "melee"},
+    "Thunderbird": {"faction": "monster", "type": "ranged"},
+    "Abyssal Titan": {"faction": "monster", "type": "melee"},
+    "Void Drake": {"faction": "monster", "type": "ranged"},
     "Longbowman": {"faction": "human", "type": "ranged"},
     "Hussar": {"faction": "human", "type": "melee"},
     "Cannon": {"faction": "human", "type": "ranged"},
@@ -132,7 +281,6 @@ MAX_MONSTER_CAMPS   = 10  # standalone monster camps on the map
 FORT_SLOT_WEIGHTS = [20, 20, 20, 15, 10, 10, 5]
 
 # Monster fort/camp spawn table (star levels 1-10)
-# Stars 1-6: Troll/Wraith tier   Stars 7-10: Demon/Pegasus tier
 MONSTER_STAR_SPAWN_WEIGHTS: dict[int, int] = {
     1:  20,
     2:  18,
@@ -146,18 +294,17 @@ MONSTER_STAR_SPAWN_WEIGHTS: dict[int, int] = {
     10:  2,
 }
 
-# Monster unit tier per star level
-# Stars 1-6 → Troll/Wraith,  Stars 7-10 → Demon/Pegasus
+# Monster unit pair per star level
 MONSTER_STAR_TIER: dict[int, list[str]] = {
     1:  ["Troll", "Wraith"],
-    2:  ["Troll", "Wraith"],
-    3:  ["Troll", "Wraith"],
-    4:  ["Troll", "Wraith"],
-    5:  ["Troll", "Wraith"],
-    6:  ["Troll", "Wraith"],
-    7:  ["Demon", "Pegasus"],
-    8:  ["Demon", "Pegasus"],
-    9:  ["Demon", "Pegasus"],
+    2:  ["Goblin Brute", "Harpy"],
+    3:  ["Minotaur", "Basilisk"],
+    4:  ["Gargoyle", "Manticore"],
+    5:  ["Hydra", "Siren"],
+    6:  ["Behemoth", "Chimera"],
+    7:  ["Leviathan", "Phoenix"],
+    8:  ["Colossus", "Thunderbird"],
+    9:  ["Abyssal Titan", "Void Drake"],
     10: ["Demon", "Pegasus"],
 }
 
@@ -168,10 +315,10 @@ MONSTER_STAR_UNIT_RANGES: dict[int, tuple[int, int]] = {
     4:  (9,  11),
     5:  (12, 14),
     6:  (15, 16),
-    7:  (2,  3),
-    8:  (4,  5),
-    9:  (6,  8),
-    10: (9,  11),
+    7:  (17, 19),
+    8:  (20, 22),
+    9:  (23, 25),
+    10: (26, 30),
 }
 
 # Generic star thresholds derived from the world spawn table.

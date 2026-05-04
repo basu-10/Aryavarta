@@ -9,6 +9,7 @@
   - showBattlefieldLegend
   - allowNeutralUnits, showNeutralOccupiedMarker
   - troopIcon(type), getBattlefieldCellVisual(cell,r,c), getBattlefieldCellFallback(cell), getBattlefieldCellText(cell)
+  - showEmptyBattlefieldMarker (optional, defaults true)
   - battlefieldIconClass, battlefieldFallbackClass, battlefieldStatClass
 #}
 
@@ -61,7 +62,7 @@
                 <span class="absolute top-1 right-1 text-[9px] text-amber-300/80 font-semibold pointer-events-none select-none">NML</span>
               </template>
 
-              <template x-if="!isNeutral(c - 1) && !getBattlefieldCell(r - 1, c - 1)">
+              <template x-if="!isNeutral(c - 1) && !getBattlefieldCell(r - 1, c - 1) && showEmptyBattlefieldMarker !== false">
                 <span class="text-white/40 text-3xl leading-none pointer-events-none select-none">+</span>
               </template>
 
