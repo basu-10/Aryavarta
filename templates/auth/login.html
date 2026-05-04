@@ -2,26 +2,30 @@
 {% block title %}Login — BattleCells{% endblock %}
 {% block content %}
 <div class="max-w-sm mx-auto mt-16">
-  <h1 class="text-2xl font-bold mb-6 text-center">Login</h1>
-  <form method="POST" action="{{ url_for('auth.login', next=next_url) }}" class="space-y-4">
-    <input type="hidden" name="next" value="{{ next_url }}" />
-    <div>
-      <label class="block text-sm text-gray-400 mb-1">Username</label>
-      <input name="username" type="text" required autocomplete="username"
-             class="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2 text-white focus:outline-none focus:border-blue-500" />
+  <div class="bc-card p-8">
+    <div class="text-center mb-7">
+      <div class="font-display text-4xl tracking-widest mb-1" style="color:#22c55e">BATTLECELLS</div>
+      <p class="text-slate-400 text-sm">Welcome back, Commander</p>
     </div>
-    <div>
-      <label class="block text-sm text-gray-400 mb-1">Password</label>
-      <input name="password" type="password" required autocomplete="current-password"
-             class="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2 text-white focus:outline-none focus:border-blue-500" />
-    </div>
-    <button type="submit"
-            class="w-full bg-blue-600 hover:bg-blue-500 text-white font-semibold py-2 rounded transition-colors">
-      Login
-    </button>
-  </form>
-  <p class="text-center text-sm text-gray-500 mt-4">
-    No account? <a href="{{ url_for('auth.register') }}" class="text-blue-400 hover:underline">Register</a>
-  </p>
+    <form method="POST" action="{{ url_for('auth.login', next=next_url) }}" class="space-y-4">
+      <input type="hidden" name="next" value="{{ next_url }}" />
+      <div>
+        <label class="block text-xs font-semibold uppercase tracking-widest text-slate-400 mb-1.5">Username</label>
+        <input name="username" type="text" required autocomplete="username"
+               class="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2.5 text-white focus:outline-none focus:border-green-500 transition-colors" />
+      </div>
+      <div>
+        <label class="block text-xs font-semibold uppercase tracking-widest text-slate-400 mb-1.5">Password</label>
+        <input name="password" type="password" required autocomplete="current-password"
+               class="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2.5 text-white focus:outline-none focus:border-green-500 transition-colors" />
+      </div>
+      <button type="submit" class="bc-btn bc-btn-green w-full mt-2">
+        Login
+      </button>
+    </form>
+    <p class="text-center text-sm text-slate-500 mt-5">
+      No account? <a href="{{ url_for('auth.register') }}" class="text-green-400 hover:text-green-300 font-medium">Register</a>
+    </p>
+  </div>
 </div>
 {% endblock %}

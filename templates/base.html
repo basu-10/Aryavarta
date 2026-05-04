@@ -7,6 +7,9 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="theme-color" content="#030712" />
   <title>{% block title %}BattleCells{% endblock %}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
@@ -15,7 +18,13 @@
           colors: {
             teamA: { DEFAULT: '#3b82f6', light: '#dbeafe', border: '#2563eb' },
             teamB: { DEFAULT: '#ef4444', light: '#fee2e2', border: '#dc2626' },
-          }
+            navy: { 900: '#050d1a', 800: '#0a1628', 700: '#0d1f3c', 600: '#1e3a5f' },
+            brand: { DEFAULT: '#22c55e', dark: '#16a34a' },
+          },
+          fontFamily: {
+            sans: ['Inter', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+            display: ['Bebas Neue', 'sans-serif'],
+          },
         }
       }
     }
@@ -24,36 +33,36 @@
   <script src="https://unpkg.com/htmx.org@1.9.12"></script>
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
 </head>
-<body class="bg-gray-950 text-gray-100 {% block body_class %}min-h-screen{% endblock %} flex flex-col">
+<body class="bg-navy-900 text-gray-100 font-sans {% block body_class %}min-h-screen{% endblock %} flex flex-col" style="background:#050d1a">
 
   {# ════════════════════════════════════════════════════════════════════
      Desktop Top Navigation — hidden on mobile, shown on sm+
      ════════════════════════════════════════════════════════════════════ #}
   <header id="desktop-nav"
-          class="hidden sm:flex fixed top-0 left-0 right-0 z-[60] h-14 bg-gray-900 border-b border-gray-800 items-center gap-1 px-4">
+          class="hidden sm:flex fixed top-0 left-0 right-0 z-[60] h-14 items-center gap-1 px-4" style="background:#0a1628;border-bottom:1px solid rgba(30,58,95,0.7)">
 
     {# Brand #}
     <a href="{{ url_for('battle.index') }}"
-       class="font-bold text-white text-sm mr-3 shrink-0 hover:text-blue-300 transition-colors">
-      ⚔ BattleCells
+       class="font-display text-base mr-3 shrink-0 tracking-widest transition-colors" style="color:#22c55e;letter-spacing:0.12em">
+      ⚔ BATTLECELLS
     </a>
 
     {% if session.get('player_id') %}
     {# Primary nav links #}
     <a href="{{ url_for('world.world_map') }}" data-nav-path="/world"
-       class="desktop-nav-link px-3 py-1.5 rounded text-sm text-gray-300 hover:text-white hover:bg-gray-800 transition-colors">
+       class="desktop-nav-link px-3 py-1.5 rounded text-sm text-slate-300 hover:text-white bc-nav-hover transition-colors">
       🌍 World
     </a>
     <a href="{{ url_for('fort.castle_page') }}" data-nav-path="/castle"
-       class="desktop-nav-link px-3 py-1.5 rounded text-sm text-gray-300 hover:text-white hover:bg-gray-800 transition-colors">
+       class="desktop-nav-link px-3 py-1.5 rounded text-sm text-slate-300 hover:text-white bc-nav-hover transition-colors">
       <span class="relative">🏰 Castle<span id="castle-dot-desktop" class="hidden absolute -top-1 -right-2 w-2 h-2 rounded-full bg-yellow-400"></span></span>
     </a>
     <a href="{{ url_for('clan.clan_page') }}" data-nav-path="/clan"
-       class="desktop-nav-link px-3 py-1.5 rounded text-sm text-gray-300 hover:text-white hover:bg-gray-800 transition-colors">
+       class="desktop-nav-link px-3 py-1.5 rounded text-sm text-slate-300 hover:text-white bc-nav-hover transition-colors">
       ⚔️ Clan
     </a>
     <a href="{{ url_for('battle.setup') }}" data-nav-path="/setup"
-       class="desktop-nav-link px-3 py-1.5 rounded text-sm text-gray-300 hover:text-white hover:bg-gray-800 transition-colors">
+       class="desktop-nav-link px-3 py-1.5 rounded text-sm text-slate-300 hover:text-white bc-nav-hover transition-colors">
       ⚡ Simulate
     </a>
 
@@ -61,43 +70,43 @@
 
     {# Secondary actions — right side #}
     <a href="{{ url_for('auth.battles') }}" data-nav-path="/battles"
-       class="desktop-nav-link px-3 py-1.5 rounded text-sm text-gray-400 hover:text-white hover:bg-gray-800 transition-colors">
+       class="desktop-nav-link px-3 py-1.5 rounded text-sm text-slate-400 hover:text-white bc-nav-hover transition-colors">
       <span class="relative">📜 History<span id="history-dot-desktop" class="hidden absolute -top-1 -right-2 w-2 h-2 rounded-full bg-red-500"></span></span>
     </a>
     <a href="{{ url_for('wiki.wiki_index') }}" data-nav-path="/wiki"
-       class="desktop-nav-link px-3 py-1.5 rounded text-sm text-gray-400 hover:text-white hover:bg-gray-800 transition-colors">
+       class="desktop-nav-link px-3 py-1.5 rounded text-sm text-slate-400 hover:text-white bc-nav-hover transition-colors">
       📖 Wiki
     </a>
     <button onclick="openTutorial()"
-            class="px-3 py-1.5 rounded text-sm text-amber-400 hover:text-amber-300 hover:bg-gray-800 transition-colors"
+            class="px-3 py-1.5 rounded text-sm text-amber-400 hover:text-amber-300 bc-nav-hover transition-colors"
             title="Getting Started">
       ? Help
     </button>
     {% if nav_is_admin %}
     <a href="{{ url_for('admin.dashboard') }}"
-       class="px-3 py-1.5 rounded text-sm text-amber-500 hover:text-amber-400 hover:bg-gray-800 transition-colors">
+       class="px-3 py-1.5 rounded text-sm text-amber-500 hover:text-amber-400 bc-nav-hover transition-colors">
       ⚙️ Admin
     </a>
     {% endif %}
-    <div class="w-px h-6 bg-gray-700 mx-1"></div>
-    <span class="text-xs text-gray-500 px-1">{{ session.get('username') }}</span>
+    <div class="w-px h-6 mx-1" style="background:rgba(30,58,95,0.8)"></div>
+    <span class="text-xs text-slate-500 px-1">{{ session.get('username') }}</span>
     <a href="{{ url_for('auth.logout') }}"
-       class="px-3 py-1.5 rounded text-sm text-red-400 hover:text-red-300 hover:bg-gray-800 transition-colors">
+       class="px-3 py-1.5 rounded text-sm text-red-400 hover:text-red-300 bc-nav-hover transition-colors">
       Logout
     </a>
 
     {% else %}
     <div class="flex-1"></div>
     <a href="{{ url_for('wiki.wiki_index') }}"
-       class="desktop-nav-link px-3 py-1.5 rounded text-sm text-gray-400 hover:text-white hover:bg-gray-800 transition-colors">
+       class="desktop-nav-link px-3 py-1.5 rounded text-sm text-slate-400 hover:text-white bc-nav-hover transition-colors">
       📖 Wiki
     </a>
     <a href="{{ url_for('auth.login') }}"
-       class="px-3 py-1.5 rounded text-sm text-gray-300 hover:text-white hover:bg-gray-800 transition-colors">
+       class="px-3 py-1.5 rounded text-sm text-slate-300 hover:text-white bc-nav-hover transition-colors">
       Login
     </a>
     <a href="{{ url_for('auth.register') }}"
-       class="px-3 py-1.5 rounded text-sm bg-blue-600 hover:bg-blue-500 text-white transition-colors">
+       class="px-3 py-1.5 rounded text-sm font-semibold text-white transition-colors" style="background:#22c55e" onmouseover="this.style.background='#16a34a'" onmouseout="this.style.background='#22c55e'">
       Register
     </a>
     {% endif %}
@@ -651,7 +660,8 @@
      Bottom Navigation Bar
      ════════════════════════════════════════════════════════════════════ #}
   <nav id="bottom-nav"
-       class="sm:hidden fixed bottom-0 left-0 right-0 z-50 bg-gray-900 border-t border-gray-800"
+       class="sm:hidden fixed bottom-0 left-0 right-0 z-50"
+       style="background:#0a1628;border-top:1px solid rgba(30,58,95,0.7)"
        x-data="{ moreOpen: false }">
 
     {% if session.get('player_id') %}
@@ -660,32 +670,32 @@
     <div class="flex items-stretch h-16 bottom-nav-inset">
 
       <a href="{{ url_for('world.world_map') }}" data-nav-path="/world"
-         class="nav-tab flex flex-col items-center justify-center flex-1 gap-0.5 text-gray-400 hover:text-blue-300 transition-colors active:scale-95">
+         class="nav-tab flex flex-col items-center justify-center flex-1 gap-0.5 text-slate-400 hover:text-green-400 transition-colors active:scale-95">
         <span class="text-2xl leading-none">🌍</span>
         <span class="text-[10px] font-medium tracking-wide">World</span>
       </a>
 
       <a href="{{ url_for('fort.castle_page') }}" data-nav-path="/castle"
-         class="nav-tab flex flex-col items-center justify-center flex-1 gap-0.5 text-gray-400 hover:text-blue-300 transition-colors active:scale-95">
-        <span class="relative text-2xl leading-none">🏰<span id="castle-dot-mobile" class="hidden absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-yellow-400 border border-gray-900"></span></span>
+         class="nav-tab flex flex-col items-center justify-center flex-1 gap-0.5 text-slate-400 hover:text-green-400 transition-colors active:scale-95">
+        <span class="relative text-2xl leading-none">🏰<span id="castle-dot-mobile" class="hidden absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-yellow-400 border border-navy-800"></span></span>
         <span class="text-[10px] font-medium tracking-wide">Castle</span>
       </a>
 
       <a href="{{ url_for('clan.clan_page') }}" data-nav-path="/clan"
-         class="nav-tab flex flex-col items-center justify-center flex-1 gap-0.5 text-gray-400 hover:text-blue-300 transition-colors active:scale-95">
+         class="nav-tab flex flex-col items-center justify-center flex-1 gap-0.5 text-slate-400 hover:text-green-400 transition-colors active:scale-95">
         <span class="text-2xl leading-none">⚔️</span>
         <span class="text-[10px] font-medium tracking-wide">Clan</span>
       </a>
 
       <a href="{{ url_for('battle.setup') }}" data-nav-path="/setup"
-         class="nav-tab flex flex-col items-center justify-center flex-1 gap-0.5 text-gray-400 hover:text-blue-300 transition-colors active:scale-95">
+         class="nav-tab flex flex-col items-center justify-center flex-1 gap-0.5 text-slate-400 hover:text-green-400 transition-colors active:scale-95">
         <span class="text-2xl leading-none">⚡</span>
         <span class="text-[10px] font-medium tracking-wide">Battle</span>
       </a>
 
       <button @click="moreOpen = !moreOpen"
-              :class="moreOpen ? 'text-blue-400' : 'text-gray-400'"
-              class="nav-tab flex flex-col items-center justify-center flex-1 gap-0.5 hover:text-blue-300 transition-colors active:scale-95">
+              :class="moreOpen ? 'text-green-400' : 'text-slate-400'"
+              class="nav-tab flex flex-col items-center justify-center flex-1 gap-0.5 hover:text-green-400 transition-colors active:scale-95">
                <span class="relative text-2xl leading-none font-bold">···<span id="history-dot-mobile" class="hidden absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-red-500 border border-gray-900"></span></span>
         <span class="text-[10px] font-medium tracking-wide">More</span>
       </button>
@@ -712,50 +722,50 @@
          x-transition:leave="transition ease-in duration-150"
          x-transition:leave-start="opacity-100 translate-y-0"
          x-transition:leave-end="opacity-0 translate-y-4"
-         class="fixed left-0 right-0 z-50 bg-gray-900 border-t border-gray-700 rounded-t-2xl shadow-2xl"
-         style="bottom:4rem;display:none">
+         class="fixed left-0 right-0 z-50 rounded-t-2xl shadow-2xl"
+         style="bottom:4rem;display:none;background:#0a1628;border-top:1px solid rgba(30,58,95,0.7)">
 
       <div class="flex justify-center pt-2 pb-1">
-        <div class="w-10 h-1 rounded-full bg-gray-600"></div>
+        <div class="w-10 h-1 rounded-full" style="background:rgba(30,58,95,0.9)"></div>
       </div>
 
-      <div class="px-4 py-2 flex items-center gap-2 border-b border-gray-800">
-        <span class="text-sm font-semibold text-gray-300">{{ session.get('username') }}</span>
-        <span class="ml-auto text-xs text-gray-500">BattleCells</span>
+      <div class="px-4 py-2 flex items-center gap-2" style="border-bottom:1px solid rgba(30,58,95,0.7)">
+        <span class="text-sm font-semibold text-slate-200">{{ session.get('username') }}</span>
+        <span class="ml-auto text-xs font-display tracking-widest" style="color:#22c55e">BATTLECELLS</span>
       </div>
 
       <div class="py-1">
         <a href="{{ url_for('auth.battles') }}" @click="moreOpen = false"
-           class="flex items-center gap-3 px-5 py-3.5 text-gray-200 hover:bg-gray-800 active:bg-gray-700 transition-colors">
+           class="flex items-center gap-3 px-5 py-3.5 text-slate-200 bc-flyout-hover active:opacity-70 transition-colors">
           <span class="text-xl w-7 text-center">📜</span>
           <span class="text-sm font-medium">Battle History</span>
         </a>
         <a href="{{ url_for('wiki.wiki_index') }}" @click="moreOpen = false"
-           class="flex items-center gap-3 px-5 py-3.5 text-gray-200 hover:bg-gray-800 active:bg-gray-700 transition-colors">
+           class="flex items-center gap-3 px-5 py-3.5 text-slate-200 bc-flyout-hover active:opacity-70 transition-colors">
           <span class="text-xl w-7 text-center">📖</span>
           <span class="text-sm font-medium">Wiki</span>
         </a>
         <button type="button" @click="moreOpen = false; openTutorial()"
-                class="w-full flex items-center gap-3 px-5 py-3.5 text-amber-400 hover:bg-gray-800 active:bg-gray-700 transition-colors">
+                class="w-full flex items-center gap-3 px-5 py-3.5 text-amber-400 bc-flyout-hover active:opacity-70 transition-colors">
           <span class="text-xl w-7 text-center font-bold">?</span>
           <span class="text-sm font-medium">Getting Started</span>
         </button>
         {% if nav_is_admin %}
-        <div class="mx-5 border-t border-gray-800 my-1"></div>
+        <div class="mx-5 my-1" style="border-top:1px solid rgba(30,58,95,0.6)"></div>
         <a href="{{ url_for('admin.dashboard') }}" @click="moreOpen = false"
-           class="flex items-center gap-3 px-5 py-3.5 text-amber-400 hover:bg-gray-800 active:bg-gray-700 transition-colors">
+           class="flex items-center gap-3 px-5 py-3.5 text-amber-400 bc-flyout-hover active:opacity-70 transition-colors">
           <span class="text-xl w-7 text-center">⚙️</span>
           <span class="text-sm font-medium">Admin Dashboard</span>
         </a>
         <a href="{{ url_for('admin.test_run_page') }}" @click="moreOpen = false"
-           class="flex items-center gap-3 px-5 py-3.5 text-amber-400 hover:bg-gray-800 active:bg-gray-700 transition-colors">
+           class="flex items-center gap-3 px-5 py-3.5 text-amber-400 bc-flyout-hover active:opacity-70 transition-colors">
           <span class="text-xl w-7 text-center">🧪</span>
           <span class="text-sm font-medium">Test Run</span>
         </a>
         {% endif %}
-        <div class="mx-5 border-t border-gray-800 my-1"></div>
+        <div class="mx-5 my-1" style="border-top:1px solid rgba(30,58,95,0.6)"></div>
         <a href="{{ url_for('auth.logout') }}" @click="moreOpen = false"
-           class="flex items-center gap-3 px-5 py-3.5 text-red-400 hover:bg-gray-800 active:bg-gray-700 transition-colors">
+           class="flex items-center gap-3 px-5 py-3.5 text-red-400 bc-flyout-hover active:opacity-70 transition-colors">
           <span class="text-xl w-7 text-center">🚪</span>
           <span class="text-sm font-medium">Logout</span>
         </a>
@@ -769,21 +779,21 @@
     <div class="flex items-stretch h-16 bottom-nav-inset">
 
       <a href="{{ url_for('wiki.wiki_index') }}" data-nav-path="/wiki"
-         class="nav-tab flex flex-col items-center justify-center flex-1 gap-0.5 text-gray-400 hover:text-blue-300 transition-colors active:scale-95">
+         class="nav-tab flex flex-col items-center justify-center flex-1 gap-0.5 text-slate-400 hover:text-green-400 transition-colors active:scale-95">
         <span class="text-2xl leading-none">📖</span>
         <span class="text-[10px] font-medium tracking-wide">Wiki</span>
       </a>
 
-      <div class="w-px bg-gray-800 my-3"></div>
+      <div class="w-px my-3" style="background:rgba(30,58,95,0.8)"></div>
 
       <a href="{{ url_for('auth.login') }}" data-nav-path="/login"
-         class="nav-tab flex flex-col items-center justify-center flex-1 gap-0.5 text-gray-400 hover:text-blue-300 transition-colors active:scale-95">
+         class="nav-tab flex flex-col items-center justify-center flex-1 gap-0.5 text-slate-400 hover:text-green-400 transition-colors active:scale-95">
         <span class="text-2xl leading-none">🔑</span>
         <span class="text-[10px] font-medium tracking-wide">Login</span>
       </a>
 
       <a href="{{ url_for('auth.register') }}" data-nav-path="/register"
-         class="nav-tab flex flex-col items-center justify-center flex-1 gap-0.5 text-gray-400 hover:text-blue-300 transition-colors active:scale-95">
+         class="nav-tab flex flex-col items-center justify-center flex-1 gap-0.5 text-slate-400 hover:text-green-400 transition-colors active:scale-95">
         <span class="text-2xl leading-none">✨</span>
         <span class="text-[10px] font-medium tracking-wide">Register</span>
       </a>
@@ -801,8 +811,8 @@
     document.querySelectorAll('[data-nav-path]').forEach(el => {
       const p = el.dataset.navPath;
       if (path === p || path.startsWith(p + '/')) {
-        el.classList.remove('text-gray-400');
-        el.classList.add('text-blue-400');
+        el.classList.remove('text-gray-400', 'text-slate-400', 'text-slate-300');
+        el.classList.add('text-green-400');
       }
     });
   })();

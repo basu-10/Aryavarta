@@ -2,61 +2,60 @@
 {% block title %}Wiki — BattleCells{% endblock %}
 
 {% block content %}
-<div class="space-y-10">
+<div class="space-y-8">
 
   <!-- Header -->
   <div>
-    <h1 class="text-3xl font-bold tracking-tight">📖 BattleCells Wiki</h1>
-    <p class="text-gray-400 text-sm mt-2">
+    <h1 class="bc-title text-5xl text-white">BattleCells Wiki</h1>
+    <p class="text-slate-400 text-sm mt-2">
       Learn game mechanics, explore units and buildings, and master gameplay strategies.
     </p>
   </div>
 
   <!-- Section grid -->
-  <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+  <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
 
     <!-- Guides -->
     <a href="{{ url_for('wiki.guides_index') }}"
-       class="group bg-gray-900 border border-gray-800 rounded-2xl overflow-hidden
-              hover:border-amber-600 hover:bg-gray-800 transition-all duration-150 flex flex-col">
-      <div class="h-40 bg-gradient-to-br from-amber-900 to-gray-800 border-b border-gray-700 flex items-center justify-center">
+       class="group bc-card overflow-hidden hover:border-amber-600/60 transition-all duration-150 flex flex-col">
+      <div class="h-36 flex items-center justify-center" style="background:linear-gradient(135deg,rgba(120,53,15,0.6),rgba(13,31,60,0.9))">
         <span class="text-6xl">📚</span>
       </div>
       <div class="p-5 flex flex-col gap-1">
-        <h2 class="text-xl font-bold group-hover:text-amber-300 transition-colors">📚 Game Guides</h2>
-        <p class="text-gray-400 text-sm leading-relaxed">
+        <span class="bc-pill bg-amber-900/50 text-amber-300 w-fit mb-1">Guides</span>
+        <h2 class="text-lg font-bold text-slate-100 group-hover:text-amber-300 transition-colors">Game Guides</h2>
+        <p class="text-slate-400 text-sm leading-relaxed">
           Step-by-step tutorials and strategies to master BattleCells. From your first farm to 
           commanding a clan.
         </p>
-        <span class="mt-3 text-xs text-amber-400 group-hover:text-amber-300">Browse guides →</span>
+        <span class="mt-3 text-xs text-amber-400 group-hover:text-amber-300 font-semibold">Browse guides →</span>
       </div>
     </a>
 
     <!-- Troops -->
     <a href="{{ url_for('wiki.troops_index') }}"
-       class="group bg-gray-900 border border-gray-800 rounded-2xl overflow-hidden
-              hover:border-gray-600 hover:bg-gray-800 transition-all duration-150 flex flex-col">
-      <div class="h-40 bg-gray-800 border-b border-gray-700 flex items-center justify-center gap-4">
+       class="group bc-card overflow-hidden hover:border-slate-500/60 transition-all duration-150 flex flex-col">
+      <div class="h-36 flex items-center justify-center gap-4" style="background:linear-gradient(135deg,rgba(13,31,60,0.9),rgba(5,13,26,0.95))">
         <img src="/assets/theme1/troops/human/animations/barbarian/idle.gif"
              alt="Barbarian" class="h-20 w-20 object-contain drop-shadow-lg" />
         <img src="/assets/theme1/troops/human/animations/archer/idle.gif"
              alt="Archer" class="h-20 w-20 object-contain drop-shadow-lg" />
       </div>
       <div class="p-5 flex flex-col gap-1">
-        <h2 class="text-xl font-bold group-hover:text-white transition-colors">⚔ Troops</h2>
-        <p class="text-gray-400 text-sm leading-relaxed">
+        <span class="bc-pill bg-slate-700/60 text-slate-200 w-fit mb-1">Units</span>
+        <h2 class="text-lg font-bold text-slate-100 group-hover:text-white transition-colors">⚔ Troops</h2>
+        <p class="text-slate-400 text-sm leading-relaxed">
           Stats, lore, and upgrade curves for every unit in BattleCells — infantry,
           ranged, cavalry, monsters, and siege.
         </p>
-        <span class="mt-3 text-xs text-indigo-400 group-hover:text-indigo-300">Browse troops →</span>
+        <span class="mt-3 text-xs text-blue-400 group-hover:text-blue-300 font-semibold">Browse troops →</span>
       </div>
     </a>
 
     <!-- Buildings -->
     <a href="{{ url_for('wiki.buildings_index') }}"
-       class="group bg-gray-900 border border-gray-800 rounded-2xl overflow-hidden
-              hover:border-gray-600 hover:bg-gray-800 transition-all duration-150 flex flex-col">
-      <div class="h-40 bg-gray-800 border-b border-gray-700 flex items-center justify-center gap-6">
+       class="group bc-card overflow-hidden hover:border-slate-500/60 transition-all duration-150 flex flex-col">
+      <div class="h-36 flex items-center justify-center gap-6" style="background:linear-gradient(135deg,rgba(13,31,60,0.9),rgba(5,13,26,0.95))">
         <img src="/assets/theme1/buildings/resource/farm.svg"
              alt="Farm" class="h-16 w-16 object-contain drop-shadow-lg" />
         <img src="/assets/theme1/buildings/military/garrison.svg"
@@ -65,12 +64,13 @@
              alt="Cannon" class="h-16 w-16 object-contain drop-shadow-lg" />
       </div>
       <div class="p-5 flex flex-col gap-1">
-        <h2 class="text-xl font-bold group-hover:text-white transition-colors">🏗 Buildings</h2>
-        <p class="text-gray-400 text-sm leading-relaxed">
+        <span class="bc-pill bg-slate-700/60 text-slate-200 w-fit mb-1">Buildings</span>
+        <h2 class="text-lg font-bold text-slate-100 group-hover:text-white transition-colors">🏗 Buildings</h2>
+        <p class="text-slate-400 text-sm leading-relaxed">
           Build costs, production rates, training times, and upgrade paths for
           every building you can place in your castle.
         </p>
-        <span class="mt-3 text-xs text-indigo-400 group-hover:text-indigo-300">Browse buildings →</span>
+        <span class="mt-3 text-xs text-blue-400 group-hover:text-blue-300 font-semibold">Browse buildings →</span>
       </div>
     </a>
 

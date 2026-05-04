@@ -19,25 +19,25 @@
   'leader':    'bg-yellow-600 text-yellow-100',
   'co-leader': 'bg-purple-700 text-purple-100',
   'elder':     'bg-blue-700 text-blue-100',
-  'member':    'bg-gray-600 text-gray-200'
+  'member':    'bg-slate-700 text-slate-200'
 } %}
 
 <div x-data="clanHub()" class="max-w-4xl mx-auto">
 
   <!-- Header -->
-  <div class="flex items-center justify-between mb-4 gap-3 flex-wrap">
+  <div class="flex items-center justify-between mb-5 gap-3 flex-wrap">
     <div class="flex items-center gap-3">
-      <h1 class="text-2xl font-bold">⚔ {{ clan.name }}</h1>
-      <span class="text-xs px-2 py-0.5 rounded {{ role_badge[my_role] if my_role in role_badge else 'bg-gray-600 text-gray-200' }}">
+      <h1 class="bc-title text-4xl text-white">{{ clan.name }}</h1>
+      <span class="bc-pill {{ role_badge[my_role] if my_role in role_badge else 'bg-slate-700 text-slate-200' }}">
         {{ my_role|capitalize }}
       </span>
-      <span class="text-xs text-gray-400">{{ clan.member_count }} member{{ 's' if clan.member_count != 1 }}</span>
+      <span class="text-xs text-slate-400">{{ clan.member_count }} member{{ 's' if clan.member_count != 1 }}</span>
     </div>
     <!-- Notification badges -->
     <div class="flex items-center gap-2">
       {% if can_apps and applications %}
       <button @click="tab='applications'"
-              class="relative flex items-center gap-1 text-xs bg-amber-700 hover:bg-amber-600 text-white px-3 py-1 rounded">
+              class="relative flex items-center gap-1 text-xs bg-amber-700 hover:bg-amber-600 text-white px-3 py-1 rounded-full font-semibold">
         🔔 Applications
         <span class="bg-red-500 text-white text-xs rounded-full px-1.5">{{ applications|length }}</span>
       </button>
@@ -47,11 +47,12 @@
   </div>
 
   <!-- Tabs -->
-  <div class="flex gap-1 border-b border-gray-700 mb-4 flex-wrap">
+  <div class="flex gap-1 mb-4 flex-wrap" style="border-bottom:1px solid rgba(30,58,95,0.7)">
     {% for t, label in [('members','👥 Members'),('info','📋 Info'),('applications','📥 Applications'),('attacks','⚔ Attacks')] %}
       {% if t != 'applications' or can_apps %}
       <button @click="tab='{{ t }}'"
-              :class="tab==='{{ t }}' ? 'border-b-2 border-blue-400 text-white' : 'text-gray-400 hover:text-white'"
+              :class="tab==='{{ t }}' ? 'border-b-2 text-white' : 'text-slate-400 hover:text-white'"
+              :style="tab==='{{ t }}' ? 'border-color:#22c55e' : ''"
               class="px-4 py-2 text-sm font-medium transition-colors">
         {{ label }}
         {% if t == 'applications' and applications %}

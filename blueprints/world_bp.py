@@ -49,7 +49,12 @@ def world_map():
             session["world_id"] = worlds[0]["id"]
             world_id = worlds[0]["id"]
         elif len(worlds) > 1:
-            return redirect(url_for("world.select_world"))
+            player = m.get_player_by_id(session["player_id"])
+            if player and player["role"] in ("admin", "mod"):
+                return redirect(url_for("world.select_world"))
+            # Non-admin users are auto-assigned to the first world
+            session["world_id"] = worlds[0]["id"]
+            world_id = worlds[0]["id"]
         else:
             return render_template("world/no_worlds.html")
     world = m.get_world(world_id)
@@ -64,7 +69,7 @@ def world_map():
 
 
 @world_bp.route("/world/select")
-@login_required
+@mod_required
 def select_world():
     worlds = m.get_all_worlds()
     if len(worlds) == 1:
@@ -74,7 +79,7 @@ def select_world():
 
 
 @world_bp.route("/world/select", methods=["POST"])
-@login_required
+@mod_required
 def select_world_post():
     world_id = request.form.get("world_id", type=int)
     if world_id and m.get_world(world_id):

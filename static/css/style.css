@@ -1,5 +1,168 @@
 /* BattleCells — Custom CSS supplement to Tailwind */
 
+/* ════════════════════════════════════════════════════════════════════════
+   BC THEME — global design system
+   ════════════════════════════════════════════════════════════════════════ */
+:root {
+  --bc-navy-900: #050d1a;
+  --bc-navy-800: #0a1628;
+  --bc-navy-700: #0d1f3c;
+  --bc-navy-600: #1e3a5f;
+  --bc-green:    #22c55e;
+  --bc-green-dk: #16a34a;
+  --bc-blue:     #3b82f6;
+}
+
+/* Fonts */
+body {
+  font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
+}
+
+/* ── Nav hover state ────────────────────────────────────────────────── */
+.bc-nav-hover:hover {
+  background: rgba(30, 58, 95, 0.45) !important;
+}
+
+/* ── Mobile flyout hover ────────────────────────────────────────────── */
+.bc-flyout-hover:hover {
+  background: rgba(30, 58, 95, 0.55) !important;
+}
+
+/* ── Desktop active nav link ────────────────────────────────────────── */
+#desktop-nav .desktop-nav-link.text-green-400 {
+  background: rgba(34, 197, 94, 0.1);
+  color: #4ade80 !important;
+}
+
+/* ── Page headings — apply Bebas Neue to all h1.bc-title ────────────── */
+.bc-title {
+  font-family: 'Bebas Neue', sans-serif;
+  letter-spacing: 0.06em;
+}
+
+/* ── Standard card surface ──────────────────────────────────────────── */
+.bc-card {
+  background: var(--bc-navy-700);
+  border: 1px solid var(--bc-navy-600);
+  border-radius: 0.75rem;
+}
+
+/* ── Primary button (green) ─────────────────────────────────────────── */
+.bc-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.5rem 1.25rem;
+  border-radius: 9999px;
+  font-weight: 700;
+  font-size: 0.8rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  transition: background 0.2s, transform 0.18s, box-shadow 0.18s;
+  cursor: pointer;
+}
+.bc-btn-green {
+  background: var(--bc-green);
+  color: #fff;
+}
+.bc-btn-green:hover {
+  background: var(--bc-green-dk);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(34,197,94,0.3);
+}
+.bc-btn-blue {
+  background: var(--bc-blue);
+  color: #fff;
+}
+.bc-btn-blue:hover {
+  background: #2563eb;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(59,130,246,0.3);
+}
+
+/* ── Pill label ─────────────────────────────────────────────────────── */
+.bc-pill {
+  display: inline-block;
+  padding: 0.15rem 0.65rem;
+  border-radius: 9999px;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+/* ── Stat card ──────────────────────────────────────────────────────── */
+.bc-stat {
+  background: var(--bc-navy-700);
+  border: 1px solid var(--bc-navy-600);
+  border-radius: 0.75rem;
+  padding: 1rem 1.25rem;
+}
+.bc-stat-num {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 2rem;
+  line-height: 1;
+  letter-spacing: 0.04em;
+}
+.bc-stat-label {
+  font-size: 0.65rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: #64748b;
+  font-weight: 600;
+}
+
+/* ── Section title strip ────────────────────────────────────────────── */
+.bc-section-title {
+  font-family: 'Bebas Neue', sans-serif;
+  letter-spacing: 0.1em;
+  font-size: 1.4rem;
+  color: #e2e8f0;
+}
+
+/* ── Tab bar active state ───────────────────────────────────────────── */
+.bc-tab-active {
+  border-bottom: 2px solid var(--bc-green) !important;
+  color: #fff !important;
+}
+
+/* ── Flash messages (global) ────────────────────────────────────────── */
+/* Override the gray-900 / gray-800 card feel globally */
+.bg-gray-900.border.border-gray-800 {
+  background: var(--bc-navy-700) !important;
+  border-color: var(--bc-navy-600) !important;
+}
+
+/* ── Bottom nav dot indicator — green ──────────────────────────────── */
+.nav-tab[data-nav-path].text-green-400::after {
+  content: '';
+  display: block;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--bc-green);
+  margin: 2px auto 0;
+}
+/* Remove old blue dot */
+.nav-tab[data-nav-path].text-blue-400::after {
+  background: #60a5fa;
+}
+
+/* ── Form inputs — keep readable on dark navy ───────────────────────── */
+input[class*="bg-gray-800"],
+textarea[class*="bg-gray-800"],
+select[class*="bg-gray-800"] {
+  background: var(--bc-navy-700) !important;
+  border-color: var(--bc-navy-600) !important;
+}
+input[class*="bg-gray-800"]:focus,
+textarea[class*="bg-gray-800"]:focus {
+  border-color: var(--bc-green) !important;
+  outline: none;
+}
+
+
+
 /* Smooth cell transitions on the battlefield grid */
 .battle-cell {
   transition: background-color 0.3s ease, filter 0.28s ease;
