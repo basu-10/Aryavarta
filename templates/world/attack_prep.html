@@ -138,33 +138,9 @@
                 <!-- Name -->
                 <h3 class="font-semibold text-sm text-white truncate mb-2" x-text="preset.name"></h3>
 
-                <!-- Mini Team A battlefield (grid_rows × team_a_cols) -->
-                <div class="rounded overflow-hidden border border-gray-600/50 w-full">
-                  <template x-for="mr in GRID_ROWS" :key="mr">
-                    <div class="flex">
-                      <template x-for="mc in TEAM_A_COLS" :key="mc">
-                        <div class="flex-1 border-r border-b border-black/20 flex flex-col items-center justify-center"
-                             :class="miniGetUnit(preset, mr - 1, mc) ? 'bg-blue-900/50' : 'bg-gray-900/60'"
-                             style="height: 36px; min-width: 0;">
-                          <template x-if="miniGetUnit(preset, mr - 1, mc)">
-                            <div class="flex flex-col items-center gap-px pointer-events-none">
-                              <template x-if="troopIcon(miniGetUnit(preset, mr - 1, mc).type)">
-                                <img :src="troopVisual(miniGetUnit(preset, mr - 1, mc).type, 'idle')"
-                                     :alt="miniGetUnit(preset, mr - 1, mc).type"
-                                     class="w-5 h-5 object-contain" />
-                              </template>
-                              <template x-if="!troopIcon(miniGetUnit(preset, mr - 1, mc).type)">
-                                <span class="text-xs font-bold text-white leading-none"
-                                      x-text="typeAbbrev(miniGetUnit(preset, mr - 1, mc).type)"></span>
-                              </template>
-                              <span class="text-yellow-300 font-semibold leading-none" style="font-size:8px"
-                                    x-text="'×' + fmtQty(miniGetUnit(preset, mr - 1, mc).quantity || 1)"></span>
-                            </div>
-                          </template>
-                        </div>
-                      </template>
-                    </div>
-                  </template>
+                <!-- Team A-only preview via shared battlefield component -->
+                <div class="saved-formation-mini" x-data="savedFormationPreview(preset)">
+                  {% include "components/battlefield_grid.html" %}
                 </div>
 
                 <!-- Footer -->
@@ -190,39 +166,9 @@
           Click any cell to place troops. Only your side (Team A) is shown.
         </p>
 
-        <!-- 4×4 Team A grid -->
-        <div class="inline-block rounded-lg border border-gray-700 overflow-hidden">
-          <template x-for="r in GRID_ROWS" :key="r">
-            <div class="flex">
-              <template x-for="c in TEAM_A_COLS" :key="c">
-                <div @click="toggleBuilderCell(r - 1, c)"
-                     :class="builderCellClass(r - 1, c)"
-                     class="bc-cell-a w-14 h-14 sm:w-16 sm:h-16 cursor-pointer flex flex-col items-center justify-center border-r border-b border-black/20 select-none transition-all">
-
-                  <template x-if="!getBuilderUnit(r - 1, c)">
-                    <span class="text-white/30 text-2xl leading-none pointer-events-none">+</span>
-                  </template>
-
-                  <template x-if="getBuilderUnit(r - 1, c)">
-                    <div class="flex flex-col items-center gap-0.5 pointer-events-none">
-                      <template x-if="troopIcon(getBuilderUnit(r-1, c).type)">
-                        <img :src="troopVisual(getBuilderUnit(r-1, c).type, 'idle')"
-                             :alt="getBuilderUnit(r-1, c).type"
-                             class="w-7 h-7 object-contain drop-shadow" />
-                      </template>
-                      <template x-if="!troopIcon(getBuilderUnit(r-1, c).type)">
-                        <span class="text-sm font-bold leading-none"
-                              x-text="typeAbbrev(getBuilderUnit(r-1, c).type)"></span>
-                      </template>
-                      <span class="text-xs leading-none font-semibold text-yellow-200"
-                            x-text="'×' + fmtQty(getBuilderUnit(r-1, c).quantity)"></span>
-                    </div>
-                  </template>
-
-                </div>
-              </template>
-            </div>
-          </template>
+        <!-- Team A builder grid via shared battlefield component -->
+        <div class="inline-block rounded-lg border border-gray-700 overflow-hidden w-[240px] sm:w-[272px]">
+          {% include "components/battlefield_grid.html" %}
         </div>
 
         <!-- Builder actions -->
@@ -453,6 +399,99 @@ const TROOP_ASSETS  = {
   Wraith:     { icon: '/assets/{{ active_theme }}/troops/monster/map-icons/wraith.svg' },
 };
 
+function savedFormationPreview(preset) {
+  return {
+    preset,
+    canClickBattlefieldCells: false,
+    allowNeutralUnits: false,
+    showNeutralOccupiedMarker: false,
+    showColumnFillControls: false,
+    showBattlefieldLegend: false,
+    battlefieldIconClass: 'w-5 h-5',
+    battlefieldFallbackClass: 'text-xs',
+    battlefieldStatClass: 'text-[8px]',
+
+    getBattlefieldRows() {
+      return GRID_ROWS;
+    },
+    getBattlefieldCols() {
+      return 9;
+    },
+    isBattlefieldColumnVisible(c) {
+      return TEAM_A_COLS.includes(c);
+    },
+    isNeutral(c) {
+      return !TEAM_A_COLS.includes(c);
+    },
+    getBattlefieldCell(r, c) {
+      if (!this.preset._unitMap) {
+        this.preset._unitMap = {};
+        for (const u of (this.preset.army_a || [])) {
+          this.preset._unitMap[`${u.row},${u.col}`] = u;
+        }
+      }
+      return this.preset._unitMap[`${r},${c}`] || null;
+    },
+    getBattlefieldCellClass(r, c) {
+      if (this.isNeutral(c)) return 'bc-cell-neutral opacity-60';
+      return this.getBattlefieldCell(r, c)
+        ? 'bc-cell-a ring-1 ring-inset ring-white/20'
+        : 'bc-cell-a';
+    },
+    getBattlefieldCellStyle(r, c) {
+      void r;
+      void c;
+      return '';
+    },
+    onBattlefieldCellClick(r, c) {
+      void r;
+      void c;
+    },
+    canFillColumn(c) {
+      void c;
+      return false;
+    },
+    onFillColumn(c) {
+      void c;
+    },
+    troopIcon(type) {
+      return (TROOP_ASSETS[type] && TROOP_ASSETS[type].icon) || '';
+    },
+    troopVisual(type, action = 'idle') {
+      const asset = TROOP_ASSETS[type];
+      if (!asset) return '';
+      if (asset.animations && asset.animations[action]) return asset.animations[action];
+      return asset.icon || '';
+    },
+    getBattlefieldCellVisual(cell, r, c) {
+      void r;
+      void c;
+      return this.troopVisual(cell.type, 'idle');
+    },
+    typeAbbrev(type) {
+      const map = {
+        Barbarian: 'B', Archer: 'AR', Troll: 'TR', Wraith: 'WR',
+        Longbowman: 'LB', Hussar: 'HS', Cannon: 'CN', 'Archer Tower': 'AT',
+        Demon: 'DM', Pegasus: 'PG',
+      };
+      return map[type] || type.replace(/[^A-Za-z]/g, '').slice(0, 3).toUpperCase();
+    },
+    getBattlefieldCellFallback(cell) {
+      return this.typeAbbrev(cell.type);
+    },
+    fmtQty(n) {
+      if (!n || n < 1) return '0';
+      if (n >= 1_000_000_000) return (n / 1_000_000_000).toFixed(1).replace(/\.0$/, '') + 'B';
+      if (n >= 1_000_000) return (n / 1_000_000).toFixed(1).replace(/\.0$/, '') + 'M';
+      if (n >= 1_000) return (n / 1_000).toFixed(1).replace(/\.0$/, '') + 'k';
+      return String(n);
+    },
+    getBattlefieldCellText(cell) {
+      return '×' + this.fmtQty(cell.quantity || 1);
+    },
+  };
+}
+
 function attackPrep() {
   return {
     // Presets
@@ -513,30 +552,64 @@ function attackPrep() {
       return this.selectedPresetName === name && !this.usingBuilder;
     },
 
-    miniCellStyle(preset, r, c) {
-      if (!preset._cellMap) {
-        preset._cellMap = {};
-        for (const u of (preset.army_a || [])) {
-          preset._cellMap[`${u.row},${u.col}`] = true;
-        }
-      }
-      const occupied = !!preset._cellMap[`${r},${c}`];
-      return occupied
-        ? 'background: rgba(59,130,246,0.85)'
-        : 'background: rgba(50,78,120,0.35)';
-    },
-
-    miniGetUnit(preset, r, c) {
-      if (!preset._unitMap) {
-        preset._unitMap = {};
-        for (const u of (preset.army_a || [])) {
-          preset._unitMap[`${u.row},${u.col}`] = u;
-        }
-      }
-      return preset._unitMap[`${r},${c}`] || null;
-    },
-
     // ── Builder ───────────────────────────────────────────────────────
+    // Shared battlefield component adapters for Team A-only builder view.
+    canClickBattlefieldCells: true,
+    allowNeutralUnits: false,
+    showNeutralOccupiedMarker: false,
+    showColumnFillControls: false,
+    showBattlefieldLegend: false,
+    battlefieldContainerClass: 'px-0',
+    battlefieldIconClass: 'w-7 h-7',
+    battlefieldFallbackClass: 'text-sm',
+    battlefieldStatClass: 'text-xs',
+    getBattlefieldRows() {
+      return GRID_ROWS;
+    },
+    getBattlefieldCols() {
+      return 9;
+    },
+    isBattlefieldColumnVisible(c) {
+      return TEAM_A_COLS.includes(c);
+    },
+    isNeutral(c) {
+      return !TEAM_A_COLS.includes(c);
+    },
+    getBattlefieldCell(r, c) {
+      return this.getBuilderUnit(r, c);
+    },
+    getBattlefieldCellClass(r, c) {
+      if (this.isNeutral(c)) return 'bc-cell-neutral opacity-60';
+      const ring = this.builderCellClass(r, c);
+      return ring ? `bc-cell-a cursor-pointer ${ring}` : 'bc-cell-a cursor-pointer';
+    },
+    getBattlefieldCellStyle(r, c) {
+      void r;
+      void c;
+      return '';
+    },
+    onBattlefieldCellClick(r, c) {
+      this.toggleBuilderCell(r, c);
+    },
+    canFillColumn(c) {
+      void c;
+      return false;
+    },
+    onFillColumn(c) {
+      void c;
+    },
+    getBattlefieldCellVisual(cell, r, c) {
+      void r;
+      void c;
+      return this.troopVisual(cell.type, 'idle');
+    },
+    getBattlefieldCellFallback(cell) {
+      return this.typeAbbrev(cell.type);
+    },
+    getBattlefieldCellText(cell) {
+      return '×' + this.fmtQty(cell.quantity || 1);
+    },
+
     getBuilderUnit(r, c) {
       return this.builderMap[`${r},${c}`] || null;
     },

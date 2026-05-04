@@ -97,53 +97,36 @@
     </select>
   </div>
 
+  <!-- ── HP POOLS ───────────────────────────────────────────────────────── -->
+  <div class="grid grid-cols-2 gap-4">
+    <!-- Team A Pool -->
+    <div class="bg-gray-900 border border-blue-900/50 rounded-lg px-4 py-3">
+      <div class="flex items-center justify-between mb-1.5">
+        <span class="text-xs font-semibold text-blue-400 uppercase tracking-wider">Team A — Base HP</span>
+        <span class="text-xs font-mono text-blue-300" x-text="fmtPoolHp(poolAHp) + ' / ' + fmtPoolHp(poolAInitial)"></span>
+      </div>
+      <div class="w-full bg-gray-800 rounded-full h-3 overflow-hidden">
+        <div class="h-3 rounded-full bg-blue-500 transition-all duration-200"
+             :style="'width:' + poolAPercent() + '%'"></div>
+      </div>
+    </div>
+    <!-- Team B Pool -->
+    <div class="bg-gray-900 border border-red-900/50 rounded-lg px-4 py-3">
+      <div class="flex items-center justify-between mb-1.5">
+        <span class="text-xs font-semibold text-red-400 uppercase tracking-wider">Team B — Base HP</span>
+        <span class="text-xs font-mono text-red-300" x-text="fmtPoolHp(poolBHp) + ' / ' + fmtPoolHp(poolBInitial)"></span>
+      </div>
+      <div class="w-full bg-gray-800 rounded-full h-3 overflow-hidden">
+        <div class="h-3 rounded-full bg-red-500 transition-all duration-200"
+             :style="'width:' + poolBPercent() + '%'"></div>
+      </div>
+    </div>
+  </div>
+
   <!-- ── BATTLEFIELD (full width) ─────────────────────────────────────── -->
   <div class="space-y-2">
     <h2 class="text-sm font-semibold text-gray-400 uppercase tracking-wider">Battlefield</h2>
-    <div class="battlefield-container">
-      <div class="battlefield-rotatable">
-        <div class="rounded-lg border border-gray-700 overflow-hidden">
-          <template x-for="r in GRID_ROWS" :key="r">
-            <div class="flex">
-              <template x-for="c in GRID_COLS" :key="c">
-                <div
-                  :class="getCellClass(r - 1, c - 1)"
-                  class="battle-cell flex flex-col items-center justify-center select-none"
-                >
-                  <!-- Neutral zone -->
-                  <template x-if="isNeutral(c - 1)">
-                    <span class="text-gray-600/40 text-lg pointer-events-none select-none">|</span>
-                  </template>
-
-                  <!-- Occupied cell -->
-                  <template x-if="!isNeutral(c - 1) && getCell(r - 1, c - 1)">
-                    <div class="flex flex-col items-center gap-0.5 pointer-events-none select-none">
-                      <template x-if="troopIcon(getCell(r - 1, c - 1).type)">
-                        <img :src="troopVisualForCell(getCell(r - 1, c - 1), r - 1, c - 1)"
-                             :alt="getCell(r - 1, c - 1).type"
-                             class="w-8 h-8 object-contain drop-shadow" />
-                      </template>
-                      <template x-if="!troopIcon(getCell(r - 1, c - 1).type)">
-                        <span class="text-base font-bold leading-none"
-                              x-text="unitInitial(getCell(r - 1, c - 1).type)"></span>
-                      </template>
-                      <span class="text-xs leading-none font-semibold text-yellow-200"
-                            x-text="hpBar(getCell(r - 1, c - 1))"></span>
-                    </div>
-                  </template>
-                </div>
-              </template>
-            </div>
-          </template>
-        </div>
-      </div>
-      <!-- Legend -->
-      <div class="flex gap-4 mt-3 text-xs text-gray-500">
-        <div class="flex items-center gap-1"><div class="w-3 h-3 rounded bc-cell-a border border-gray-600"></div> Team A</div>
-        <div class="flex items-center gap-1"><div class="w-3 h-3 rounded bc-cell-b border border-gray-600"></div> Team B</div>
-        <div class="flex items-center gap-1"><div class="w-3 h-3 rounded bc-cell-neutral border border-gray-600"></div> No-man's land</div>
-      </div>
-    </div>
+    {% include "components/battlefield_grid.html" %}
   </div>
 
   <!-- ── TROOP ACTIONS LOG ─────────────────────────────────────────────── -->

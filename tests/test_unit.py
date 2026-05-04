@@ -18,7 +18,7 @@ def test_take_damage_no_defense():
     u = make_unit("A_B1", "A", "Barbarian", 0, 0)
     effective = u.take_damage(3)
     assert effective == 3
-    assert u.hp == 7
+    assert u.hp == 97
 
 
 def test_take_damage_with_defense():
@@ -26,7 +26,7 @@ def test_take_damage_with_defense():
     u.defense = 2
     effective = u.take_damage(3)
     assert effective == 1
-    assert u.hp == 9
+    assert u.hp == 99
 
 
 def test_take_damage_cannot_go_negative():
@@ -34,7 +34,7 @@ def test_take_damage_cannot_go_negative():
     u.defense = 10
     effective = u.take_damage(3)
     assert effective == 0
-    assert u.hp == 10  # unchanged
+    assert u.hp == 100  # unchanged
 
 
 def test_is_alive():
@@ -78,7 +78,7 @@ def test_from_dict_round_trip():
     u = Unit.from_dict(data)
     assert u.unit_id == "B_AR1"
     assert u.team == "B"
-    assert u.hp == 6          # Archer base HP
-    assert u.damage == 2
+    assert u.hp == 60         # Archer base HP
+    assert u.damage == 20
     assert u.range == 2       # updated Archer range
     assert u.speed == 0.5     # updated Archer speed

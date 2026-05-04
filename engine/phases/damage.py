@@ -5,6 +5,8 @@ All attacks fire simultaneously:
   - Effective Damage = max(0, attacker.damage − target.defense)
   - HP reductions are collected first, then applied all at once.
   - Units do NOT die during this phase (see death.py).
+  - Units with intent 'attack_pool' deal full damage directly to the opposing HP pool
+    (no defense reduction — the pool is a structural target, not an armoured unit).
 
 Mutates unit.hp and sets unit._damage_dealt / unit._action.
 """
@@ -17,10 +19,14 @@ if TYPE_CHECKING:
     from engine.unit import Unit
 
 
-def apply_damage(units: list["Unit"]) -> list[dict]:
+def apply_damage(units: list["Unit"]) -> tuple[list[dict], dict[str, int]]:
     """
     Apply simultaneous damage for all attackers that have a valid target.
-    Returns a list of event dicts (attacker_id, target_id, damage).
+
+    Returns:
+      - list of event dicts (attacker_id, target_id, damage) for unit attacks
+      - dict {"A": <int>, "B": <int>} with total pool damage dealt this tick
+        (key = which pool was attacked)
     """
     # Build a lookup map: unit_id -> Unit
     unit_map: dict[str, "Unit"] = {u.unit_id: u for u in units}
@@ -28,10 +34,22 @@ def apply_damage(units: list["Unit"]) -> list[dict]:
     # Accumulate damage per target (simultaneous)
     pending: dict[str, int] = defaultdict(int)  # target_id -> total incoming damage
     attacker_events: list[dict] = []
+    pool_damage: dict[str, int] = {"A": 0, "B": 0}
 
     for attacker in units:
         if not attacker.is_alive():
             continue
+
+        # --- Pool attack ---
+        if attacker._intent == "attack_pool":
+            # Team A units attack Team B pool, Team B units attack Team A pool
+            target_pool = "B" if attacker.team == "A" else "A"
+            pool_damage[target_pool] += attacker.damage
+            attacker._damage_dealt = attacker.damage
+            attacker._action = "attack_pool"
+            continue
+
+        # --- Normal unit attack ---
         if attacker._intent != "attack" or attacker._target_id is None:
             continue
 
@@ -65,4 +83,4 @@ def apply_damage(units: list["Unit"]) -> list[dict]:
         if target:
             target.hp -= total_dmg
 
-    return attacker_events
+    return attacker_events, pool_damage

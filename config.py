@@ -1,12 +1,19 @@
 # BattleCells — Central Configuration
 
 GRID_ROWS = 4
-GRID_COLS = 9
+GRID_COLS = 11   # Columns 0-10: A-defense(0) | A-troops(1-4) | NML(5) | B-troops(6-9) | B-defense(10)
 
 # Valid placement columns per team (units face each other left vs right)
-TEAM_A_COLS = [0, 1, 2, 3]   # Team A starts on the left
-TEAM_B_COLS = [5, 6, 7, 8]   # Team B starts on the right
-# Column 4 is no-man's land
+TEAM_A_COLS = [1, 2, 3, 4]   # Team A starts on the left
+TEAM_B_COLS = [6, 7, 8, 9]   # Team B starts on the right
+# Column 5 is no-man's land
+NO_MANS_LAND_COL = 5
+# Defense columns — buildings (Cannon, Archer Tower) spawn here, outside the troop zone
+TEAM_A_DEF_COL = 0   # behind Team A's back line; Team B units attack this column
+TEAM_B_DEF_COL = 10  # behind Team B's back line; Team A units attack this column
+
+# Building unit types — stationary, not player-dispatched, only appear as defenders
+BUILDING_TYPES = ["Cannon", "Archer Tower"]
 
 MAX_TICKS = 500  # Safety ceiling to prevent infinite loops — raised to handle high-HP battles
 

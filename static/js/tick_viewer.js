@@ -47,6 +47,21 @@ function tickViewer() {
       return entries;
     },
 
+    // ── HP Pool helpers ────────────────────────────────────────────────── //
+    get poolAHp()       { return this.currentSnap.pool_a_hp       ?? 0; },
+    get poolBHp()       { return this.currentSnap.pool_b_hp       ?? 0; },
+    get poolAInitial()  { return this.currentSnap.pool_a_initial  ?? 1; },
+    get poolBInitial()  { return this.currentSnap.pool_b_initial  ?? 1; },
+    poolAPercent()  { return Math.max(0, Math.round(this.poolAHp / this.poolAInitial * 100)); },
+    poolBPercent()  { return Math.max(0, Math.round(this.poolBHp / this.poolBInitial * 100)); },
+    fmtPoolHp(n) {
+      if (!n && n !== 0) return '?';
+      if (n >= 1_000_000_000) return (n / 1_000_000_000).toFixed(1).replace(/\.0$/, '') + 'B';
+      if (n >= 1_000_000)     return (n / 1_000_000).toFixed(1).replace(/\.0$/, '') + 'M';
+      if (n >= 1_000)         return (n / 1_000).toFixed(1).replace(/\.0$/, '') + 'k';
+      return String(n);
+    },
+
     // ── Lifecycle ─────────────────────────────────────────────────────── //
     init() {
       this.ticks = TICK_DATA;
@@ -127,8 +142,13 @@ function tickViewer() {
 
     // ── Grid rendering ────────────────────────────────────────────────── //
     isNeutral(c) {
-      // Column 4 is no-man's land (TEAM_A_COLS=[0..3], TEAM_B_COLS=[5..8])
-      return c === 4;
+      // Column 5 is no-man's land; columns 0 and 10 are defense columns
+      // Defense cols are shown with a distinct style but are not "neutral" blocked cells
+      return c === 5;
+    },
+
+    isDefenseCol(c) {
+      return c === 0 || c === GRID_COLS - 1;
     },
 
     getCell(r, c) {
@@ -137,11 +157,70 @@ function tickViewer() {
     },
 
     getCellClass(r, c) {
-      if (this.isNeutral(c)) return 'bc-cell-neutral';
-      const teamCls = c < 4 ? 'bc-cell-a' : 'bc-cell-b';
       const cell = this.getCell(r, c);
+      if (this.isNeutral(c)) {
+        return cell ? 'bc-cell-neutral ring-1 ring-inset ring-amber-200/35' : 'bc-cell-neutral';
+      }
+      // Defense columns use a darker variant of each team's color
+      if (c === 0) {
+        return cell ? 'bc-cell-a ring-2 ring-inset ring-blue-300/50 opacity-90' : 'bc-cell-a opacity-60';
+      }
+      if (c === GRID_COLS - 1) {
+        return cell ? 'bc-cell-b ring-2 ring-inset ring-red-300/50 opacity-90' : 'bc-cell-b opacity-60';
+      }
+      const teamCls = c < 5 ? 'bc-cell-a' : 'bc-cell-b';
       if (cell) return teamCls + ' ring-1 ring-inset ring-white/20';
       return teamCls;
+    },
+
+    // Shared battlefield component adapters
+    canClickBattlefieldCells: false,
+    allowNeutralUnits: true,
+    showNeutralOccupiedMarker: true,
+    showColumnFillControls: false,
+    battlefieldIconClass: 'w-14 h-14',
+    battlefieldFallbackClass: 'text-xl',
+    battlefieldStatClass: 'text-[10px]',
+    getBattlefieldRows() {
+      return GRID_ROWS;
+    },
+    getBattlefieldCols() {
+      return GRID_COLS;
+    },
+    isBattlefieldColumnVisible(c) {
+      void c;
+      return true;
+    },
+    getBattlefieldCell(r, c) {
+      return this.getCell(r, c);
+    },
+    getBattlefieldCellClass(r, c) {
+      return this.getCellClass(r, c);
+    },
+    getBattlefieldCellStyle(r, c) {
+      void r;
+      void c;
+      return '';
+    },
+    onBattlefieldCellClick(r, c) {
+      void r;
+      void c;
+    },
+    canFillColumn(c) {
+      void c;
+      return false;
+    },
+    onFillColumn(c) {
+      void c;
+    },
+    getBattlefieldCellVisual(cell, r, c) {
+      return this.troopVisualForCell(cell, r, c);
+    },
+    getBattlefieldCellFallback(cell) {
+      return this.unitInitial(cell.type);
+    },
+    getBattlefieldCellText(cell) {
+      return this.hpBar(cell);
     },
 
     unitInitial(type) {
@@ -239,8 +318,21 @@ function tickViewer() {
       return this.troopVisual(cell.type, action);
     },
 
+    survivingQty(cell) {
+      if (!cell) return 0;
+      const qty = cell.quantity || 1;
+      if (qty <= 1) return cell.hp > 0 ? 1 : 0;
+      const maxHp = cell.max_hp || 1;
+      return Math.max(0, Math.floor(cell.hp / (maxHp / qty)));
+    },
+
     hpBar(cell) {
       if (!cell) return '';
+      const qty = cell.quantity || 1;
+      if (qty > 1) {
+        const surviving = this.survivingQty(cell);
+        return `×${surviving}/${qty}`;
+      }
       return `${cell.hp}/${cell.max_hp} HP`;
     },
 
@@ -320,6 +412,17 @@ function tickViewer() {
             target: null,
             teamB:  null,
             detail: null,
+          });
+        } else if (ev.type === 'pool_attack') {
+          const attackerTeam = ev.target_pool === 'B' ? 'A' : 'B';
+          entries.push({
+            icon: '💥',
+            actor:  `Team ${attackerTeam}`,
+            teamA:  attackerTeam,
+            verb:   `struck Team ${ev.target_pool} base for`,
+            target: `${this.fmtPoolHp(ev.damage)} dmg`,
+            teamB:  ev.target_pool,
+            detail: `pool HP: ${this.fmtPoolHp(ev.pool_hp)}`,
           });
         } else if (ev.type === 'death') {
           const u = unitMap[ev.unit_id] || prevUnitMap[ev.unit_id] || {};

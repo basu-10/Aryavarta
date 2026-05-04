@@ -1,0 +1,151 @@
+{
+  "name": "hussar and longbowmen2",
+  "army_a": [
+    {
+      "col": 3,
+      "quantity": 100,
+      "row": 3,
+      "team": "A",
+      "type": "Hussar",
+      "unit_id": "A_Hussar_3_3"
+    },
+    {
+      "col": 3,
+      "quantity": 100,
+      "row": 2,
+      "team": "A",
+      "type": "Hussar",
+      "unit_id": "A_Hussar_2_3"
+    },
+    {
+      "col": 3,
+      "quantity": 100,
+      "row": 1,
+      "team": "A",
+      "type": "Hussar",
+      "unit_id": "A_Hussar_1_3"
+    },
+    {
+      "col": 3,
+      "quantity": 100,
+      "row": 0,
+      "team": "A",
+      "type": "Hussar",
+      "unit_id": "A_Hussar_0_3"
+    },
+    {
+      "unit_id": "A_Longbowman_0_2",
+      "team": "A",
+      "type": "Longbowman",
+      "row": 0,
+      "col": 2,
+      "quantity": 1000
+    },
+    {
+      "unit_id": "A_Longbowman_1_2",
+      "team": "A",
+      "type": "Longbowman",
+      "row": 1,
+      "col": 2,
+      "quantity": 1000
+    },
+    {
+      "unit_id": "A_Longbowman_2_2",
+      "team": "A",
+      "type": "Longbowman",
+      "row": 2,
+      "col": 2,
+      "quantity": 1000
+    },
+    {
+      "unit_id": "A_Longbowman_3_2",
+      "team": "A",
+      "type": "Longbowman",
+      "row": 3,
+      "col": 2,
+      "quantity": 1000
+    },
+    {
+      "unit_id": "A_LB9",
+      "team": "A",
+      "type": "Longbowman",
+      "row": 0,
+      "col": 1,
+      "quantity": 1000
+    },
+    {
+      "unit_id": "A_LB10",
+      "team": "A",
+      "type": "Longbowman",
+      "row": 1,
+      "col": 1,
+      "quantity": 1000
+    },
+    {
+      "unit_id": "A_LB11",
+      "team": "A",
+      "type": "Longbowman",
+      "row": 2,
+      "col": 1,
+      "quantity": 1000
+    },
+    {
+      "unit_id": "A_LB12",
+      "team": "A",
+      "type": "Longbowman",
+      "row": 3,
+      "col": 1,
+      "quantity": 1000
+    },
+    {
+      "unit_id": "A_LB13",
+      "team": "A",
+      "type": "Longbowman",
+      "row": 3,
+      "col": 0,
+      "quantity": 1000
+    },
+    {
+      "unit_id": "A_LB14",
+      "team": "A",
+      "type": "Longbowman",
+      "row": 2,
+      "col": 0,
+      "quantity": 1000
+    },
+    {
+      "unit_id": "A_LB15",
+      "team": "A",
+      "type": "Longbowman",
+      "row": 0,
+      "col": 0,
+      "quantity": 1000
+    },
+    {
+      "unit_id": "A_LB16",
+      "team": "A",
+      "type": "Longbowman",
+      "row": 1,
+      "col": 0,
+      "quantity": 1000
+    }
+  ],
+  "army_b": [
+    {
+      "unit_id": "B_TR1",
+      "team": "B",
+      "type": "Troll",
+      "row": 0,
+      "col": 5,
+      "quantity": 1
+    },
+    {
+      "unit_id": "B_WR2",
+      "team": "B",
+      "type": "Wraith",
+      "row": 0,
+      "col": 6,
+      "quantity": 1
+    }
+  ]
+}

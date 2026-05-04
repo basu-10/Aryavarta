@@ -205,10 +205,11 @@ class TestTargetingPhase:
         assert attacker._target_id == "B_B1"
 
     def test_tie_break_by_unit_id(self):
-        """Two equidistant in-range enemies — alphabetically-first unit_id wins."""
-        attacker = make_unit("A_B1", "A", "Barbarian", 0, 3)
-        e1 = make_unit("B_B2", "B", "Barbarian", 0, 4)
-        e2 = make_unit("B_B1", "B", "Barbarian", 1, 4)  # same Chebyshev=1
+        """Two equidistant off-row enemies — alphabetically-first unit_id wins."""
+        # Attacker in middle row so both targets are diagonal (neither direct-front)
+        attacker = make_unit("A_B1", "A", "Barbarian", 1, 3)
+        e1 = make_unit("B_B2", "B", "Barbarian", 0, 4)  # Chebyshev=1, row 0
+        e2 = make_unit("B_B1", "B", "Barbarian", 2, 4)  # Chebyshev=1, row 2
         attacker._intent = "attack"
         resolve_targeting([attacker, e1, e2])
         assert attacker._target_id == "B_B1"  # alphabetically first
@@ -242,7 +243,7 @@ class TestDamagePhase:
         attacker._intent = "attack"
         attacker._target_id = "B_B1"
         apply_damage([attacker, target])
-        assert target.hp == 9  # 10 - 1
+        assert target.hp == 90  # 100 - 10
 
     def test_simultaneous_damage(self):
         """Both units attack each other — neither dies mid-phase."""
@@ -251,9 +252,9 @@ class TestDamagePhase:
         a._intent = "attack"; a._target_id = "B_B1"
         b._intent = "attack"; b._target_id = "A_B1"
         apply_damage([a, b])
-        # Both should have taken 1 HP of damage
-        assert a.hp == 9
-        assert b.hp == 9
+        # Both should have taken 10 HP of damage
+        assert a.hp == 90
+        assert b.hp == 90
 
     def test_multiple_attackers_on_one_target(self):
         """Two units attacking same target — damage accumulates."""
@@ -263,17 +264,17 @@ class TestDamagePhase:
         a1._intent = "attack"; a1._target_id = "B_B1"
         a2._intent = "attack"; a2._target_id = "B_B1"
         apply_damage([a1, a2, t])
-        assert t.hp == 8  # 10 - 1 - 1
+        assert t.hp == 80  # 100 - 10 - 10
 
     def test_returns_events(self):
         a = make_unit("A_B1", "A", "Barbarian", 0, 1)
         t = make_unit("B_B1", "B", "Barbarian", 0, 2)
         a._intent = "attack"; a._target_id = "B_B1"
-        events = apply_damage([a, t])
+        events, pool_damage = apply_damage([a, t])
         assert len(events) == 1
         assert events[0]["attacker_id"] == "A_B1"
         assert events[0]["target_id"] == "B_B1"
-        assert events[0]["damage"] == 1
+        assert events[0]["damage"] == 10  # Barbarian damage=10, target defense=0
 
 
 # ─────────────────────────────────────────────────────────────────────────────

@@ -52,6 +52,16 @@ class Unit:
     def is_alive(self) -> bool:
         return self.alive and self.hp > 0
 
+    @property
+    def surviving_quantity(self) -> int:
+        """Return the number of troops that would survive based on remaining HP."""
+        if self.quantity <= 1:
+            return 1 if self.hp > 0 else 0
+        if self.max_hp <= 0:
+            return 0
+        hp_per_troop = self.max_hp / self.quantity
+        return max(0, int(self.hp / hp_per_troop))
+
     def take_damage(self, attacker_damage: int) -> int:
         """Apply damage, return effective damage dealt."""
         effective = max(0, attacker_damage - self.defense)
@@ -75,6 +85,7 @@ class Unit:
             "col": self.col,
             "hp": self.hp,
             "max_hp": self.max_hp,
+            "quantity": self.quantity,
             "alive": self.alive,
         }
         if self.ammo is not None:
@@ -91,7 +102,10 @@ class Unit:
         if utype not in all_stats:
             raise KeyError(f"Unknown unit type: '{utype}'")
         stats = all_stats[utype]
-        hp = data.get("hp", stats["hp"])
+        qty = max(1, int(data.get("quantity", 1)))
+        # If an explicit hp is provided (e.g. restoring a mid-battle unit) use it;
+        # otherwise scale base HP by quantity so stacked troops fight as one block.
+        hp = data.get("hp", stats["hp"] * qty)
         return cls(
             unit_id=data["unit_id"],
             team=data["team"],
@@ -99,10 +113,11 @@ class Unit:
             row=data["row"],
             col=data["col"],
             hp=hp,
-            max_hp=stats["hp"],
-            damage=stats["damage"],
-            defense=stats["defense"],
+            max_hp=stats["hp"] * qty,
+            damage=stats["damage"] * qty,
+            defense=stats["defense"] * qty,
             range=stats["range"],
             speed=stats["speed"],
             ammo=data.get("ammo"),
+            quantity=qty,
         )

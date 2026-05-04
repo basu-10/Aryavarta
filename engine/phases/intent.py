@@ -2,15 +2,18 @@
 intent.py — Phase 1: Intent Evaluation
 
 Each living unit inspects the current battlefield and records
-what it intends to do this tick: 'attack', 'move', 'retreat', or 'hold'.
+what it intends to do this tick: 'attack', 'move', 'retreat', 'attack_pool', or 'hold'.
 
 Rules (in priority order):
-1. No living enemies anywhere → hold.
+1. No living enemies anywhere → if unit is at/past the enemy defense column, attack pool;
+   otherwise hold.
 2. Ranged unit (range > 1) has an enemy directly ahead in the same row
    AND that enemy is closer than the unit's range (distance < range)
    → retreat (move backward to re-establish optimal range).
 3. Any enemy is within the unit's attack range → attack.
-4. Otherwise → move (advance toward enemy territory).
+4. Unit is at the enemy's defense column (dead-end) with no enemies in range
+   → attack_pool (hit the opposing HP pool directly).
+5. Otherwise → move (advance toward enemy territory).
 
 No positions change here — pure read-only resolution.
 """
@@ -20,6 +23,8 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from engine.unit import Unit
+
+import config
 
 
 def chebyshev(u1: "Unit", u2: "Unit") -> int:
@@ -63,10 +68,30 @@ def _front_enemies_too_close(unit: "Unit", all_units: list["Unit"]) -> list["Uni
     ]
 
 
-def evaluate_intents(units: list["Unit"]) -> None:
+def _unit_can_reach_pool(unit: "Unit") -> bool:
+    """
+    Return True if this unit is positioned to attack the opposing HP pool.
+    Team A attacks Team B's pool (TEAM_B_DEF_COL); their range must bridge the gap.
+    Team B attacks Team A's pool (TEAM_A_DEF_COL); their range must bridge the gap.
+    """
+    if unit.team == "A":
+        # Distance from unit's column to Team B defense column
+        dist = config.TEAM_B_DEF_COL - unit.col
+    else:
+        # Distance from unit's column to Team A defense column
+        dist = unit.col - config.TEAM_A_DEF_COL
+    return dist >= 0 and dist <= unit.range
+
+
+def evaluate_intents(units: list["Unit"], pool_a_hp: int = 0, pool_b_hp: int = 0) -> None:
     """
     Mutate each unit's _intent field in-place.
     Called at the start of every tick before any other phase.
+
+    pool_a_hp / pool_b_hp — current HP pool values passed in from Battle so
+    intent can fall back to attack_pool when all enemies are dead but the
+    opposing pool is still standing.  Defaults to 0 (no pool / pool dead) so
+    existing tests that don't pass pool values still work correctly.
     """
     living = [u for u in units if u.is_alive()]
 
@@ -75,8 +100,17 @@ def evaluate_intents(units: list["Unit"]) -> None:
 
         enemies = [u for u in living if u.team != unit.team]
         if not enemies:
-            unit._intent = "hold"
-            unit._action = "hold"
+            # No living enemies — attack pool if in range, advance toward it if not,
+            # or hold if no HP pool system is active (pool_hp == 0).
+            opposing_pool_hp = pool_b_hp if unit.team == "A" else pool_a_hp
+            if opposing_pool_hp > 0:
+                if _unit_can_reach_pool(unit):
+                    unit._intent = "attack_pool"
+                else:
+                    unit._intent = "move"  # keep advancing toward enemy pool
+            else:
+                unit._intent = "hold"
+                unit._action = "hold"
             continue
 
         # Priority 1: ranged kiting — back up if a front enemy is too close
@@ -89,5 +123,11 @@ def evaluate_intents(units: list["Unit"]) -> None:
             unit._intent = "attack"
             continue
 
-        # Priority 3: advance toward the enemy
+        # Priority 3: attack HP pool if at enemy's defense column end and can reach it
+        opposing_pool_hp = pool_b_hp if unit.team == "A" else pool_a_hp
+        if opposing_pool_hp > 0 and _unit_can_reach_pool(unit):
+            unit._intent = "attack_pool"
+            continue
+
+        # Priority 4: advance toward the enemy
         unit._intent = "move"

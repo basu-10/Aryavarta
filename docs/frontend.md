@@ -236,7 +236,7 @@ The castle page includes an `Owned Forts` card grid with per-fort summary detail
 
 ## Battle simulation and replay asset wiring
 
-- Setup page (`/setup`):
+- Simulate battle page (`/setup`):
    - Unit cells and Add Troop modal use troop map-icons for both human and monster factions.
    - Grid area overlays `/assets/theme1/ui/battlefield/grid.svg`.
 - Replay page (`/results/<id>`):
@@ -248,7 +248,7 @@ The castle page includes an `Owned Forts` card grid with per-fort summary detail
 - Animated action GIFs are stored under `assets/theme1/troops/human/animations/<troop>/`.
 - Current animated troops: `archer`, `barbarian`.
 - Action files used: `idle.gif`, `walk.gif`, `attack.gif`, `hurt.gif`, `death.gif`.
-- Setup page (`/setup`) uses `idle` animations for in-cell previews and troop-picker cards.
+- Simulate page (`/setup`) uses `idle` animations for in-cell previews and troop-picker cards.
 - Replay page (`/results/<id>`) switches animation per unit state:
    - `attack` when unit action is attack,
    - `walk` when unit action is move,

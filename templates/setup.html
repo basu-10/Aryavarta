@@ -1,5 +1,6 @@
 ﻿{% extends "base.html" %}
-{% block title %}Setup â€” BattleCells{% endblock %}
+{% block title %}Simulate  €” BattleCells{% endblock %}
+{% block main_class %}px-3 py-6 xl:px-6 2xl:px-8 max-w-[1600px] mx-auto{% endblock %}
 
 {% block content %}
 <div
@@ -12,67 +13,11 @@
   <div>
     <h1 class="text-2xl font-bold">Battle Simulator</h1>
     <p class="text-gray-400 text-sm mt-1">
-      Click any cell to place troops. One troop type per cell â€” stack any quantity.
+      Click any cell to place troops. One troop type per cell  €” stack any quantity.
     </p>
   </div>
 
-  <!-- â”€â”€ BATTLEFIELD GRID â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ -->
-  <!-- Battlefield — rotates 90° on mobile so long axis is vertical -->
-  <div class="battlefield-container">
-    <div class="battlefield-rotatable">
-
-      <!-- Grid: CSS-styled cells, no SVG background -->
-      <div class="rounded-lg border border-gray-700 overflow-hidden">
-        <template x-for="r in {{ grid_rows }}" :key="r">
-          <div class="flex">
-            <template x-for="c in {{ grid_cols }}" :key="c">
-              <div
-                @click="toggleCell(r - 1, c - 1)"
-                :class="cellClass(r - 1, c - 1)"
-                class="battle-cell cursor-pointer flex flex-col items-center justify-center select-none"
-              >
-                <!-- Neutral zone -->
-                <template x-if="isNeutral(c - 1)">
-                  <span class="text-gray-600/40 text-lg pointer-events-none select-none">|</span>
-                </template>
-
-                <!-- Empty team cell -->
-                <template x-if="!isNeutral(c - 1) && !getUnit(r - 1, c - 1)">
-                  <span class="text-white/40 text-3xl leading-none pointer-events-none select-none">+</span>
-                </template>
-
-                <!-- Occupied cell: icon + formatted quantity -->
-                <template x-if="!isNeutral(c - 1) && getUnit(r - 1, c - 1)">
-                  <div class="flex flex-col items-center gap-0.5 pointer-events-none select-none">
-                    <template x-if="troopIcon(getUnit(r - 1, c - 1).type)">
-                      <img :src="troopVisual(getUnit(r - 1, c - 1).type, 'idle')"
-                           :alt="getUnit(r - 1, c - 1).type"
-                           class="w-8 h-8 object-contain drop-shadow" />
-                    </template>
-                    <template x-if="!troopIcon(getUnit(r - 1, c - 1).type)">
-                      <span class="text-base font-bold leading-none"
-                            x-text="typeAbbrev(getUnit(r - 1, c - 1).type)"></span>
-                    </template>
-                    <span class="text-xs leading-none font-semibold text-yellow-200"
-                          x-text="'×' + fmtQty(getUnit(r - 1, c - 1).quantity || 1)"></span>
-                  </div>
-                </template>
-              </div>
-            </template>
-          </div>
-        </template>
-      </div>
-
-    </div>
-    <!-- Legend -->
-    <div class="flex gap-4 mt-3 text-xs text-gray-500">
-      <div class="flex items-center gap-1"><div class="w-3 h-3 rounded bc-cell-a border border-gray-600"></div> Team A</div>
-      <div class="flex items-center gap-1"><div class="w-3 h-3 rounded bc-cell-b border border-gray-600"></div> Team B</div>
-      <div class="flex items-center gap-1"><div class="w-3 h-3 rounded bc-cell-neutral border border-gray-600"></div> No-man's land</div>
-    </div>
-  </div>
-
-  <!-- â”€â”€ CONTROLS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ -->
+  <!-- Controls above battlefield -->
   <div class="bg-gray-900/70 border border-gray-800 rounded-lg p-4">
     <div class="flex items-center gap-3 flex-wrap">
       <button
@@ -100,7 +45,7 @@
         class="px-5 py-2 rounded bg-green-600 hover:bg-green-500 disabled:opacity-50 disabled:cursor-not-allowed text-sm font-semibold transition-colors"
       >
         <span x-show="!submitting">Run Battle</span>
-        <span x-show="submitting">Simulatingâ€¦</span>
+        <span x-show="submitting">Simulating €¦</span>
       </button>
 
       <span
@@ -112,7 +57,26 @@
     </div>
   </div>
 
-  <!-- â”€â”€ CELL MODAL â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ -->
+  <!--    BATTLEFIELD GRID                                                 -->
+  <!-- Battlefield — rotates 90° on mobile so long axis is vertical -->
+  <!-- Paste-mode banner -->
+  <template x-if="pasteMode">
+    <div class="flex items-center gap-3 px-4 py-2.5 rounded-lg bg-indigo-900/60 border border-indigo-600/70 text-sm">
+      <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-indigo-300 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+      <span class="text-indigo-200">
+        Clipboard: <span class="font-semibold text-white" x-text="clipboardUnit ? clipboardUnit.type + ' ×' + fmtQty(clipboardUnit.quantity) : ''"></span>
+        &mdash; click cells to paste
+      </span>
+      <template x-if="pasteModeError">
+        <span class="text-red-400 text-xs ml-1" x-text="pasteModeError"></span>
+      </template>
+      <button @click="clearClipboard()" class="ml-auto text-xs px-3 py-1 rounded bg-gray-700 hover:bg-gray-600 text-gray-300 transition-colors">Clear clipboard</button>
+    </div>
+  </template>
+
+  {% include "components/battlefield_grid.html" %}
+
+  <!--    CELL MODAL                                                          -->
   <!-- PRESET MODAL -->
   <template x-if="showPresetModal">
     <div
@@ -194,7 +158,7 @@
             <p class="text-xs text-gray-400 mt-0.5"
                x-text="'Team ' + teamOfCol(modalCell.c) + ' deployment zone'"></p>
           </div>
-          <button @click="closeTroopModal()" class="text-gray-500 hover:text-white text-xl leading-none px-1">âœ•</button>
+          <button @click="closeTroopModal()" class="text-gray-500 hover:text-white text-xl leading-none px-1"> œ•</button>
         </div>
 
         <!-- Current state / quantity controls -->
@@ -227,6 +191,10 @@
                   placeholder="e.g. 5M"
                 />
                 <button
+                  @click="copyCell()"
+                  class="px-3 py-1.5 text-xs bg-indigo-900/50 hover:bg-indigo-800/70 border border-indigo-700/60 rounded text-indigo-300 whitespace-nowrap"
+                >Copy</button>
+                <button
                   @click="clearCell()"
                   class="px-3 py-1.5 text-xs bg-red-900/50 hover:bg-red-800/70 border border-red-800/60 rounded text-red-300 whitespace-nowrap"
                 >Clear</button>
@@ -245,7 +213,7 @@
                 class="w-36 bg-gray-800 border border-gray-700 rounded px-3 py-1.5 text-sm font-mono focus:outline-none focus:border-indigo-500"
                 placeholder="e.g. 1, 1k, 5M"
               />
-              <span class="text-xs text-gray-500">k = Ã—1,000 &nbsp;Â·&nbsp; M = Ã—1,000,000 &nbsp;Â·&nbsp; B = Ã—1,000,000,000</span>
+              <span class="text-xs text-gray-500">k = Ã—1,000 &nbsp; ·&nbsp; M = Ã—1,000,000 &nbsp; ·&nbsp; B = Ã—1,000,000,000</span>
             </div>
           </template>
         </div>
@@ -337,12 +305,12 @@
     </div>
   </template>
 
-  <!-- â”€â”€ VALIDATION ERROR â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ -->
+  <!--    VALIDATION ERROR                                                -->
   <template x-if="errorMsg">
     <div class="bg-red-900 border border-red-700 text-red-200 rounded px-4 py-3 text-sm" x-text="errorMsg"></div>
   </template>
 
-  <!-- â”€â”€ ARMY SUMMARY â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ -->
+  <!--    ARMY SUMMARY                                                   -->
   <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
     <template x-for="[label, key, colorClass] in [['Team A (Blue)', 'army_a', 'text-blue-400'], ['Team B (Red)', 'army_b', 'text-red-400']]" :key="key">
       <div class="bg-gray-900 border border-gray-800 rounded-lg p-5">
@@ -357,7 +325,7 @@
                 <span class="text-gray-300" x-text="entry.type"></span>
                 <span class="font-mono text-white">
                   <span x-text="entry.cells"></span> cell<span x-text="entry.cells > 1 ? 's' : ''"></span>
-                  &nbsp;Â·&nbsp;
+                  &nbsp; ·&nbsp;
                   <span class="text-yellow-300 font-semibold" x-text="'Ã—' + fmtQty(entry.totalQty)"></span> total
                 </span>
               </div>
@@ -428,15 +396,20 @@
       presetSaveMsg: '',
       presetSaveError: false,
 
+      // Clipboard / paste mode
+      clipboardUnit: null,
+      pasteMode: false,
+      pasteModeError: '',
+
       // Preset modal state
       showPresetModal: false,
       presetCards: [],
 
       init() {
-        // No-op â€” presets loaded on demand
+        // No-op  €” presets loaded on demand
       },
 
-      // â”€â”€ Quantity helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+      //    Quantity helpers                                              
       parseQty(str) {
         if (!str) return 1;
         const s = String(str).trim().toLowerCase().replace(/,/g, '').replace(/\s/g, '');
@@ -457,7 +430,7 @@
         return String(n);
       },
 
-      // â”€â”€ Cell helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+      //    Cell helpers                                                  
       isNeutral(c) {
         return !TEAM_A_COLS.includes(c) && !TEAM_B_COLS.includes(c);
       },
@@ -519,7 +492,68 @@
         });
       },
 
-      // â”€â”€ Modal â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+      // Shared battlefield component adapters
+      canClickBattlefieldCells: true,
+      allowNeutralUnits: false,
+      showNeutralOccupiedMarker: false,
+      get showColumnFillControls() {
+        return this.pasteMode;
+      },
+      get battlefieldIconClass() {
+        return 'w-24 h-24';
+      },
+      get battlefieldFallbackClass() {
+        return 'text-3xl';
+      },
+      get battlefieldStatClass() {
+        return 'text-xs';
+      },
+      getBattlefieldRows() {
+        return GRID_ROWS;
+      },
+      getBattlefieldCols() {
+        return GRID_COLS;
+      },
+      isBattlefieldColumnVisible(c) {
+        void c;
+        return true;
+      },
+      getBattlefieldCell(r, c) {
+        return this.getUnit(r, c);
+      },
+      getBattlefieldCellClass(r, c) {
+        return this.cellClass(r, c);
+      },
+      getBattlefieldCellStyle(r, c) {
+        if (!this.pasteMode || this.isNeutral(c) || !this.clipboardUnit) return '';
+        return 'outline: 2px dashed rgba(99,102,241,0.7); outline-offset: -2px;';
+      },
+      onBattlefieldCellClick(r, c) {
+        if (this.pasteMode) {
+          this.pasteToCell(r, c);
+          return;
+        }
+        this.toggleCell(r, c);
+      },
+      canFillColumn(c) {
+        return this.pasteMode && this.clipboardUnit && !this.isNeutral(c);
+      },
+      onFillColumn(c) {
+        this.fillColumnFromClipboard(c);
+      },
+      getBattlefieldCellVisual(cell, r, c) {
+        void r;
+        void c;
+        return this.troopVisual(cell.type, 'idle');
+      },
+      getBattlefieldCellFallback(cell) {
+        return this.typeAbbrev(cell.type);
+      },
+      getBattlefieldCellText(cell) {
+        return '×' + this.fmtQty(cell.quantity || 1);
+      },
+
+      //    Modal                                                          
       toggleCell(r, c) {
         if (this.isNeutral(c)) return;
         const unit = this.getUnit(r, c);
@@ -576,6 +610,93 @@
         this.rebuildArmies();
       },
 
+      // Copy current modal cell to clipboard and enter paste mode
+      copyCell() {
+        const { r, c } = this.modalCell;
+        if (r === null || !this.modalCell.unit) return;
+        this.clipboardUnit = {
+          type: this.modalCell.unit.type,
+          quantity: this.modalCell.unit.quantity || 1,
+        };
+        this.pasteMode = true;
+        this.pasteModeError = '';
+        this.closeTroopModal();
+      },
+
+      // Paste clipboard contents into a cell (called when pasteMode is active)
+      pasteToCell(r, c) {
+        if (!this.clipboardUnit || this.isNeutral(c)) return;
+        const team = this.teamOfCol(c);
+        this.pasteModeError = '';
+        const existing = this.getUnit(r, c);
+        if (existing) {
+          const shouldReplace = window.confirm(
+            `Overwrite this cell?\nExisting: ${existing.type} x${this.fmtQty(existing.quantity || 1)}\nNew: ${this.clipboardUnit.type} x${this.fmtQty(this.clipboardUnit.quantity || 1)}`,
+          );
+          if (!shouldReplace) return;
+        }
+        const key = `${r},${c}`;
+        const allUnits = Object.values(this.unitMap).filter(Boolean);
+        const count = allUnits.filter(u => u.team === team).length + (this.unitMap[key] ? 0 : 1);
+        const typeInitial = this.typeAbbrev(this.clipboardUnit.type);
+        const unit_id = this.unitMap[key]
+          ? this.unitMap[key].unit_id
+          : `${team}_${typeInitial}${count}`;
+        this.unitMap[key] = {
+          unit_id,
+          team,
+          type: this.clipboardUnit.type,
+          row: r,
+          col: c,
+          quantity: this.clipboardUnit.quantity,
+        };
+        this.rebuildArmies();
+      },
+
+      fillColumnFromClipboard(col) {
+        if (this.isNeutral(col)) return;
+        if (!this.clipboardUnit) {
+          this.pasteModeError = 'Copy a troop first, then use column fill.';
+          setTimeout(() => { this.pasteModeError = ''; }, 2200);
+          return;
+        }
+        const team = this.teamOfCol(col);
+
+        let overwriteCount = 0;
+        for (let r = 0; r < GRID_ROWS; r++) {
+          if (this.getUnit(r, col)) overwriteCount++;
+        }
+        if (overwriteCount > 0) {
+          const ok = window.confirm(`This will overwrite ${overwriteCount} cell(s) in column ${col + 1}. Continue?`);
+          if (!ok) return;
+        }
+
+        for (let r = 0; r < GRID_ROWS; r++) {
+          const key = `${r},${col}`;
+          const existing = this.unitMap[key];
+          const allUnits = Object.values(this.unitMap).filter(Boolean);
+          const count = allUnits.filter(u => u.team === team).length + (existing ? 0 : 1);
+          const typeInitial = this.typeAbbrev(this.clipboardUnit.type);
+          const unit_id = existing ? existing.unit_id : `${team}_${typeInitial}${count}`;
+          this.unitMap[key] = {
+            unit_id,
+            team,
+            type: this.clipboardUnit.type,
+            row: r,
+            col,
+            quantity: this.clipboardUnit.quantity,
+          };
+        }
+        this.rebuildArmies();
+      },
+
+      // Exit paste mode and clear clipboard
+      clearClipboard() {
+        this.clipboardUnit = null;
+        this.pasteMode = false;
+        this.pasteModeError = '';
+      },
+
       rebuildArmies() {
         const all = Object.values(this.unitMap).filter(Boolean);
         this.armies.army_a = all.filter(u => u.team === 'A');
@@ -594,7 +715,7 @@
         return Object.values(byType);
       },
 
-      // â”€â”€ Presets â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+      //    Presets                                                       
       async openPresetModal() {
         this.showPresetModal = true;
         if (this.presetCards.length > 0) return;
@@ -612,13 +733,15 @@
 
       loadPresetFromModal(preset) {
         this.unitMap = {};
-        for (const u of [...(preset.army_a || []), ...(preset.army_b || [])]) {
-          const key = `${u.row},${u.col}`;
-          const existing = this.unitMap[key];
-          if (!existing) {
-            this.unitMap[key] = { ...u, quantity: u.quantity || 1 };
-          } else if (existing.type === u.type) {
-            existing.quantity = (existing.quantity || 1) + (u.quantity || 1);
+        for (const [arrayKey, inferredTeam] of [['army_a', 'A'], ['army_b', 'B']]) {
+          for (const u of (preset[arrayKey] || [])) {
+            const key = `${u.row},${u.col}`;
+            const existing = this.unitMap[key];
+            if (!existing) {
+              this.unitMap[key] = { ...u, team: u.team || inferredTeam, quantity: u.quantity || 1 };
+            } else if (existing.type === u.type) {
+              existing.quantity = (existing.quantity || 1) + (u.quantity || 1);
+            }
           }
         }
         this.rebuildArmies();
@@ -655,17 +778,20 @@
           const preset = await res.json();
           this.unitMap = {};
 
-          // Support both old format (many units per cell, no qty) and new (single unit with qty)
-          for (const u of [...(preset.army_a || []), ...(preset.army_b || [])]) {
-            const key = `${u.row},${u.col}`;
-            const existing = this.unitMap[key];
-            if (!existing) {
-              this.unitMap[key] = { ...u, quantity: u.quantity || 1 };
-            } else if (existing.type === u.type) {
-              // Old format: multiple same-type entries per cell â†’ merge qty
-              existing.quantity = (existing.quantity || 1) + (u.quantity || 1);
+          // Support both old format (many units per cell, no qty) and new (single unit with qty).
+          // Back-fill missing team from the array the unit lives in (old saves omitted this field).
+          for (const [arrayKey, inferredTeam] of [['army_a', 'A'], ['army_b', 'B']]) {
+            for (const u of (preset[arrayKey] || [])) {
+              const key = `${u.row},${u.col}`;
+              const existing = this.unitMap[key];
+              if (!existing) {
+                this.unitMap[key] = { ...u, team: u.team || inferredTeam, quantity: u.quantity || 1 };
+              } else if (existing.type === u.type) {
+                // Old format: multiple same-type entries per cell → merge qty
+                existing.quantity = (existing.quantity || 1) + (u.quantity || 1);
+              }
+              // Different type at same cell: skip (keep first)
             }
-            // Different type at same cell: skip (keep first)
           }
 
           this.rebuildArmies();

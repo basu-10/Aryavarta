@@ -1,0 +1,106 @@
+{#
+  Shared battlefield renderer.
+  Expected Alpine API:
+  - getBattlefieldRows(), getBattlefieldCols()
+  - isNeutral(c), getBattlefieldCell(r,c), getBattlefieldCellClass(r,c), getBattlefieldCellStyle(r,c)
+  - onBattlefieldCellClick(r,c), canClickBattlefieldCells
+  - showColumnFillControls, canFillColumn(c), onFillColumn(c)
+  - isBattlefieldColumnVisible(c)
+  - showBattlefieldLegend
+  - allowNeutralUnits, showNeutralOccupiedMarker
+  - troopIcon(type), getBattlefieldCellVisual(cell,r,c), getBattlefieldCellFallback(cell), getBattlefieldCellText(cell)
+  - battlefieldIconClass, battlefieldFallbackClass, battlefieldStatClass
+#}
+
+<div class="battlefield-container" :class="battlefieldContainerClass || ''">
+  <div class="battlefield-rotatable">
+    <div class="rounded-lg border border-gray-700 overflow-hidden">
+      <template x-if="showColumnFillControls">
+        <div class="flex border-b border-gray-700">
+          <template x-for="c in getBattlefieldCols()" :key="'col-fill-' + c">
+            <div
+              x-show="isBattlefieldColumnVisible(c - 1)"
+              class="flex-1 min-w-0 h-9 border-r border-black/20 flex items-center justify-center"
+              :class="isNeutral(c - 1) ? 'bc-cell-neutral opacity-60' : 'bg-gray-900/50'"
+            >
+              <template x-if="!isNeutral(c - 1)">
+                <button
+                  @click="onFillColumn(c - 1)"
+                  class="w-6 h-6 rounded text-xs font-bold transition-colors"
+                  :class="canFillColumn(c - 1)
+                    ? 'bg-indigo-700 hover:bg-indigo-600 text-white'
+                    : 'bg-gray-700 hover:bg-gray-600 text-gray-200'"
+                  title="Fill this column with copied troop"
+                >
+                  ↓
+                </button>
+              </template>
+              <template x-if="isNeutral(c - 1)">
+                <span class="text-gray-600/50 text-sm select-none">|</span>
+              </template>
+            </div>
+          </template>
+        </div>
+      </template>
+
+      <template x-for="r in getBattlefieldRows()" :key="r">
+        <div class="flex">
+          <template x-for="c in getBattlefieldCols()" :key="c">
+            <div
+              x-show="isBattlefieldColumnVisible(c - 1)"
+              @click="canClickBattlefieldCells ? onBattlefieldCellClick(r - 1, c - 1) : null"
+              :class="getBattlefieldCellClass(r - 1, c - 1)"
+              :style="getBattlefieldCellStyle(r - 1, c - 1)"
+              class="battle-cell relative flex flex-col items-center justify-center select-none"
+            >
+              <template x-if="isNeutral(c - 1) && !getBattlefieldCell(r - 1, c - 1)">
+                <span class="text-gray-600/40 text-lg pointer-events-none select-none">|</span>
+              </template>
+
+              <template x-if="isNeutral(c - 1) && showNeutralOccupiedMarker && getBattlefieldCell(r - 1, c - 1)">
+                <span class="absolute top-1 right-1 text-[9px] text-amber-300/80 font-semibold pointer-events-none select-none">NML</span>
+              </template>
+
+              <template x-if="!isNeutral(c - 1) && !getBattlefieldCell(r - 1, c - 1)">
+                <span class="text-white/40 text-3xl leading-none pointer-events-none select-none">+</span>
+              </template>
+
+              <template x-if="getBattlefieldCell(r - 1, c - 1) && (allowNeutralUnits || !isNeutral(c - 1))">
+                <div class="flex flex-col items-center gap-0.5 pointer-events-none select-none">
+                  <template x-if="troopIcon(getBattlefieldCell(r - 1, c - 1).type)">
+                    <img
+                      :src="getBattlefieldCellVisual(getBattlefieldCell(r - 1, c - 1), r - 1, c - 1)"
+                      :alt="getBattlefieldCell(r - 1, c - 1).type"
+                      :class="battlefieldIconClass"
+                      class="object-contain drop-shadow"
+                    />
+                  </template>
+                  <template x-if="!troopIcon(getBattlefieldCell(r - 1, c - 1).type)">
+                    <span
+                      :class="battlefieldFallbackClass"
+                      class="font-bold leading-none"
+                      x-text="getBattlefieldCellFallback(getBattlefieldCell(r - 1, c - 1))"
+                    ></span>
+                  </template>
+                  <span
+                    :class="battlefieldStatClass"
+                    class="leading-none font-semibold text-yellow-200"
+                    x-text="getBattlefieldCellText(getBattlefieldCell(r - 1, c - 1))"
+                  ></span>
+                </div>
+              </template>
+            </div>
+          </template>
+        </div>
+      </template>
+    </div>
+  </div>
+
+  <template x-if="showBattlefieldLegend !== false">
+    <div class="flex gap-4 mt-3 text-xs text-gray-500">
+      <div class="flex items-center gap-1"><div class="w-3 h-3 rounded bc-cell-a border border-gray-600"></div> Team A</div>
+      <div class="flex items-center gap-1"><div class="w-3 h-3 rounded bc-cell-b border border-gray-600"></div> Team B</div>
+      <div class="flex items-center gap-1"><div class="w-3 h-3 rounded bc-cell-neutral border border-gray-600"></div> No-man's land</div>
+    </div>
+  </template>
+</div>

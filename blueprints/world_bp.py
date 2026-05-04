@@ -168,8 +168,11 @@ def attack_prep(target_type: str, target_id: int):
             pass
 
     all_stats = get_all_unit_stats()
-    unit_classification = dict(config.UNIT_CLASSIFICATION)
-    for unit_type in all_stats:
+    # Buildings are never dispatched to attack — filter them out
+    deployable_types = [t for t in all_stats.keys() if t not in config.BUILDING_TYPES]
+    unit_classification = {k: v for k, v in config.UNIT_CLASSIFICATION.items()
+                           if k not in config.BUILDING_TYPES}
+    for unit_type in deployable_types:
         if unit_type not in unit_classification:
             stats = all_stats[unit_type]
             troop_type = "melee" if stats.get("range", 1) <= 1 else "ranged"
@@ -186,8 +189,8 @@ def attack_prep(target_type: str, target_id: int):
         presets=presets,
         grid_rows=config.GRID_ROWS,
         team_a_cols=config.TEAM_A_COLS,
-        unit_types=list(all_stats.keys()),
-        unit_stats=all_stats,
+        unit_types=deployable_types,
+        unit_stats={k: v for k, v in all_stats.items() if k not in config.BUILDING_TYPES},
         unit_classification=unit_classification,
         active_theme=config.ACTIVE_THEME,
     )
@@ -414,7 +417,7 @@ def _formation_from_preset_name(name: str) -> list[dict]:
         col = unit.get("col")
         if not utype or not isinstance(row, int) or not isinstance(col, int):
             continue
-        formation.append({"unit_type": utype, "quantity": 1, "row": row, "col": col})
+        formation.append({"unit_type": utype, "quantity": unit.get("quantity", 1), "row": row, "col": col})
     return formation
 
 
@@ -527,70 +530,108 @@ def _build_attacker_units(formation: list[dict]) -> list[Unit]:
                 unit_type=utype,
                 row=row, col=col,
                 hp=stats["hp"] * qty, max_hp=stats["hp"] * qty,
-                damage=stats["damage"] * qty, defense=stats["defense"],
+                damage=stats["damage"] * qty, defense=stats["defense"] * qty,
                 range=stats["range"], speed=stats["speed"],
                 quantity=qty,
             ))
         return units
 
-    total_units = sum(max(0, int(e.get("quantity", 0))) for e in formation)
-    positions = random.sample(_TEAM_A_POSITIONS, min(len(_TEAM_A_POSITIONS), total_units))
+    # One stacked unit per formation entry: HP and damage scale with quantity.
+    # This mirrors the explicit-positions path so a large army is properly
+    # represented even when no grid preset was chosen.
+    n_entries = sum(1 for e in formation
+                    if (e.get("unit_type") or e.get("type", "")).strip() in all_stats
+                    and max(0, int(e.get("quantity", 0))) > 0)
+    positions = random.sample(_TEAM_A_POSITIONS, min(len(_TEAM_A_POSITIONS), n_entries))
     pos_idx = 0
     for entry in formation:
         utype = (entry.get("unit_type") or entry.get("type") or "").strip()
         if not utype or utype not in all_stats:
             continue
-        stats = all_stats[utype]
         qty = max(0, int(entry.get("quantity", 0)))
-        for n in range(qty):
-            if pos_idx >= len(positions):
-                break
-            row, col = positions[pos_idx]; pos_idx += 1
-            units.append(Unit(
-                unit_id=f"A_{utype[0]}{len(units)+1}",
-                team="A",
-                unit_type=utype,
-                row=row, col=col,
-                hp=stats["hp"], max_hp=stats["hp"],
-                damage=stats["damage"], defense=stats["defense"],
-                range=stats["range"], speed=stats["speed"],
-            ))
+        if qty <= 0:
+            continue
+        if pos_idx >= len(positions):
+            break
+        stats = all_stats[utype]
+        row, col = positions[pos_idx]; pos_idx += 1
+        units.append(Unit(
+            unit_id=f"A_{utype[0]}{len(units)+1}",
+            team="A",
+            unit_type=utype,
+            row=row, col=col,
+            hp=stats["hp"] * qty, max_hp=stats["hp"] * qty,
+            damage=stats["damage"] * qty, defense=stats["defense"] * qty,
+            range=stats["range"], speed=stats["speed"],
+            quantity=qty,
+        ))
     return units
 
 
 def _build_defender_units(defender_spec: list[dict]) -> list[Unit]:
     """
-    Turn a defender spec [{type, count}, ...] into Unit objects at random
-    Team B positions.
+    Turn a defender spec [{type, count}, ...] into Unit objects.
+
+    Buildings (Cannon, Archer Tower) are placed in the Team B defense column
+    (TEAM_B_DEF_COL), up to a maximum of 4 (randomly selected if more are
+    present).  Regular troop stacks are placed at random TEAM_B_COLS positions.
     """
-    total = sum(e["count"] for e in defender_spec)
-    positions = random.sample(_TEAM_B_POSITIONS, min(len(_TEAM_B_POSITIONS), total))
     all_stats = config.UNIT_STATS
     units: list[Unit] = []
+
+    # Separate buildings from regular troops
+    building_entries = [e for e in defender_spec if e["type"] in config.BUILDING_TYPES]
+    troop_entries    = [e for e in defender_spec if e["type"] not in config.BUILDING_TYPES]
+
+    # Cap buildings at 4, chosen randomly
+    if len(building_entries) > 4:
+        building_entries = random.sample(building_entries, 4)
+
+    # Place buildings in defense column rows 0-3 (one per row, shuffled)
+    defense_rows = random.sample(range(config.GRID_ROWS), min(len(building_entries), config.GRID_ROWS))
+    for i, entry in enumerate(building_entries):
+        if i >= len(defense_rows):
+            break
+        utype = entry["type"]
+        stats = all_stats.get(utype, {})
+        if not stats:
+            continue
+        unit_id = f"B_DEF_{entry['building_id']}" if entry.get("building_id") is not None else f"B_BLD_{len(units)+1}"
+        ammo = int(entry.get("ammo_count", 0)) if entry.get("building_id") is not None else None
+        units.append(Unit(
+            unit_id=unit_id,
+            team="B",
+            unit_type=utype,
+            row=defense_rows[i], col=config.TEAM_B_DEF_COL,
+            hp=stats["hp"], max_hp=stats["hp"],
+            damage=stats["damage"], defense=stats["defense"],
+            range=stats["range"], speed=stats["speed"],
+            ammo=ammo,
+            quantity=1,
+        ))
+
+    # Place regular troops in random TEAM_B_COLS positions
+    total_troops = sum(e["count"] for e in troop_entries)
+    positions = random.sample(_TEAM_B_POSITIONS, min(len(_TEAM_B_POSITIONS), len(troop_entries)))
     pos_idx = 0
-    for entry in defender_spec:
+    for entry in troop_entries:
+        if pos_idx >= len(positions):
+            break
         utype = entry["type"]
         stats = all_stats.get(utype, config.UNIT_STATS.get("Troll", {}))
-        for n in range(entry["count"]):
-            if pos_idx >= len(positions):
-                break
-            row, col = positions[pos_idx]; pos_idx += 1
-            unit_id = f"B_{utype[0]}{len(units)+1}"
-            ammo = None
-            # Defence buildings are represented as one unit per building with per-building ammo.
-            if entry.get("building_id") is not None:
-                unit_id = f"B_DEF_{entry['building_id']}"
-                ammo = int(entry.get("ammo_count", 0))
-            units.append(Unit(
-                unit_id=unit_id,
-                team="B",
-                unit_type=utype,
-                row=row, col=col,
-                hp=stats["hp"], max_hp=stats["hp"],
-                damage=stats["damage"], defense=stats["defense"],
-                range=stats["range"], speed=stats["speed"],
-                ammo=ammo,
-            ))
+        row, col = positions[pos_idx]; pos_idx += 1
+        qty = max(1, int(entry.get("count", 1)))
+        unit_id = f"B_{utype[0]}{len(units)+1}"
+        units.append(Unit(
+            unit_id=unit_id,
+            team="B",
+            unit_type=utype,
+            row=row, col=col,
+            hp=stats["hp"] * qty, max_hp=stats["hp"] * qty,
+            damage=stats["damage"] * qty, defense=stats["defense"] * qty,
+            range=stats["range"], speed=stats["speed"],
+            quantity=qty,
+        ))
     return units
 
 
@@ -945,10 +986,18 @@ def _resolve_one_mission(mission: dict) -> dict:
 def _deduct_defender_casualties(
     location_type: str, location_id: int, owner_id: int, all_units: list
 ) -> None:
-    """Deduct dead defender troops from the garrison after a successful defence."""
+    """Deduct defender casualties from the garrison after a defence.
+
+    For each defending troop stack (not a building), calculate casualties as
+    the difference between original quantity and surviving quantity (HP-to-troop
+    conversion).  Both dead and partially damaged alive stacks are accounted for.
+    """
     for u in all_units:
-        if u.team == "B" and not u.is_alive() and not u.unit_id.startswith("B_DEF_"):
-            m.deduct_troop(owner_id, u.unit_type, u.quantity, location_type, location_id)
+        if u.team != "B" or u.unit_id.startswith("B_DEF_"):
+            continue
+        casualties = u.quantity - u.surviving_quantity
+        if casualties > 0:
+            m.deduct_troop(owner_id, u.unit_type, casualties, location_type, location_id)
 
 
 def _apply_outcome(mission: dict, winner_label: str, all_units: list | None = None) -> None:
@@ -968,11 +1017,15 @@ def _apply_outcome(mission: dict, winner_label: str, all_units: list | None = No
         return
 
     # Attacker wins — return surviving attacker troops to their origin.
+    # Quantity returned is based on HP-to-troop conversion (surviving_quantity),
+    # so a stack that took heavy damage returns fewer troops.
     if all_units is not None:
         survivors: dict[str, int] = {}
         for u in all_units:
-            if u.team == "A" and u.is_alive():
-                survivors[u.unit_type] = survivors.get(u.unit_type, 0) + u.quantity
+            if u.team == "A":
+                qty = u.surviving_quantity
+                if qty > 0:
+                    survivors[u.unit_type] = survivors.get(u.unit_type, 0) + qty
         for utype, count in survivors.items():
             m.add_troop(attacker_id, utype, count, origin_type, origin_id)
 

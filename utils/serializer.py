@@ -46,6 +46,12 @@ def _event_to_log_line(ev: dict) -> str:
         )
     elif t == "death":
         return f"{ev['unit_id']} was eliminated"
+    elif t == "pool_attack":
+        return (
+            f"Team {'B' if ev['target_pool'] == 'A' else 'A'} struck "
+            f"Team {ev['target_pool']} base for {ev['damage']} damage "
+            f"(pool HP: {ev['pool_hp']})"
+        )
     return str(ev)
 
 
@@ -68,6 +74,7 @@ def build_tick_data(result: "BattleResult") -> list[dict]:
                     "type": u["type"],
                     "hp": u["hp"],
                     "max_hp": u["max_hp"],
+                    "quantity": u.get("quantity", 1),
                     "status": u["status"],
                     "action": u["action"],
                 }
@@ -83,6 +90,10 @@ def build_tick_data(result: "BattleResult") -> list[dict]:
                 "log": log_lines,
                 "cells": cells,
                 "units": snap["units"],   # full unit list for summary panel
+                "pool_a_hp": snap.get("pool_a_hp", 0),
+                "pool_b_hp": snap.get("pool_b_hp", 0),
+                "pool_a_initial": snap.get("pool_a_initial", 0),
+                "pool_b_initial": snap.get("pool_b_initial", 0),
             }
         )
 

@@ -3,6 +3,7 @@
   "army_a": [
     {
       "unit_id": "A_Hussar_3_3",
+      "team": "A",
       "type": "Hussar",
       "row": 3,
       "col": 3,
@@ -10,6 +11,7 @@
     },
     {
       "unit_id": "A_Hussar_2_3",
+      "team": "A",
       "type": "Hussar",
       "row": 2,
       "col": 3,
@@ -17,6 +19,7 @@
     },
     {
       "unit_id": "A_Hussar_1_3",
+      "team": "A",
       "type": "Hussar",
       "row": 1,
       "col": 3,
@@ -24,6 +27,7 @@
     },
     {
       "unit_id": "A_Hussar_0_3",
+      "team": "A",
       "type": "Hussar",
       "row": 0,
       "col": 3,
@@ -31,6 +35,7 @@
     },
     {
       "unit_id": "A_Longbowman_0_2",
+      "team": "A",
       "type": "Longbowman",
       "row": 0,
       "col": 2,
@@ -38,6 +43,7 @@
     },
     {
       "unit_id": "A_Longbowman_1_2",
+      "team": "A",
       "type": "Longbowman",
       "row": 1,
       "col": 2,
@@ -45,6 +51,7 @@
     },
     {
       "unit_id": "A_Longbowman_2_2",
+      "team": "A",
       "type": "Longbowman",
       "row": 2,
       "col": 2,
@@ -52,6 +59,7 @@
     },
     {
       "unit_id": "A_Longbowman_3_2",
+      "team": "A",
       "type": "Longbowman",
       "row": 3,
       "col": 2,

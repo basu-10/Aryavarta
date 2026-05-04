@@ -19,8 +19,8 @@ def client(tmp_path):
 
 VALID_PAYLOAD = {
     "army_a": [
-        {"unit_id": "A_B1", "team": "A", "type": "Barbarian", "row": 0, "col": 0},
-        {"unit_id": "A_B2", "team": "A", "type": "Barbarian", "row": 1, "col": 1},
+        {"unit_id": "A_B1", "team": "A", "type": "Barbarian", "row": 0, "col": 1},
+        {"unit_id": "A_B2", "team": "A", "type": "Barbarian", "row": 1, "col": 2},
     ],
     "army_b": [
         {"unit_id": "B_AR1", "team": "B", "type": "Archer", "row": 0, "col": 8},
@@ -56,8 +56,9 @@ class TestRememberAuth:
     def _create_user(self, client, username: str | None = None, password: str = "pw123"):
         username = username or f"u_{uuid.uuid4().hex[:8]}"
         with client.application.app_context():
+            world_id = m.create_world(f"w_{uuid.uuid4().hex[:8]}", 10, 10, 0, 0)
             player_id = m.create_player(username, generate_password_hash(password))
-            m.create_castle(player_id, 4, 0, 0)
+            m.create_castle(player_id, 4, 0, 0, world_id)
         return username, password
 
     def test_remember_cookie_restores_session_after_session_clear(self, client):
@@ -141,9 +142,9 @@ class TestRunRoute:
         bad_payload = {
             "army_a": [
                 {"unit_id": "A_B1", "team": "A", "type": "Barbarian",
-                 "row": 0, "col": 0},
+                 "row": 0, "col": 1},
                 {"unit_id": "A_B2", "team": "A", "type": "Barbarian",
-                 "row": 0, "col": 0},  # same cell!
+                 "row": 0, "col": 1},  # same cell!
             ],
             "army_b": VALID_PAYLOAD["army_b"],
         }
