@@ -79,10 +79,12 @@ def fort_page(fort_id: int):
     buildings = m.get_buildings("fort", fort_id)
     troops    = m.get_troops_at("fort", fort_id)
     pending   = m.get_location_pending_resources("fort", fort_id)
+    player    = m.get_player_by_id(session["player_id"])
     return render_template(
         "fort/location.html",
         location=fort, location_type="fort", location_id=fort_id,
         buildings=buildings, troops=troops, pending=pending,
+        player=player,
         owned_fort_cards=[],
         build_costs=config.BUILDING_BUILD_COST,
         build_types=list(config.BUILDING_BUILD_TIME.keys()),
@@ -100,7 +102,8 @@ def api_fort_resources(fort_id: int):
         return "Forbidden", 403
     pending = m.get_location_pending_resources("fort", fort_id)
     troops = m.get_troops_at("fort", fort_id)
-    return render_template("fort/_header_cards.html", pending=pending, troops=troops, player=None)
+    player = m.get_player_by_id(session["player_id"])
+    return render_template("fort/_header_cards.html", pending=pending, troops=troops, player=player)
 
 
 @fort_bp.route("/api/castle/resources")
@@ -308,6 +311,13 @@ def api_building_details(building_id: int):
         payload["troop_count"] = troop_count
         payload["all_troops"] = troops
         payload["train_cost"] = config.TROOP_TRAIN_COST.get(army["unit_type"], {})
+        _player = m.get_player_by_id(session["player_id"])
+        payload["player_resources"] = {
+            "food":   float(_player.get("food",   0)) if _player else 0,
+            "timber": float(_player.get("timber", 0)) if _player else 0,
+            "gold":   float(_player.get("gold",   0)) if _player else 0,
+            "metal":  float(_player.get("metal",  0)) if _player else 0,
+        }
 
     ammo_type = config.DEFENCE_BUILDING_AMMO.get(b["type"])
     if ammo_type:
@@ -365,14 +375,17 @@ def api_troop_train():
         return jsonify({"error": "This building does not train troops"}), 400
 
     unit_type = army["unit_type"]
+    quantity  = max(1, min(500, int(data.get("quantity", 1))))
     cost = config.TROOP_TRAIN_COST.get(unit_type, {})
-    if cost and not m.deduct_player_resources(session["player_id"], **cost):
+    total_cost = {k: v * quantity for k, v in cost.items()}
+    if total_cost and not m.deduct_player_resources(session["player_id"], **total_cost):
         return jsonify({"error": "Not enough resources"}), 402
 
-    entry = m.queue_troop_training(
-        building_id, session["player_id"], unit_type, army["training_seconds"]
-    )
-    return jsonify({"ok": True, "queue_entry": entry})
+    for _ in range(quantity):
+        m.queue_troop_training(
+            building_id, session["player_id"], unit_type, army["training_seconds"]
+        )
+    return jsonify({"ok": True, "queued": quantity})
 
 
 # ── Delete troop ───────────────────────────────────────────────────────── #

@@ -65,8 +65,6 @@
 {% set cc = occupied.get(0) %}
 
 <h2 class="text-lg font-semibold mb-3">Buildings ({{ location.slot_count }} slots + Command Centre)</h2>
-{% if location_type == 'castle' %}
-{# ── CoC-style top-down castle base ──────────────────────────────────── #}
 <div class="max-w-4xl mb-8">
   <div class="castle-base-wrapper relative w-full rounded-xl overflow-hidden select-none"
        style="aspect-ratio:1/1; max-height:680px; background:#1a3a0d;">
@@ -161,80 +159,7 @@
     </div>
   </div>
 </div>
-{% else %}
-{# ── Fort view — Command Centre card at top, then regular building cards #}
 
-{# Command Centre slot #}
-<div class="mb-4">
-  <div class="bg-gray-900 border-2 border-red-900 rounded-lg p-3 flex items-center gap-3 max-w-xs relative">
-    {% if cc %}
-      {% set cc_icon = building_icon_map.get(cc.type) %}
-      {% if cc_icon %}
-      <img src="{{ cc_icon }}" alt="Command Centre" class="w-8 h-8 object-contain flex-shrink-0" />
-      {% else %}
-      <div class="text-2xl flex-shrink-0">🏰</div>
-      {% endif %}
-      <div class="min-w-0">
-        <div class="font-semibold text-sm text-red-200">Command Centre</div>
-        <div class="text-xs text-gray-400">Level {{ cc.level }}</div>
-        {% if cc.build_complete_at %}
-        <div class="text-xs text-yellow-400 mt-0.5">Building… <span class="countdown-label" data-complete="{{ cc.build_complete_at }}">…</span></div>
-        {% elif cc.is_destroyed %}
-        <div class="text-xs text-red-400 mt-0.5">Destroyed</div>
-        {% else %}
-        <div class="text-xs text-green-400 mt-0.5">Active</div>
-        {% endif %}
-      </div>
-    {% else %}
-      <div class="text-2xl flex-shrink-0">🏰</div>
-      <div class="font-semibold text-sm text-red-300">Command Centre</div>
-    {% endif %}
-    <span class="absolute top-1.5 right-2 text-[10px] text-red-500/70 font-bold">⚑ HQ</span>
-  </div>
-</div>
-
-<div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-8">
-  {% for slot in all_slots %}
-    {% if slot == 0 %}{% else %}
-    {% if slot in occupied %}
-      {% set b = occupied[slot] %}
-      {% set building_icon = building_icon_map.get(b.type) %}
-      <div onclick="openBuildingPanel({{ b.id }})"
-           class="bg-gray-800 border {% if b.is_destroyed %}border-red-700{% elif b.build_complete_at %}border-yellow-700{% else %}border-gray-600 hover:border-blue-400 cursor-pointer{% endif %} rounded-lg p-3 relative transition-colors">
-        <div class="flex items-center gap-2 mb-1">
-          {% if building_icon %}
-          <img src="{{ building_icon }}" alt="{{ b.type }}" class="w-5 h-5 object-contain" />
-          {% endif %}
-          <div class="font-semibold text-sm">{{ b.type }}</div>
-        </div>
-        <div class="text-xs text-gray-400 mb-2">Level {{ b.level }}</div>
-        {% if b.is_destroyed %}
-          <span class="text-red-400 text-xs block">Destroyed</span>
-          <button onclick="event.stopPropagation(); repairBuilding({{ b.id }})"
-                  class="mt-2 text-xs bg-yellow-700 hover:bg-yellow-600 text-white px-2 py-1 rounded w-full">
-            Repair
-          </button>
-        {% elif b.build_complete_at %}
-          <span class="text-yellow-400 text-xs block">Building…</span>
-          <div class="text-xs text-gray-500 mt-1" data-complete="{{ b.build_complete_at }}">
-            <span class="countdown-label">calculating…</span>
-          </div>
-        {% else %}
-          <span class="text-green-400 text-xs block">Active</span>
-          <span class="text-[10px] text-gray-500 block mt-1">click to manage</span>
-        {% endif %}
-      </div>
-    {% else %}
-      <div class="bg-gray-900 border border-dashed border-gray-700 rounded-lg p-3 flex flex-col items-center justify-center min-h-[90px]">
-        <span class="text-gray-600 text-xs mb-2">Empty slot {{ slot }}</span>
-        <button onclick="openBuildModal({{ slot }})"
-                class="text-xs bg-blue-700 hover:bg-blue-600 text-white px-3 py-1 rounded">Build</button>
-      </div>
-    {% endif %}
-    {% endif %}
-  {% endfor %}
-</div>
-{% endif %}
 
 <h2 class="text-lg font-semibold mb-3">Troops stationed here</h2>
 {% if troops %}
@@ -604,17 +529,53 @@ function renderPanel(data) {
     const unitVisual = troopVisualPath(unit, 'idle');
     const queue = data.queue || [];
     const nowTraining = queue.length ? queue[0] : null;
-    const stack = (data.all_troops || []).find((t) => t.unit_type === unit);
+    const allTroops = data.all_troops || [];
+    const trainCost = data.train_cost || {};
+    const playerRes = data.player_resources || {};
+
+    // Resource badges — highlight resources required for training
+    const resOrder = ['food', 'timber', 'gold', 'metal'];
+    const resIcons = { food: '🍖', timber: '🪵', gold: '💰', metal: '⚙️' };
+    const resBadges = resOrder.map((r) => {
+      const have = playerRes[r] || 0;
+      const need = trainCost[r] || 0;
+      const color = need > 0 ? (have >= need ? 'text-green-300' : 'text-red-400') : 'text-gray-400';
+      return `<span class="inline-flex items-center gap-1 bg-gray-700 rounded px-2 py-0.5 text-xs ${color}">${resIcons[r]} <b>${Math.floor(have)}</b></span>`;
+    }).join('');
+
+    // All stationed troops (including captured Barbarians/Archers) with dismiss buttons
+    const troopRows = allTroops.length
+      ? allTroops.map((t) => {
+          const icon = troopIconPath(t.unit_type);
+          const iconHtml = icon ? `<img src="${icon}" alt="${t.unit_type}" class="troop-icon-inline" />` : '';
+          return `<div class="flex items-center justify-between bg-gray-800 rounded-lg px-4 py-2">
+            <span class="text-sm flex items-center gap-2">${iconHtml}${t.unit_type} ×${t.quantity}</span>
+            <div class="flex gap-2">
+              <button onclick="deleteTroop(${t.id},1)" class="text-xs bg-red-800 hover:bg-red-700 text-white px-3 py-1 rounded">Dismiss 1</button>
+              ${t.quantity > 1 ? `<button onclick="deleteTroop(${t.id},${t.quantity})" class="text-xs bg-red-900 hover:bg-red-800 text-white px-3 py-1 rounded">Dismiss all</button>` : ''}
+            </div>
+          </div>`;
+        }).join('')
+      : '<p class="text-xs text-gray-500">No troops stationed here.</p>';
+
     html += `
       <section>
         <h4 class="text-sm font-semibold text-gray-300 mb-2 flex items-center gap-2">${unitVisual ? `<img src="${unitVisual}" alt="${unit}" class="troop-icon-inline" />` : ''}<span>Troop Management (${unit})</span></h4>
         <div class="text-xs text-gray-400 mb-2">Available: <b class="text-white">${data.troop_count || 0}</b> | Queue: <b class="text-yellow-300">${queue.length}</b></div>
         ${nowTraining ? `<div class="bg-gray-800 rounded-lg px-4 py-2 text-xs text-gray-300 mb-2">Training now: ${unit} — <span data-train-complete="${nowTraining.complete_at}" class="font-mono">...</span> left</div>` : ''}
-        <div class="flex flex-wrap items-center gap-2 mb-3">
-          <span class="text-xs text-gray-400">Cost per unit: ${fmtCost(data.train_cost || {})}</span>
-          <button onclick="trainTroop(${b.id})" class="ml-auto bg-green-700 hover:bg-green-600 text-white text-xs px-4 py-1.5 rounded font-medium">Train 1</button>
+        <div class="bg-gray-800/60 rounded-lg px-3 py-2 mb-3">
+          <div class="text-[11px] text-gray-500 uppercase tracking-wide mb-1.5">Your Resources</div>
+          <div class="flex flex-wrap gap-1.5">${resBadges}</div>
         </div>
-        ${stack ? `<div class="flex items-center justify-between bg-gray-800 rounded-lg px-4 py-2"><span class="text-sm">${stack.unit_type} ×${stack.quantity}</span><div class="flex gap-2"><button onclick="deleteTroop(${stack.id},1)" class="text-xs bg-red-800 hover:bg-red-700 text-white px-3 py-1 rounded">Dismiss 1</button>${stack.quantity > 1 ? `<button onclick="deleteTroop(${stack.id},${stack.quantity})" class="text-xs bg-red-900 hover:bg-red-800 text-white px-3 py-1 rounded">Dismiss all</button>` : ''}</div></div>` : '<p class="text-xs text-gray-500">No trained troops to dismiss.</p>'}
+        <div class="flex flex-wrap items-center gap-2 mb-3">
+          <span class="text-xs text-gray-400">Cost per unit: ${fmtCost(trainCost)}</span>
+          <div class="ml-auto flex items-center gap-2">
+            <input type="number" id="train-qty-${b.id}" value="1" min="1" max="500"
+                   class="w-16 text-center text-xs bg-gray-700 border border-gray-600 rounded px-2 py-1.5 text-white" />
+            <button onclick="trainTroop(${b.id})" class="bg-green-700 hover:bg-green-600 text-white text-xs px-4 py-1.5 rounded font-medium">Train</button>
+          </div>
+        </div>
+        <div class="space-y-2 mb-2">${troopRows}</div>
         <p class="text-xs text-gray-500 mt-2">Dismiss refund is instant. Training is queued one-at-a-time.</p>
       </section>
     `;
@@ -669,10 +630,12 @@ async function upgradeBuilding(buildingId) {
 }
 
 async function trainTroop(buildingId) {
+  const qtyInput = document.getElementById(`train-qty-${buildingId}`);
+  const quantity = Math.max(1, parseInt(qtyInput ? qtyInput.value : '1', 10) || 1);
   const r = await fetch('/api/troop/train', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ building_id: buildingId }),
+    body: JSON.stringify({ building_id: buildingId, quantity }),
   });
   const d = await r.json();
   if (d.ok) refreshPanel();

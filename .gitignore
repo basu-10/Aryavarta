@@ -1,6 +1,5 @@
 .venv/
 __pycache__/
 output/
-battlecells.db
 __pycache__/
 .pytest_cache/
