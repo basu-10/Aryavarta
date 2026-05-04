@@ -184,9 +184,6 @@ def _single_pk(conn: sqlite3.Connection, table: str) -> str | None:
 
 
 def _conflict_target_for_table(conn: sqlite3.Connection, table: str, file_columns: list[str]) -> str | None:
-    if table == "player" and "username" in file_columns:
-        return "username"
-
     pk = _single_pk(conn, table)
     if pk and pk in file_columns:
         return pk
