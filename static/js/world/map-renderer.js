@@ -15,18 +15,6 @@ const BIOME_PAL = {
   open:      ['#52963e','#569a42','#509840','#5a9c44','#4e943c'],
 };
 
-// ── Entity colours ([r, g, b, a]) ──────────────────────────────────────
-const EC = {
-  castle_own:   [37,  99, 235, 0.82],
-  castle_other: [30,  58, 138, 0.82],
-  fort_own:     [22,  163, 74, 0.82],
-  fort_npc:     [180, 83,   9, 0.82],
-  fort_enemy:   [220, 38,  38, 0.82],
-  fort_monster: [234, 88,  12, 0.82],
-  camp:         [147, 51, 234, 0.82],
-};
-function ecRgba(c, a) { return `rgba(${c[0]},${c[1]},${c[2]},${a ?? c[3]})`; }
-
 // ── Asset intrinsic sizes [width, height] in world units ───────────────
 // Sprites are rendered at these sizes (× scale factor from biome def).
 // Bottom-center anchor is used so taller trees stand up naturally.
@@ -54,7 +42,12 @@ const SPRITE_PATHS = ACTIVE_THEME === 'theme2'
   ? {
       castle: `${THEME_PATH}/locations/castle.png`,
       fort: `${THEME_PATH}/locations/fort.png`,
-      monster_camp: '/assets/theme1/map/locations/monster-camp.svg',
+  monster_camp: `${THEME_PATH}/locations/monster-camp.png`,
+  own_fort_banner: `${THEME_PATH}/locations/banners/own-fort.png`,
+  friend_banner: `${THEME_PATH}/locations/banners/friend-banner.png`,
+  clan_banner: `${THEME_PATH}/locations/banners/clan-banner.png`,
+  enemy_banner: `${THEME_PATH}/locations/banners/enemy-banner.png`,
+  abandoned_banner: `${THEME_PATH}/locations/banners/abandoned-banner.png`,
       trees: `${THEME_PATH}/terrain/trees.png`,
       mixed_trees: `${THEME_PATH}/terrain/mixed-trees.png`,
       conifers: `${THEME_PATH}/terrain/conifers.png`,
@@ -329,15 +322,35 @@ function resizeCanvas() {
 }
 new ResizeObserver(resizeCanvas).observe(document.getElementById('world-map-shell'));
 
-// ── Rounded-rect path (no object allocations) ──────────────────────────
-function roundRect(c, x, y, w, h, r) {
-  c.beginPath();
-  c.moveTo(x + r, y);
-  c.lineTo(x + w - r, y);     c.quadraticCurveTo(x + w, y,     x + w, y + r);
-  c.lineTo(x + w, y + h - r); c.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
-  c.lineTo(x + r, y + h);     c.quadraticCurveTo(x,     y + h, x,     y + h - r);
-  c.lineTo(x, y + r);         c.quadraticCurveTo(x,     y,     x + r, y);
-  c.closePath();
+function getFortBannerKeys(item) {
+  if (item.owner_id === PLAYER_ID) return ['own_fort_banner'];
+  if (!item.owner_id) return ['abandoned_banner'];
+
+  const banners = [];
+  if (item.is_friend) banners.push('friend_banner');
+  if (item.is_same_clan) banners.push('clan_banner');
+  if (!banners.length) banners.push('enemy_banner');
+  return banners;
+}
+
+function drawFortBanners(item, sx, sy, cs) {
+  const bannerKeys = getFortBannerKeys(item);
+  if (!bannerKeys.length) return;
+
+  const anchorXs = bannerKeys.length === 1
+    ? [sx + cs * 0.06]
+    : [sx - cs * 0.08, sx + cs * 0.68];
+  const bannerY = sy + cs * 0.20;
+
+  bannerKeys.forEach((bannerKey, index) => {
+    const spr = SPR[bannerKey];
+    if (!spr || !spr.complete || !spr.naturalWidth || !spr.naturalHeight) return;
+
+    const bannerH = cs * 0.92;
+    const ratio = spr.naturalWidth / spr.naturalHeight;
+    const bannerW = bannerH * ratio;
+    ctx.drawImage(spr, anchorXs[index], bannerY, bannerW, bannerH);
+  });
 }
 
 // ── Main draw ──────────────────────────────────────────────────────────
@@ -438,36 +451,26 @@ function draw() {
         item.grid_y < ty0 - 1 || item.grid_y > ty1 + 1) continue;
 
     const { x: sx, y: sy } = worldToScreen(item.grid_x * BASE_CELL, item.grid_y * BASE_CELL);
-    let col = null, label = '', starStr = '';
+    let label = '', starStr = '';
 
     if (item.type === 'castle') {
-      col   = item.owner_id === PLAYER_ID ? EC.castle_own : EC.castle_other;
       label = item.owner_id === PLAYER_ID ? 'Your Castle' : (item.owner_name || '?');
     } else if (item.type === 'fort') {
-      if      (item.owner_id === PLAYER_ID) { col = EC.fort_own;     label = 'Your Fort'; }
-      else if (item.is_npc)                 { col = EC.fort_npc;     label = item.owner_name || 'NPC Fort';   starStr = '\u2605'.repeat(Math.min(item.star_level || 0, 4)); }
-      else if (item.owner_id)               { col = EC.fort_enemy;   label = item.owner_name || 'Enemy Fort'; }
-      else                                  { col = EC.fort_monster; label = 'Abandoned Fort'; starStr = '\u2605'.repeat(Math.min(item.star_level || 0, 4)); }
+      if      (item.owner_id === PLAYER_ID) { label = 'Your Fort'; }
+      else if (item.owner_id)               { label = item.owner_name || (item.is_npc ? 'NPC Fort' : 'Enemy Fort'); }
+      else                                  { label = 'Abandoned Fort'; starStr = '\u2605'.repeat(Math.min(item.star_level || 0, 4)); }
     } else if (item.type === 'monster_camp') {
-      col = EC.camp; label = 'Monster Camp'; starStr = '\u2605'.repeat(Math.min(item.star_level || 0, 4));
+      label = 'Monster Camp'; starStr = '\u2605'.repeat(Math.min(item.star_level || 0, 4));
     }
-    if (!col) continue;
 
-    // Tile-sized coloured background box (click target stays 1 cell)
-    const r = Math.max(2, cs * 0.06);
-    ctx.fillStyle = ecRgba(col);
-    roundRect(ctx, sx, sy, cs, cs, r);
-    ctx.fill();
-
-    // Highlight ring
+    // Filter ring remains, but the state-colour box is removed.
     let ringColor = null;
     if      (_viewFilter === 'own' && item.owner_id === PLAYER_ID)                              ringColor = '#22d3ee';
     else if (_viewFilter && _viewFilter.type === 'friend' && item.owner_id === _viewFilter.id) ringColor = '#f59e0b';
     if (ringColor) {
       ctx.strokeStyle = ringColor;
       ctx.lineWidth   = Math.max(2, cs * 0.05);
-      roundRect(ctx, sx + 1, sy + 1, cs - 2, cs - 2, r);
-      ctx.stroke();
+      ctx.strokeRect(sx + 1, sy + 1, cs - 2, cs - 2);
     }
 
     // Entity sprite — rendered larger than tile for visual presence
@@ -477,6 +480,8 @@ function draw() {
       const sw = cs * mult, sh = cs * mult;
       ctx.drawImage(spr, sx + (cs - sw) * 0.5, sy + (cs - sh) * 0.5, sw, sh);
     }
+
+    if (item.type === 'fort') drawFortBanners(item, sx, sy, cs);
 
     if (showLabels || cs >= 38) {
       const txt = label + (starStr ? ' ' + starStr : '');

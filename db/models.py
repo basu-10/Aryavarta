@@ -1246,35 +1246,49 @@ def find_empty_cell(world_id: int = 0, grid_w: int = 0, grid_h: int = 0) -> tupl
     raise RuntimeError("World grid is full — cannot find empty cell.")
 
 
-def get_world_map_snapshot(world_id: int = 0) -> list[dict]:
+def get_world_map_snapshot(world_id: int = 0, viewer_player_id: Optional[int] = None) -> list[dict]:
     """All world entities as a flat list for the map renderer (filtered by world)."""
     db = get_db()
     items: list[dict] = []
+    viewer = get_player_by_id(viewer_player_id) if viewer_player_id else None
+    viewer_clan_id = viewer.get("clan_id") if viewer else None
+    friend_ids = {f["id"] for f in get_friends(viewer_player_id)} if viewer_player_id else set()
 
     for r in db.execute(
-        "SELECT c.id, c.grid_x, c.grid_y, p.id as owner_id, p.username as owner_name, p.role as owner_role "
+        "SELECT c.id, c.grid_x, c.grid_y, p.id as owner_id, p.username as owner_name, "
+        "p.role as owner_role, p.clan_id as owner_clan_id "
         "FROM castle c JOIN player p ON c.player_id=p.id WHERE c.world_id=?",
         (world_id,),
     ).fetchall():
+        owner_id = r["owner_id"]
         items.append({
             "type": "castle", "id": r["id"],
             "grid_x": r["grid_x"], "grid_y": r["grid_y"],
-            "owner_id": r["owner_id"], "owner_name": r["owner_name"],
+            "owner_id": owner_id, "owner_name": r["owner_name"],
             "is_npc": r["owner_role"] == "npc",
             "star_level": None,
+            "is_friend": owner_id in friend_ids,
+            "is_same_clan": bool(
+                viewer_clan_id and r["owner_clan_id"] and viewer_clan_id == r["owner_clan_id"]
+            ),
         })
 
     for r in db.execute(
-        "SELECT f.*, p.username as owner_name, p.role as owner_role "
+        "SELECT f.*, p.username as owner_name, p.role as owner_role, p.clan_id as owner_clan_id "
         "FROM fort f LEFT JOIN player p ON f.owner_id=p.id WHERE f.world_id=?",
         (world_id,),
     ).fetchall():
+        owner_id = r["owner_id"]
         items.append({
             "type": "fort", "id": r["id"],
             "grid_x": r["grid_x"], "grid_y": r["grid_y"],
-            "owner_id": r["owner_id"], "owner_name": r["owner_name"],
-            "is_npc": (r["owner_role"] == "npc") if r["owner_id"] else False,
-            "star_level": r["star_level"] if r["owner_id"] is None else None,
+            "owner_id": owner_id, "owner_name": r["owner_name"],
+            "is_npc": (r["owner_role"] == "npc") if owner_id else False,
+            "star_level": r["star_level"] if owner_id is None else None,
+            "is_friend": owner_id in friend_ids,
+            "is_same_clan": bool(
+                owner_id and viewer_clan_id and r["owner_clan_id"] and viewer_clan_id == r["owner_clan_id"]
+            ),
         })
 
     for r in db.execute(

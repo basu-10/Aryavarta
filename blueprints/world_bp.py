@@ -226,6 +226,7 @@ def api_player_origins():
 @login_required
 def api_world_map():
     world_id = session.get("world_id", 0)
+    player_id = session["player_id"]
     # Auto-populate NPCs if below cap (cheap check)
     world = m.get_world(world_id)
     if world:
@@ -234,7 +235,7 @@ def api_world_map():
         m.ensure_npc_population()
     # Top up monster forts/camps if any were defeated
     ensure_world_entities()
-    return jsonify({"items": m.get_world_map_snapshot(world_id)})
+    return jsonify({"items": m.get_world_map_snapshot(world_id, viewer_player_id=player_id)})
 
 
 # ── NPC generation endpoint ───────────────────────────────────────────── #

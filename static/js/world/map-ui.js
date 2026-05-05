@@ -209,18 +209,25 @@ function toggleZoomAll() {
 
 // ── Legend ────────────────────────────────────────────────────────────
 const LEGEND_ITEMS = [
-  { label: 'Your Castle',     color: EC.castle_own,   icon: 'castle' },
-  { label: 'Enemy Castle',    color: EC.castle_other, icon: 'castle' },
-  { label: 'Your Fort',       color: EC.fort_own,     icon: 'fort' },
-  { label: 'Enemy Fort',      color: EC.fort_enemy,   icon: 'fort' },
-  { label: 'Abandoned Fort',  color: EC.fort_monster, icon: 'fort' },
-  { label: 'Monster Camp',    color: EC.camp,         icon: 'monster_camp' },
+  { label: 'Castle',               icon: 'castle' },
+  { label: 'Your Fort',            icon: 'fort', banners: ['own_fort_banner'] },
+  { label: 'Friend Fort',          icon: 'fort', banners: ['friend_banner'] },
+  { label: 'Same Clan Fort',       icon: 'fort', banners: ['clan_banner'] },
+  { label: 'Friend + Clan Fort',   icon: 'fort', banners: ['friend_banner', 'clan_banner'] },
+  { label: 'Enemy Fort',    icon: 'fort', banners: ['enemy_banner'] },
+  { label: 'Abandoned Fort',       icon: 'fort', banners: ['abandoned_banner'] },
+  { label: 'Monster Camp',         icon: 'monster_camp' },
 ];
 const LOCATION_ICON = ACTIVE_THEME === 'theme2'
   ? {
       castle: `${THEME_PATH}/locations/castle.png`,
       fort: `${THEME_PATH}/locations/fort.png`,
-      monster_camp: '/assets/theme1/map/locations/monster-camp.svg',
+      monster_camp: `${THEME_PATH}/locations/monster-camp.png`,
+      own_fort_banner: `${THEME_PATH}/locations/banners/own-fort.png`,
+      friend_banner: `${THEME_PATH}/locations/banners/friend-banner.png`,
+      clan_banner: `${THEME_PATH}/locations/banners/clan-banner.png`,
+      enemy_banner: `${THEME_PATH}/locations/banners/enemy-banner.png`,
+      abandoned_banner: `${THEME_PATH}/locations/banners/abandoned-banner.png`,
     }
   : {
       castle: `${THEME_PATH}/locations/castle.svg`,
@@ -228,20 +235,23 @@ const LOCATION_ICON = ACTIVE_THEME === 'theme2'
       monster_camp: `${THEME_PATH}/locations/monster-camp.svg`,
     };
 
-function renderLegendTile(col, iconKey) {
-  const bg = ecRgba(col);
+function renderLegendTile(iconKey, bannerKeys = []) {
   const iconPath = LOCATION_ICON[iconKey] || '';
   const icon = iconPath
-    ? `<img src="${iconPath}" alt="" aria-hidden="true" style="position:absolute;top:8%;left:8%;width:84%;height:84%;object-fit:contain;pointer-events:none;">`
+    ? `<img src="${iconPath}" alt="" aria-hidden="true" style="position:absolute;left:50%;bottom:0;width:78%;height:78%;transform:translateX(-50%);object-fit:contain;pointer-events:none;">`
     : '';
-  return `<span class="relative inline-block w-5 h-5 rounded-sm shrink-0 border border-white/15" style="background:${bg};">${icon}</span>`;
+  const banners = bannerKeys.map((bannerKey, index) => {
+    const left = bannerKeys.length === 1 ? '6%' : (index === 0 ? '-4%' : '54%');
+    return `<img src="${LOCATION_ICON[bannerKey]}" alt="" aria-hidden="true" style="position:absolute;left:${left};top:18%;height:76%;width:auto;object-fit:contain;pointer-events:none;">`;
+  }).join('');
+  return `<span class="relative inline-block w-8 h-6 shrink-0 overflow-visible">${icon}${banners}</span>`;
 }
 
 function renderLegend() {
   const body = document.getElementById('legend-body');
   if (!body) return;
   body.innerHTML = LEGEND_ITEMS.map(item =>
-    `<div class="flex items-center gap-2 min-w-0">${renderLegendTile(item.color, item.icon)}<span class="truncate">${item.label}</span></div>`
+    `<div class="flex items-center gap-2 min-w-0">${renderLegendTile(item.icon, item.banners)}<span class="truncate">${item.label}</span></div>`
   ).join('');
 }
 

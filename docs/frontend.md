@@ -41,21 +41,28 @@ UI and map visuals are stored in `assets/theme1` using an entity-first structure
 
 See `assets/assets_readme.md` for exact folder rules.
 
-### Colour coding
+### World map markers
 
-| Entity | Colour |
-|---|---|
-| Player's own castle | Blue |
-| Player's own fort | Green |
-| Enemy fort (other player) | Red |
-| Monster fort (unowned) | Orange |
-| Monster camp | Purple |
-| Empty | Light grey |
+Theme2 world-map markers no longer use coloured square backplates.
+
+- Castles render as the base castle marker with no state colour.
+- Forts render as the base fort marker plus banner overlays for ownership or relation state.
+- Monster camps render with the dedicated theme2 monster-camp art.
+
+Fort banner states:
+
+- `own-fort.png` for the player's own fort.
+- `friend-banner.png` for a friend's fort.
+- `clan-banner.png` for a same-clan fort.
+- `friend-banner.png` + `clan-banner.png` together for a friend in the same clan.
+- `enemy-banner.png` for enemy players and NPC-owned forts.
+- `abandoned-banner.png` for unowned monster forts.
 
 ### World map asset wiring
 
 - Base terrain tile per world cell: `/assets/theme1/map/terrain/grass.svg`.
 - Entity markers: `/assets/theme1/map/locations/castle.svg`, `/assets/theme1/map/locations/fort.svg`, `/assets/theme1/map/locations/monster-camp.svg`.
+- Theme2 banners live under `/assets/theme2/map/locations/banners/` and are composited next to fort markers in the map canvas and legend.
 
 ### Interaction
 Clicking a cell fires an HTMX request to `GET /world/item/<type>/<id>`, which returns an HTML partial injected into the popup panel. For forts and monster camps the popup shows an **Attack** link that navigates to the dedicated attack preparation page (`GET /attack/<target_type>/<target_id>`).
