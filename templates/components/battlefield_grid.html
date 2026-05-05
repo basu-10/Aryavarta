@@ -15,7 +15,7 @@
 
 <div class="battlefield-container" :class="battlefieldContainerClass || ''">
   <div class="battlefield-rotatable">
-    <div class="rounded-lg border border-gray-700 overflow-hidden"
+    <div class="rounded-lg border border-gray-700 overflow-hidden battlefield-board-frame"
          {% if active_theme == 'theme2' %}
          style="background-image:url('/assets/theme2/floors/battlefield-floor.png'); background-size:cover; background-position:center;"
          {% endif %}
@@ -48,67 +48,69 @@
         </div>
       </template>
 
-      <template x-for="r in getBattlefieldRows()" :key="r">
-        <div class="flex">
-          <template x-for="c in getBattlefieldCols()" :key="c">
-            <div
-              x-show="isBattlefieldColumnVisible(c - 1)"
-              @click="canClickBattlefieldCells ? onBattlefieldCellClick(r - 1, c - 1) : null"
-              :class="getBattlefieldCellClass(r - 1, c - 1)"
-              :style="getBattlefieldCellStyle(r - 1, c - 1)"
-              class="battle-cell relative flex flex-col items-center justify-center select-none"
-            >
-              <template x-if="isNeutral(c - 1) && !getBattlefieldCell(r - 1, c - 1)">
-                <span class="text-gray-600/40 text-lg pointer-events-none select-none">|</span>
-              </template>
+      <div :class="typeof battlefieldPlayfieldClass === 'string' && battlefieldPlayfieldClass ? battlefieldPlayfieldClass : 'battlefield-playfield battlefield-playfield-perspective'">
+        <template x-for="r in getBattlefieldRows()" :key="r">
+          <div class="battlefield-row">
+            <template x-for="c in getBattlefieldCols()" :key="c">
+              <div
+                x-show="isBattlefieldColumnVisible(c - 1)"
+                @click="canClickBattlefieldCells ? onBattlefieldCellClick(r - 1, c - 1) : null"
+                :class="getBattlefieldCellClass(r - 1, c - 1)"
+                :style="getBattlefieldCellStyle(r - 1, c - 1)"
+                class="battle-cell relative flex flex-col items-center justify-center select-none"
+              >
+                <template x-if="isNeutral(c - 1) && !getBattlefieldCell(r - 1, c - 1)">
+                  <span class="text-gray-600/40 text-lg pointer-events-none select-none">|</span>
+                </template>
 
-              <template x-if="isNeutral(c - 1) && showNeutralOccupiedMarker && getBattlefieldCell(r - 1, c - 1)">
-                <span class="absolute top-1 right-1 text-[9px] text-amber-300/80 font-semibold pointer-events-none select-none">NML</span>
-              </template>
+                <template x-if="isNeutral(c - 1) && showNeutralOccupiedMarker && getBattlefieldCell(r - 1, c - 1)">
+                  <span class="absolute top-1 right-1 text-[9px] text-amber-300/80 font-semibold pointer-events-none select-none">NML</span>
+                </template>
 
-              <template x-if="!isNeutral(c - 1) && !getBattlefieldCell(r - 1, c - 1) && showEmptyBattlefieldMarker !== false">
-                <span class="text-white/40 text-3xl leading-none pointer-events-none select-none">+</span>
-              </template>
+                <template x-if="!isNeutral(c - 1) && !getBattlefieldCell(r - 1, c - 1) && showEmptyBattlefieldMarker !== false">
+                  <span class="text-white/40 text-3xl leading-none pointer-events-none select-none">+</span>
+                </template>
 
-              <template x-if="getBattlefieldCell(r - 1, c - 1) && (allowNeutralUnits || !isNeutral(c - 1))">
-                <div class="flex flex-col items-center gap-0.5 pointer-events-none select-none">
-                  <template x-if="troopIcon(getBattlefieldCell(r - 1, c - 1).type)">
-                    <img
-                      :src="getBattlefieldCellVisual(getBattlefieldCell(r - 1, c - 1), r - 1, c - 1)"
-                      :alt="getBattlefieldCell(r - 1, c - 1).type"
-                      :class="battlefieldIconClass"
-                      class="object-contain drop-shadow battlefield-unit-visual"
-                    />
-                  </template>
-                  <template x-if="!troopIcon(getBattlefieldCell(r - 1, c - 1).type)">
+                <template x-if="getBattlefieldCell(r - 1, c - 1) && (allowNeutralUnits || !isNeutral(c - 1))">
+                  <div class="flex flex-col items-center gap-0.5 pointer-events-none select-none">
+                    <template x-if="troopIcon(getBattlefieldCell(r - 1, c - 1).type)">
+                      <img
+                        :src="getBattlefieldCellVisual(getBattlefieldCell(r - 1, c - 1), r - 1, c - 1)"
+                        :alt="getBattlefieldCell(r - 1, c - 1).type"
+                        :class="battlefieldIconClass"
+                        class="object-contain drop-shadow battlefield-unit-visual"
+                      />
+                    </template>
+                    <template x-if="!troopIcon(getBattlefieldCell(r - 1, c - 1).type)">
+                      <span
+                        :class="battlefieldFallbackClass"
+                        class="font-bold leading-none battlefield-unit-fallback"
+                        x-text="getBattlefieldCellFallback(getBattlefieldCell(r - 1, c - 1))"
+                      ></span>
+                    </template>
                     <span
-                      :class="battlefieldFallbackClass"
-                      class="font-bold leading-none battlefield-unit-fallback"
-                      x-text="getBattlefieldCellFallback(getBattlefieldCell(r - 1, c - 1))"
+                      :class="battlefieldStatClass"
+                      class="leading-none font-semibold text-yellow-200"
+                      x-text="getBattlefieldCellText(getBattlefieldCell(r - 1, c - 1))"
                     ></span>
-                  </template>
-                  <span
-                    :class="battlefieldStatClass"
-                    class="leading-none font-semibold text-yellow-200"
-                    x-text="getBattlefieldCellText(getBattlefieldCell(r - 1, c - 1))"
-                  ></span>
-                </div>
-              </template>
+                  </div>
+                </template>
 
-              <template x-if="typeof getBattlefieldDamagePopups === 'function' && getBattlefieldDamagePopups(r - 1, c - 1).length">
-                <div class="damage-popups">
-                  <template x-for="(popup, i) in getBattlefieldDamagePopups(r - 1, c - 1)" :key="popup.id">
-                    <div class="damage-popup" :style="'top:' + Math.max(4, 18 - (i * 13)) + '%'">
-                      <span class="damage-popup-icon">🩸</span>
-                      <span x-text="popup.text"></span>
-                    </div>
-                  </template>
-                </div>
-              </template>
-            </div>
-          </template>
-        </div>
-      </template>
+                <template x-if="typeof getBattlefieldDamagePopups === 'function' && getBattlefieldDamagePopups(r - 1, c - 1).length">
+                  <div class="damage-popups">
+                    <template x-for="(popup, i) in getBattlefieldDamagePopups(r - 1, c - 1)" :key="popup.id">
+                      <div class="damage-popup" :style="'top:' + Math.max(4, 18 - (i * 13)) + '%'">
+                        <span class="damage-popup-icon">🩸</span>
+                        <span x-text="popup.text"></span>
+                      </div>
+                    </template>
+                  </div>
+                </template>
+              </div>
+            </template>
+          </div>
+        </template>
+      </div>
     </div>
   </div>
 

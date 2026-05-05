@@ -1,11 +1,11 @@
 {% extends "base.html" %}
-{% block title %}Fort #{{ location.id }} — BattleCells{% endblock %}
+{% block title %}Castle — BattleCells{% endblock %}
 {% block content %}
 
 <div class="flex flex-wrap items-center justify-between gap-3 mb-5">
-  <h1 class="text-2xl font-bold">🏯 Fort #{{ location.id }}</h1>
+  <h1 class="text-2xl font-bold">🏰 Your Castle</h1>
   <div id="pending-resources"
-       hx-get="{{ url_for('fort.api_fort_resources', fort_id=location.id) }}"
+       hx-get="{{ url_for('fort.api_castle_resources') }}"
        hx-trigger="every 5s"
        hx-swap="innerHTML">
     {% include "components/_location_header_cards.html" with context %}
@@ -18,27 +18,6 @@
     Collect All Resources
   </button>
   <span id="collect-msg" class="text-xs text-gray-400"></span>
-</div>
-
-<div class="mb-6 bg-gray-900 border border-gray-800 rounded-lg p-4">
-  <div class="flex items-start justify-between gap-3 flex-wrap">
-    <div>
-      <h2 class="text-sm font-semibold text-gray-300">Defense Formation Preset</h2>
-      <p id="defense-preset-status" class="text-xs text-gray-500 mt-1">Loading defense preset...</p>
-    </div>
-    <div class="flex items-center gap-2">
-      <button type="button"
-              onclick="openDefensePresetModal()"
-              class="bg-indigo-700 hover:bg-indigo-600 text-white text-xs px-3 py-1.5 rounded font-medium">
-        Select Formation
-      </button>
-      <button type="button"
-              onclick="clearDefensePreset()"
-              class="bg-gray-700 hover:bg-gray-600 text-white text-xs px-3 py-1.5 rounded font-medium">
-        Clear
-      </button>
-    </div>
-  </div>
 </div>
 
 {% set occupied = {} %}
@@ -69,19 +48,19 @@
   <div class="castle-base-wrapper relative w-full rounded-xl overflow-hidden select-none"
        style="aspect-ratio:1/1; max-height:680px; background:#1a3a0d;">
 
-    {# Background field image — fort uses fort-floor.png #}
+    {# Background field image — castle uses castle-floor.png #}
     {% if active_theme == 'theme2' %}
-    <img src="/assets/theme2/floors/fort-floor.png"
-         alt="Fort Base" draggable="false"
+    <img src="/assets/theme2/floors/castle-floor.png"
+         alt="Castle Base" draggable="false"
          class="absolute inset-0 w-full h-full object-cover pointer-events-none" />
     {% else %}
     <img src="/assets/theme1/ui/castle-base/base-field.svg"
-         alt="Fort Base" draggable="false"
+         alt="Castle Base" draggable="false"
          class="absolute inset-0 w-full h-full object-cover pointer-events-none" />
     {% endif %}
 
     {# ── Command Centre — slot 0, large single plot above the 3×3 grid ─ #}
-    {# No background/border/blur — image sits seamlessly on the floor art #}
+    {# No background/border/blur so the image sits seamlessly on the floor art #}
     <div class="absolute flex flex-col items-center justify-center"
          style="top:27%; left:17%; width:66%; height:16%; border-radius:0.5rem;">
       {% if cc %}
@@ -98,12 +77,12 @@
           {% endif %}
         </div>
       {% else %}
-        <div class="text-2xl pointer-events-none">🏯</div>
+        <div class="text-2xl pointer-events-none">🏰</div>
         <div class="text-[8px] text-gray-300 font-semibold mt-0.5">Command Centre</div>
       {% endif %}
     </div>
 
-    {# ── 3×3 building overlay grid, scaled by row to fit the perspective art ── #}
+    {# ── 3×3 building overlay grid ── #}
     <div class="castle-slot-surface">
       {% for row in range(0, 3) %}
       <div class="castle-slot-row">
@@ -144,7 +123,7 @@
             </div>
           {% else %}
             {% if is_open_slot %}
-            {# No dashed border — slot boundary visible from floor image grass patches #}
+            {# No dashed border — slot boundary is visible from the floor image grass patches #}
             <div onclick="openBuildModal({{ slot }})" title="Empty plot {{ slot }} — click to build"
                  class="castle-slot-cell relative rounded-lg cursor-pointer transition-all
                         hover:bg-emerald-900/20 flex flex-col items-center justify-center gap-1">
@@ -192,7 +171,30 @@
 <p class="text-gray-500 text-sm mb-6">No troops stationed here.</p>
 {% endif %}
 
-
+<h2 class="text-lg font-semibold mb-3">Owned Forts</h2>
+{% if owned_fort_cards %}
+<div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3 mb-8">
+  {% for f in owned_fort_cards %}
+  <a href="{{ url_for('fort.fort_page', fort_id=f.id) }}"
+     class="block bg-gray-800 border border-gray-700 hover:border-blue-500 rounded-lg p-4 transition-colors">
+    <div class="flex items-center justify-between mb-2">
+      <div class="font-semibold">Fort #{{ f.id }}</div>
+      <div class="text-xs text-gray-500">⭐ {{ f.star_level }}</div>
+    </div>
+    <div class="text-xs text-gray-400 mb-2">Position: ({{ f.grid_x }}, {{ f.grid_y }}) • Distance: {{ f.distance }}</div>
+    <div class="text-sm mb-1">🪖 Garrisoned troops: <span class="font-semibold text-white">{{ f.troop_total }}</span></div>
+    <div class="text-sm mb-1">⏱ Training queue:
+      <span class="font-semibold {% if f.queue_count > 0 %}text-green-400{% else %}text-red-400{% endif %}">{{ f.queue_count }}</span>
+    </div>
+    <div class="text-sm">📦 Uncollected resources:
+      <span class="font-semibold {% if f.pending_total > 0 %}text-green-400{% else %}text-red-400{% endif %}">{{ '%.1f'|format(f.pending_total) }}</span>
+    </div>
+  </a>
+  {% endfor %}
+</div>
+{% else %}
+<p class="text-gray-500 text-sm mb-8">You do not own any forts yet.</p>
+{% endif %}
 
 <div id="building-panel" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/70">
   <div class="bg-gray-900 border border-gray-700 rounded-xl shadow-2xl w-full max-w-2xl mx-4 max-h-[90vh] flex flex-col">
@@ -216,22 +218,9 @@
   </div>
 </div>
 
-<div id="defense-preset-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/70">
-  <div class="bg-gray-900 border border-gray-700 rounded-xl shadow-2xl w-full max-w-3xl mx-4 max-h-[90vh] flex flex-col">
-    <div class="flex items-center justify-between px-6 py-4 border-b border-gray-700">
-      <h3 class="text-lg font-bold">Select Defense Formation</h3>
-      <button type="button" onclick="closeDefensePresetModal()" class="text-gray-400 hover:text-white text-xl leading-none">&times;</button>
-    </div>
-    <div class="overflow-y-auto p-6">
-      <div id="defense-preset-list" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3"></div>
-      <p id="defense-preset-empty" class="hidden text-sm text-gray-500 italic"></p>
-    </div>
-  </div>
-</div>
-
 <script>
 const BUILD_COSTS = {{ build_costs | tojson }};
-const LOC_TYPE = 'fort';
+const LOC_TYPE = 'castle';
 const LOC_ID = {{ location.id }};
 const COMMAND_CENTRE_GRID = '/assets/theme1/ui/command-centre/grid.svg';
 
@@ -239,7 +228,6 @@ let pendingSlot = null;
 let currentBuildingId = null;
 let panelTimer = null;
 let didReload = false;
-let defensePresetState = null;
 
 const RES_ICONS = { food: '🍖', timber: '🪵', gold: '💰', metal: '⚙️' };
 const TROOP_ASSETS = {
@@ -511,7 +499,6 @@ function renderPanel(data) {
     const trainCost = data.train_cost || {};
     const playerRes = data.player_resources || {};
 
-    // Resource badges — highlight resources required for training
     const resOrder = ['food', 'timber', 'gold', 'metal'];
     const resIcons = { food: '🍖', timber: '🪵', gold: '💰', metal: '⚙️' };
     const resBadges = resOrder.map((r) => {
@@ -521,7 +508,6 @@ function renderPanel(data) {
       return `<span class="inline-flex items-center gap-1 bg-gray-700 rounded px-2 py-0.5 text-xs ${color}">${resIcons[r]} <b>${Math.floor(have)}</b></span>`;
     }).join('');
 
-    // All stationed troops (including captured Barbarians/Archers) with dismiss buttons
     const troopRows = allTroops.length
       ? allTroops.map((t) => {
           const icon = troopIconPath(t.unit_type);
@@ -647,7 +633,6 @@ async function loadAmmo(buildingId, count) {
 function updateCountdowns() {
   document.querySelectorAll('[data-complete]').forEach((el) => {
     const rem = Math.ceil((new Date(el.dataset.complete) - Date.now()) / 1000);
-    // Support both: el IS the label, or el CONTAINS a .countdown-label child
     const label = el.classList.contains('countdown-label') ? el : el.querySelector('.countdown-label');
     if (rem <= 0) {
       if (!didReload) {
@@ -660,148 +645,14 @@ function updateCountdowns() {
   });
 }
 
-async function fetchDefensePresetState() {
-  if (LOC_TYPE !== 'fort') return null;
-  const r = await fetch(`/api/fort/${LOC_ID}/defense-presets`);
-  const d = await r.json();
-  if (!r.ok || d.error) {
-    throw new Error(d.error || 'Failed to load defense presets');
-  }
-  defensePresetState = d;
-  renderDefensePresetStatus();
-  return d;
-}
-
-function renderDefensePresetStatus() {
-  if (LOC_TYPE !== 'fort') return;
-  const el = document.getElementById('defense-preset-status');
-  if (!el) return;
-  if (!defensePresetState) {
-    el.textContent = 'Unable to load defense presets.';
-    return;
-  }
-  const presets = defensePresetState.presets || [];
-  if (!presets.length) {
-    el.textContent = 'No saved presets found. Defenders will be placed randomly.';
-    return;
-  }
-  if (defensePresetState.selected_preset_name) {
-    el.textContent = `Selected preset: ${defensePresetState.selected_preset_name}`;
-    return;
-  }
-  if (defensePresetState.effective_preset_name) {
-    el.textContent = `Default preset: ${defensePresetState.effective_preset_name} (only preset available)`;
-    return;
-  }
-  el.textContent = 'No preset selected. Defender troops will be placed randomly.';
-}
-
-function closeDefensePresetModal() {
-  const modal = document.getElementById('defense-preset-modal');
-  if (!modal) return;
-  modal.classList.add('hidden');
-  modal.classList.remove('flex');
-}
-
-async function openDefensePresetModal() {
-  if (LOC_TYPE !== 'fort') return;
-  try {
-    if (!defensePresetState) {
-      await fetchDefensePresetState();
-    }
-  } catch (e) {
-    panelError(e.message);
-    return;
-  }
-  renderDefensePresetModal();
-  const modal = document.getElementById('defense-preset-modal');
-  if (!modal) return;
-  modal.classList.remove('hidden');
-  modal.classList.add('flex');
-}
-
-function renderDefensePresetModal() {
-  const listEl = document.getElementById('defense-preset-list');
-  const emptyEl = document.getElementById('defense-preset-empty');
-  if (!listEl || !emptyEl) return;
-
-  listEl.innerHTML = '';
-  const presets = (defensePresetState && defensePresetState.presets) || [];
-  if (!presets.length) {
-    emptyEl.classList.remove('hidden');
-    emptyEl.textContent = 'No saved presets yet. Create one from the Simulator page.';
-    return;
-  }
-
-  emptyEl.classList.add('hidden');
-  const selectedName = defensePresetState.selected_preset_name;
-  for (const p of presets) {
-    const isSelected = selectedName === p.name;
-    const card = document.createElement('div');
-    card.className = `border rounded-lg p-3 transition-colors ${isSelected ? 'border-indigo-500 bg-indigo-900/20' : 'border-gray-700 bg-gray-800'}`;
-    card.innerHTML = `
-      <div class="flex items-center justify-between gap-2 mb-2">
-        <h4 class="text-sm font-semibold truncate">${p.name}</h4>
-        ${isSelected ? '<span class="text-[10px] text-green-400 font-semibold">Selected</span>' : ''}
-      </div>
-      <div class="text-xs text-gray-500 mb-3">Team A cells: ${(p.army_a || []).length}</div>
-      <button type="button" class="w-full bg-indigo-700 hover:bg-indigo-600 text-white text-xs px-3 py-1.5 rounded">Use this preset</button>
-    `;
-    card.querySelector('button').addEventListener('click', async () => {
-      await setDefensePreset(p.name);
-    });
-    listEl.appendChild(card);
-  }
-}
-
-async function setDefensePreset(presetName) {
-  const r = await fetch(`/api/fort/${LOC_ID}/defense-preset`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ preset_name: presetName }),
-  });
-  const d = await r.json();
-  if (!r.ok || d.error) {
-    panelError(d.error || 'Failed to set defense preset');
-    return;
-  }
-  await fetchDefensePresetState();
-  renderDefensePresetModal();
-}
-
-async function clearDefensePreset() {
-  if (LOC_TYPE !== 'fort') return;
-  const r = await fetch(`/api/fort/${LOC_ID}/defense-preset`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ preset_name: '' }),
-  });
-  const d = await r.json();
-  if (!r.ok || d.error) {
-    panelError(d.error || 'Failed to clear defense preset');
-    return;
-  }
-  await fetchDefensePresetState();
-}
-
 updateCountdowns();
 setInterval(updateCountdowns, 1000);
-
-if (LOC_TYPE === 'fort') {
-  fetchDefensePresetState().catch((e) => {
-    const status = document.getElementById('defense-preset-status');
-    if (status) status.textContent = e.message;
-  });
-}
 
 document.getElementById('build-modal').addEventListener('click', (e) => {
   if (e.target === document.getElementById('build-modal')) closeBuildModal();
 });
 document.getElementById('building-panel').addEventListener('click', (e) => {
   if (e.target === document.getElementById('building-panel')) closeBuildingPanel();
-});
-document.getElementById('defense-preset-modal').addEventListener('click', (e) => {
-  if (e.target === document.getElementById('defense-preset-modal')) closeDefensePresetModal();
 });
 </script>
 {% endblock %}

@@ -401,3 +401,77 @@ textarea[class*="bg-gray-800"]:focus {
   display: block;
   width: 100%;
 }
+
+.battlefield-board-frame {
+  position: relative;
+}
+
+.battlefield-playfield {
+  position: relative;
+}
+
+.battlefield-playfield-flat {
+  width: 100%;
+}
+
+.battlefield-playfield-perspective {
+  width: 90%;
+  margin: 0.5% auto 4%;
+}
+
+.battlefield-row {
+  display: flex;
+}
+
+.battlefield-playfield-perspective .battlefield-row {
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.battlefield-playfield-perspective .battlefield-row:nth-child(1) { width: 82%; }
+.battlefield-playfield-perspective .battlefield-row:nth-child(2) { width: 88%; }
+.battlefield-playfield-perspective .battlefield-row:nth-child(3) { width: 94%; }
+.battlefield-playfield-perspective .battlefield-row:nth-child(4) { width: 100%; }
+
+.castle-slot-surface {
+  position: absolute;
+  top: 44%;
+  left: 17%;
+  width: 66%;
+  height: 41%;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.castle-slot-row {
+  display: flex;
+  gap: 2.5%;
+  height: 30%;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.castle-slot-cell {
+  flex: 1 1 0;
+  height: 100%;
+  min-width: 0;
+}
+
+@media (max-width: 768px) {
+  .battlefield-playfield-perspective {
+    width: 94%;
+  }
+
+  .battlefield-playfield-perspective .battlefield-row:nth-child(1) { width: 84%; }
+  .battlefield-playfield-perspective .battlefield-row:nth-child(2) { width: 89%; }
+  .battlefield-playfield-perspective .battlefield-row:nth-child(3) { width: 94%; }
+  .battlefield-playfield-perspective .battlefield-row:nth-child(4) { width: 99%; }
+
+  .castle-slot-surface {
+    top: 45%;
+    left: 15%;
+    width: 70%;
+    height: 40%;
+  }
+}

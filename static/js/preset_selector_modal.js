@@ -22,6 +22,7 @@ function presetModalCardGrid(preset, options = {}) {
     showColumnFillControls: false,
     showBattlefieldLegend: false,
     battlefieldContainerClass: 'px-0',
+    battlefieldPlayfieldClass: 'battlefield-playfield battlefield-playfield-flat',
     battlefieldIconClass: 'w-4 h-4',
     battlefieldFallbackClass: 'text-[10px]',
     battlefieldStatClass: 'text-[9px]',

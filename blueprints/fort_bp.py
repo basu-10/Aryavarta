@@ -56,7 +56,7 @@ def castle_page():
         })
     player = m.get_player_by_id(session["player_id"])
     return render_template(
-        "fort/location.html",
+        "castle/location.html",
         location=castle, location_type="castle", location_id=castle["id"],
         buildings=buildings, troops=troops, pending=pending,
         player=player,
@@ -85,7 +85,6 @@ def fort_page(fort_id: int):
         location=fort, location_type="fort", location_id=fort_id,
         buildings=buildings, troops=troops, pending=pending,
         player=player,
-        owned_fort_cards=[],
         build_costs=config.BUILDING_BUILD_COST,
         build_types=list(config.BUILDING_BUILD_TIME.keys()),
         all_slots=range(1, fort["slot_count"] + 1),
@@ -103,7 +102,7 @@ def api_fort_resources(fort_id: int):
     pending = m.get_location_pending_resources("fort", fort_id)
     troops = m.get_troops_at("fort", fort_id)
     player = m.get_player_by_id(session["player_id"])
-    return render_template("fort/_header_cards.html", pending=pending, troops=troops, player=player)
+    return render_template("components/_location_header_cards.html", pending=pending, troops=troops, player=player)
 
 
 @fort_bp.route("/api/castle/resources")
@@ -115,7 +114,7 @@ def api_castle_resources():
     pending = m.get_location_pending_resources("castle", castle["id"])
     troops = m.get_troops_at("castle", castle["id"])
     player = m.get_player_by_id(session["player_id"])
-    return render_template("fort/_header_cards.html", pending=pending, troops=troops, player=player)
+    return render_template("components/_location_header_cards.html", pending=pending, troops=troops, player=player)
 
 
 # ── Collect ───────────────────────────────────────────────────────────── #
