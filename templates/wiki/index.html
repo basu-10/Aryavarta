@@ -2,6 +2,8 @@
 {% block title %}Wiki — BattleCells{% endblock %}
 
 {% block content %}
+{% set _bext = 'png' if active_theme == 'theme2' else 'svg' %}
+{% set _bp = '/assets/' ~ active_theme ~ '/buildings' %}
 <div class="space-y-8">
 
   <!-- Header -->
@@ -56,11 +58,11 @@
     <a href="{{ url_for('wiki.buildings_index') }}"
        class="group bc-card overflow-hidden hover:border-slate-500/60 transition-all duration-150 flex flex-col">
       <div class="h-36 flex items-center justify-center gap-6" style="background:linear-gradient(135deg,rgba(13,31,60,0.9),rgba(5,13,26,0.95))">
-        <img src="/assets/theme1/buildings/resource/farm.svg"
+         <img src="{{ _bp }}/resource/farm.{{ _bext }}"
              alt="Farm" class="h-16 w-16 object-contain drop-shadow-lg" />
-        <img src="/assets/theme1/buildings/military/garrison.svg"
+         <img src="{{ _bp }}/military/garrison.{{ _bext }}"
              alt="Garrison" class="h-16 w-16 object-contain drop-shadow-lg" />
-        <img src="/assets/theme1/buildings/defense/cannon.svg"
+         <img src="{{ _bp }}/defense/cannon.{{ _bext }}"
              alt="Cannon" class="h-16 w-16 object-contain drop-shadow-lg" />
       </div>
       <div class="p-5 flex flex-col gap-1">

@@ -51,6 +51,8 @@
 {% endfor %}
 {% set _bext = 'png' if active_theme == 'theme2' else 'svg' %}
 {% set _bp   = '/assets/' ~ active_theme ~ '/buildings' %}
+{% set _slot_icon_size = 'w-[72%] h-[72%]' if active_theme == 'theme2' else 'w-[55%] h-[55%]' %}
+{% set _cc_icon_size = 'w-[54%] h-[54%]' if active_theme == 'theme2' else 'w-[40%] h-[40%]' %}
 {% set building_icon_map = {
   'Farm':           _bp ~ '/resource/farm.'          ~ _bext,
   'Lumber Mill':    _bp ~ '/resource/lumber-mill.'   ~ _bext,
@@ -91,7 +93,7 @@
         {% set cc_icon = building_icon_map.get(cc.type) %}
         {% if cc_icon %}
         <img src="{{ cc_icon }}" alt="Command Centre"
-             class="w-[40%] h-[40%] object-contain drop-shadow-lg pointer-events-none" />
+           class="{{ _cc_icon_size }} object-contain drop-shadow-lg pointer-events-none" />
         {% endif %}
         <div class="text-[8px] text-red-200 font-semibold mt-0.5 leading-tight text-center">
           {% if cc.build_complete_at %}
@@ -126,7 +128,7 @@
                style="background:rgba(0,0,0,0.18); backdrop-filter:blur(1px);">
             {% if building_icon %}
             <img src="{{ building_icon }}" alt="{{ b.type }}"
-                 class="w-[55%] h-[55%] object-contain drop-shadow-lg pointer-events-none" />
+                class="{{ _slot_icon_size }} object-contain drop-shadow-lg pointer-events-none" />
             {% else %}
             <div class="text-2xl pointer-events-none">🏗</div>
             {% endif %}

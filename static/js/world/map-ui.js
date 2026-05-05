@@ -216,11 +216,17 @@ const LEGEND_ITEMS = [
   { label: 'Abandoned Fort',  color: EC.fort_monster, icon: 'fort' },
   { label: 'Monster Camp',    color: EC.camp,         icon: 'monster_camp' },
 ];
-const LOCATION_ICON = {
-  castle:       `${THEME_PATH}/locations/castle.svg`,
-  fort:         `${THEME_PATH}/locations/fort.svg`,
-  monster_camp: `${THEME_PATH}/locations/monster-camp.svg`,
-};
+const LOCATION_ICON = ACTIVE_THEME === 'theme2'
+  ? {
+      castle: `${THEME_PATH}/locations/castle.png`,
+      fort: `${THEME_PATH}/locations/fort.png`,
+      monster_camp: '/assets/theme1/map/locations/monster-camp.svg',
+    }
+  : {
+      castle: `${THEME_PATH}/locations/castle.svg`,
+      fort: `${THEME_PATH}/locations/fort.svg`,
+      monster_camp: `${THEME_PATH}/locations/monster-camp.svg`,
+    };
 
 function renderLegendTile(col, iconKey) {
   const bg = ecRgba(col);

@@ -30,6 +30,23 @@ def _troop_image_path(name: str) -> str | None:
     return _IMAGE_MAP.get(name)
 
 
+def _building_image_path(name: str) -> str | None:
+    ext = "png" if config.ACTIVE_THEME == "theme2" else "svg"
+    base = f"/assets/{config.ACTIVE_THEME}/buildings"
+    image_map: dict[str, str] = {
+        "Farm":           f"{base}/resource/farm.{ext}",
+        "Lumber Mill":    f"{base}/resource/lumber-mill.{ext}",
+        "Merchant":       f"{base}/resource/merchant.{ext}",
+        "Mine":           f"{base}/resource/mine.{ext}",
+        "Garrison":       f"{base}/military/garrison.{ext}",
+        "Stable":         f"{base}/military/stable.{ext}",
+        "Cannon":         f"{base}/defense/cannon.{ext}",
+        "Archer Tower":   f"{base}/defense/archer-tower.{ext}",
+        "Command Centre": f"{base}/default/command-centre.{ext}",
+    }
+    return image_map.get(name)
+
+
 def _category_label(category: str) -> str:
     return {
         "infantry":     "Melee",
@@ -238,17 +255,6 @@ def buildings_index():
         BUILDING_BUILD_COST, BUILDING_BUILD_TIME,
         ARMY_BUILDINGS, BUILDING_UPGRADE_COST, DEFENCE_BUILDING_AMMO,
     )
-    _BUILDING_ICONS: dict[str, str] = {
-        "Farm":           "/assets/theme1/buildings/resource/farm.svg",
-        "Lumber Mill":    "/assets/theme1/buildings/resource/lumber-mill.svg",
-        "Merchant":       "/assets/theme1/buildings/resource/merchant.svg",
-        "Mine":           "/assets/theme1/buildings/resource/mine.svg",
-        "Garrison":       "/assets/theme1/buildings/military/garrison.svg",
-        "Stable":         "/assets/theme1/buildings/military/stable.svg",
-        "Cannon":         "/assets/theme1/buildings/defense/cannon.svg",
-        "Archer Tower":   "/assets/theme1/buildings/defense/archer-tower.svg",
-        "Command Centre": "/assets/theme1/buildings/default/command-centre.svg",
-    }
     _BUILDING_TIPS: dict[str, str] = {
         "Farm":           "Produces food passively. All troop training consumes food, so this keeps queues running.",
         "Lumber Mill":    "Generates timber. Most fort construction and upgrades depend on it.",
@@ -270,7 +276,7 @@ def buildings_index():
             "trains":           ARMY_BUILDINGS.get(name, {}).get("unit_type"),
             "training_seconds": ARMY_BUILDINGS.get(name, {}).get("training_seconds"),
             "ammo":             DEFENCE_BUILDING_AMMO.get(name),
-            "icon":             _BUILDING_ICONS.get(name),
+            "icon":             _building_image_path(name),
             "tip":              _BUILDING_TIPS.get(name),
             "fort_buildable":   name != "Command Centre",
         })
