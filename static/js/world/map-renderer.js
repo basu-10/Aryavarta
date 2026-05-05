@@ -438,7 +438,10 @@ function draw() {
     ctx.drawImage(spr, sx + cs * 0.5 - pw * 0.5, sy + cs - ph, pw, ph);
   }
 
-  // 4. Interactive entities (castles, forts, camps)
+  // 4. Edge fog (before entities so border castles remain visible)
+  drawFog();
+
+  // 5. Interactive entities (castles, forts, camps)
   const fontSize = Math.max(8, Math.min(13, cs * 0.18));
   ctx.font = `bold ${fontSize}px sans-serif`;
   ctx.textAlign    = 'center';
@@ -493,8 +496,6 @@ function draw() {
     }
   }
 
-  // 5. Edge fog
-  drawFog();
 }
 
 // ── Edge fog ───────────────────────────────────────────────────────────
